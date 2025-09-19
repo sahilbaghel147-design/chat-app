@@ -11,25 +11,29 @@
       height: 100vh;
       background: #f5f5f5;
     }
-
-    /* Sidebar */
     #users {
-      width: 22%;
+      width: 25%;
+      min-width: 150px;
       background: #efefef;
       padding: 10px;
       border-right: 1px solid #ddd;
       overflow-y: auto;
     }
-
-    /* Main Chat Section */
+    #userList li {
+      padding: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      list-style: none;
+      margin: 5px 0;
+      background: #fff;
+    }
+    #userList li:hover { background: #ddd; }
     #main {
       flex: 1;
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
-
-    /* Header */
     #chatHeader {
       background: #2c3e50;
       color: white;
@@ -37,17 +41,10 @@
       font-size: 16px;
       font-weight: bold;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
     }
-
-    #chatHeader small {
-      font-size: 12px;
-      font-weight: normal;
-      color: #ccc;
-    }
-
-    /* Messages Area */
+    #chatHeader span { font-size: 15px; }
+    #chatHeader small { font-size: 12px; font-weight: normal; color: #ccc; }
     #messages {
       flex: 1;
       padding: 10px;
@@ -55,7 +52,6 @@
       display: flex;
       flex-direction: column;
     }
-
     .message {
       margin: 5px 0;
       padding: 8px 12px;
@@ -63,32 +59,18 @@
       max-width: 70%;
       word-wrap: break-word;
     }
-
-    .me {
-      background: #06d6a0;
-      color: white;
-      align-self: flex-end;
-    }
-
-    .other {
-      background: #ddd;
-      align-self: flex-start;
-    }
-
-    .tick {
-      font-size: 12px;
-      margin-left: 5px;
-    }
+    .me { background: #06d6a0; color: white; align-self: flex-end; }
+    .other { background: #ddd; align-self: flex-start; }
+    .tick { font-size: 12px; margin-left: 5px; }
     .seen { color: blue; }
-
-    /* Input Area */
     #inputArea {
       display: flex;
       padding: 10px;
       background: #fff;
       border-top: 1px solid #ddd;
+      align-items: center;
+      gap: 8px;
     }
-
     #msg {
       flex: 1;
       padding: 10px;
@@ -96,40 +78,35 @@
       border: 1px solid #ccc;
       outline: none;
     }
-
     button {
-      margin-left: 10px;
-      padding: 10px 18px;
+      padding: 10px 14px;
       border: none;
-      border-radius: 20px;
+      border-radius: 50%;
       background: #06d6a0;
       color: white;
       cursor: pointer;
-      font-size: 15px;
+      font-size: 16px;
     }
-
-    button:hover {
-      background: #05b387;
-    }
+    button:hover { background: #05b387; }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
   <div id="users">
     <h4>Online Users</h4>
     <ul id="userList"></ul>
   </div>
-
-  <!-- Main Chat -->
   <div id="main">
     <div id="chatHeader">
       <span id="chatWith">Chat App 🚀 - Select a user</span>
-      <small id="lastSeen"></small>
+      <small id="statusText">Offline</small>
     </div>
     <div id="messages"></div>
     <div id="inputArea">
+      <button>😊</button>
+      <button>📎</button>
       <input type="text" id="msg" placeholder="Type a message...">
       <button onclick="sendMessage()">Send</button>
+      <button>🎤</button>
     </div>
   </div>
 
@@ -138,80 +115,88 @@
     const socket = io();
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get("user");
-
     let currentChatUser = null;
 
-    // Notify server about new user
     socket.emit("newUser", username);
 
-    // Update user list
-    socket.on("updateUsers", ({users}) => {
+    socket.on("updateUsers", ({ users, lastSeen }) => {
       const list = document.getElementById("userList");
       list.innerHTML = "";
       users.forEach(u => {
         if (u !== username) {
           const li = document.createElement("li");
-          li.innerText = u;
-          li.style.cursor = "pointer";
+          li.innerText = u + " (online)";
           li.onclick = () => selectUser(u);
           list.appendChild(li);
         }
       });
+      for (let user in lastSeen) {
+        if (user !== username && !users.includes(user)) {
+          const li = document.createElement("li");
+          li.innerText = user + " (last seen " + lastSeen[user] + ")";
+          li.onclick = () => selectUser(user);
+          list.appendChild(li);
+        }
+      }
     });
 
-    // Select a user to chat
     function selectUser(user) {
       currentChatUser = user;
       document.getElementById("chatWith").innerText = "Chat with " + user;
+      document.getElementById("statusText").innerText = "Online";
       document.getElementById("messages").innerHTML = "";
       socket.emit("loadChat", { user1: username, user2: user });
     }
 
-    // Load old chats
     socket.on("chatHistory", (chats) => {
       const messagesDiv = document.getElementById("messages");
       messagesDiv.innerHTML = "";
       chats.forEach(c => {
-        addMessage(c.sender === username ? "me" : "other", c.text, c.status);
+        addMessage(c.sender === username ? "me" : "other", c.text, c.status, c._id);
       });
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
-    // Send message
-    function sendMessage() {
-      const msgInput = document.getElementById("msg");
-      const text = msgInput.value.trim();
-      if (!text || !currentChatUser) return;
+    document.getElementById("msg").addEventListener("input", () => {
+      if (currentChatUser) {
+        socket.emit("typing", { sender: username, receiver: currentChatUser });
+      }
+    });
 
+    socket.on("showTyping", ({ sender }) => {
+      if (sender === currentChatUser) {
+        document.getElementById("statusText").innerText = "Typing...";
+        setTimeout(() => {
+          document.getElementById("statusText").innerText = "Online";
+        }, 2000);
+      }
+    });
+
+    function sendMessage() {
+      const text = document.getElementById("msg").value.trim();
+      if (!text || !currentChatUser) return;
       const id = Date.now().toString();
       socket.emit("privateMessage", { id, sender: username, receiver: currentChatUser, text });
-      msgInput.value = "";
+      document.getElementById("msg").value = "";
     }
 
-    // Receive message
     socket.on("privateMessage", ({ id, sender, text, status }) => {
       addMessage(sender === username ? "me" : "other", text, status, id);
     });
 
-    // Show delivered
     socket.on("delivered", ({ id }) => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = "✓✓";
     });
-
-    // Show seen
     socket.on("seen", ({ id }) => {
       const el = document.getElementById(id);
-      if (el) el.innerHTML = "✓✓";
-      el.classList.add("seen");
+      if (el) { el.innerHTML = "✓✓"; el.classList.add("seen"); }
     });
 
-    // Add message to DOM
     function addMessage(type, text, status, id="") {
       const div = document.createElement("div");
       div.className = "message " + type;
       div.innerText = text;
-
       if (type === "me") {
         const tick = document.createElement("span");
         tick.className = "tick";
@@ -220,27 +205,8 @@
         if (status === "seen") tick.classList.add("seen");
         div.appendChild(tick);
       }
-
       document.getElementById("messages").appendChild(div);
       document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    }
-  </script>
-</body>
-</html>        typingDiv.innerText = sender + " is typing...";
-        clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => typingDiv.innerText = "", 2000);
-      }
-    });
-
-    // ✅ Send message
-    function sendMessage() {
-      const text = document.getElementById("msg").value;
-      if (!text) return;
-      if (!currentChatUser) return alert("⚠️ Select user!");
-
-      const id = Date.now();
-      socket.emit("privateMessage", { id, sender: username, receiver: currentChatUser, text });
-      document.getElementById("msg").value = "";
     }
   </script>
 </body>
