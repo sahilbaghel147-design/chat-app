@@ -25,19 +25,17 @@ mongoose.connect(
 // ✅ User Schema
 const UserSchema = new mongoose.Schema({
   username: String,
-  password: String,
-  lastSeen: { type: Date, default: Date.now }
+  password: String
 });
 const User = mongoose.model("User", UserSchema);
 
 // ✅ Private Message Schema
 const MessageSchema = new mongoose.Schema({
-  id: String, // unique msg id
   sender: String,
   receiver: String,
   text: String,
-  status: { type: String, default: "sent" }, // sent, delivered, seen
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
+  status: { type: String, default: "sent" } // sent | delivered | seen
 });
 const Message = mongoose.model("Message", MessageSchema);
 
@@ -46,7 +44,9 @@ app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
     const existingUser = await User.findOne({ username });
-    if (existingUser) return res.json({ success: false, message: "User already exists" });
+    if (existingUser) {
+      return res.json({ success: false, message: "User already exists" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword });
@@ -82,19 +82,17 @@ app.get("/client.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "client.html"));
 });
 
-// ✅ Online Users
+// ✅ Online Users + Last Seen
 let onlineUsers = {};
+let lastSeen = {};
 
 io.on("connection", (socket) => {
   console.log("New user connected");
 
-  // ✅ New user connected
-  socket.on("newUser", async (username) => {
+  socket.on("newUser", (username) => {
     socket.username = username;
     onlineUsers[username] = socket.id;
-
-    await User.updateOne({ username }, { lastSeen: new Date() });
-    io.emit("updateUsers", { users: Object.keys(onlineUsers) });
+    io.emit("updateUsers", { users: Object.keys(onlineUsers), lastSeen });
   });
 
   // ✅ Load old chat between 2 users
@@ -106,6 +104,51 @@ io.on("connection", (socket) => {
       ]
     }).sort({ timestamp: 1 });
 
+    socket.emit("chatHistory", chats);
+  });
+
+  // ✅ Typing indicator
+  socket.on("typing", ({ sender, receiver }) => {
+    if (onlineUsers[receiver]) {
+      io.to(onlineUsers[receiver]).emit("showTyping", { sender });
+    }
+  });
+
+  // ✅ Private message
+  socket.on("privateMessage", async ({ id, sender, receiver, text }) => {
+    const newMessage = new Message({ sender, receiver, text, status: "sent" });
+    await newMessage.save();
+
+    // send to sender
+    socket.emit("privateMessage", { id, sender, text, status: "sent" });
+
+    // send to receiver if online
+    if (onlineUsers[receiver]) {
+      io.to(onlineUsers[receiver]).emit("privateMessage", { id, sender, text, status: "delivered" });
+      socket.emit("delivered", { id });
+    }
+  });
+
+  // ✅ Seen message
+  socket.on("seenMessage", async ({ id }) => {
+    await Message.findByIdAndUpdate(id, { status: "seen" });
+    socket.emit("seen", { id });
+  });
+
+  // ✅ Disconnect
+  socket.on("disconnect", () => {
+    if (socket.username) {
+      delete onlineUsers[socket.username];
+      lastSeen[socket.username] = new Date().toLocaleTimeString();
+    }
+    io.emit("updateUsers", { users: Object.keys(onlineUsers), lastSeen });
+    console.log("User disconnected");
+  });
+});
+
+// ✅ Start Server
+const PORT = process.env.PORT || 4000;
+server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
     socket.emit("chatHistory", chats);
   });
 
@@ -154,3 +197,4 @@ io.on("connection", (socket) => {
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+
