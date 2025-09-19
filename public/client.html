@@ -3,254 +3,208 @@
 <head>
   <meta charset="UTF-8">
   <title>Chat App 🚀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emoji-button@latest/dist/index.min.js"></script>
   <style>
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #f2f2f2;
+      margin: 0; font-family: Arial, sans-serif;
+      display: flex; height: 100vh;
     }
-
-    /* Layout */
-    .container {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
+    #users {
+      width: 20%; background: #f1f1f1;
+      padding: 10px; overflow-y: auto;
+      border-right: 1px solid #ccc;
     }
-    .sidebar {
-      width: 25%;
-      min-width: 150px;
-      background: #fafafa;
-      border-right: 1px solid #ddd;
-      padding: 10px;
-      overflow-y: auto;
+    #chat {
+      flex: 1; display: flex; flex-direction: column;
     }
-    .chatArea {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
+    #header {
+      background: #2c3e50; color: white;
+      padding: 10px; font-weight: bold;
+      display: flex; justify-content: space-between; align-items: center;
     }
-
-    /* Header */
-    .chatHeader {
-      background: #1e3c72;
-      color: #fff;
-      padding: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    #lastSeen {
+      font-size: 12px; color: #ddd;
     }
-    .chatHeader h3 {
-      margin: 0;
-      font-size: 16px;
-    }
-    .status {
-      font-size: 12px;
-      color: #d1d1d1;
-    }
-
-    /* Messages */
     #messages {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
+      flex: 1; padding: 10px; overflow-y: auto;
+      background: #fafafa;
     }
-    .msg {
-      margin: 5px 0;
-      padding: 8px 12px;
-      border-radius: 18px;
-      max-width: 70%;
-      word-wrap: break-word;
-    }
-    .me {
-      background: #dcf8c6;
-      align-self: flex-end;
-    }
-    .other {
-      background: #fff;
-      align-self: flex-start;
-    }
-
-    /* Typing */
     #typing {
-      font-size: 12px;
-      color: gray;
-      margin: 5px 10px;
+      font-size: 12px; color: #777; margin: 4px 10px;
     }
-
-    /* Input area */
-    .inputArea {
-      display: flex;
-      align-items: center;
-      padding: 8px;
-      background: #fff;
-      border-top: 1px solid #ddd;
+    #input-area {
+      display: flex; align-items: center;
+      padding: 10px; background: #fff;
+      border-top: 1px solid #ccc;
     }
-    .inputArea button {
-      background: #25d366;
-      border: none;
-      color: #fff;
-      padding: 10px;
-      border-radius: 50%;
-      margin-right: 5px;
-      cursor: pointer;
+    #msg {
+      flex: 1; padding: 8px; border: 1px solid #ccc;
+      border-radius: 5px; margin: 0 5px;
     }
-    .inputArea input[type="text"] {
-      flex: 1;
-      padding: 10px;
-      border-radius: 20px;
-      border: 1px solid #ccc;
-      margin-right: 5px;
+    button {
+      padding: 8px 12px; border: none;
+      background: #2ecc71; color: white;
+      border-radius: 5px; cursor: pointer;
     }
-    .sendBtn {
-      background: #128c7e;
-      padding: 10px 16px;
-      border-radius: 20px;
+    button:hover { background: #27ae60; }
+    .icon-btn {
+      background: none; border: none; font-size: 20px;
+      cursor: pointer; margin: 0 5px;
     }
-
-    /* Mobile responsive */
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
+    .msg-bubble {
+      margin: 5px 0; padding: 8px 12px;
+      border-radius: 10px; max-width: 60%;
+      clear: both;
     }
+    .sent { background: #2ecc71; color: white; margin-left: auto; }
+    .received { background: #ecf0f1; color: black; margin-right: auto; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <h4>Online Users</h4>
-      <ul id="userList"></ul>
+  <!-- Online Users -->
+  <div id="users">
+    <h3>Online Users</h3>
+    <ul id="userList"></ul>
+  </div>
+
+  <!-- Chat Area -->
+  <div id="chat">
+    <div id="header">
+      <span id="chatWith">Chat App 🚀 - Select a user</span>
+      <span id="lastSeen">Offline</span>
     </div>
-
-    <!-- Chat Area -->
-    <div class="chatArea">
-      <div class="chatHeader">
-        <div>
-          <h3 id="chatTitle">Chat App 🚀 - Select a user</h3>
-          <div class="status" id="status">Offline</div>
-        </div>
-      </div>
-
-      <div id="messages"></div>
-      <div id="typing"></div>
-
-      <!-- Input -->
-      <div class="inputArea">
-        <button onclick="openEmoji()">😊</button>
-        <button onclick="document.getElementById('fileInput').click()">📎</button>
-        <input type="file" id="fileInput" style="display:none" onchange="sendFile(event)">
-        <input type="text" id="msg" placeholder="Type a message..." oninput="notifyTyping()">
-        <button onclick="sendMessage()" class="sendBtn">Send</button>
-        <button onclick="startVoice()">🎤</button>
-      </div>
+    <div id="messages"></div>
+    <div id="typing"></div>
+    <div id="input-area">
+      <button class="icon-btn" id="emojiBtn">😀</button>
+      <input type="file" id="fileInput" style="display:none">
+      <button class="icon-btn" onclick="document.getElementById('fileInput').click()">📎</button>
+      <button class="icon-btn" id="micBtn">🎤</button>
+      <input type="text" id="msg" placeholder="Type a message..." oninput="notifyTyping()">
+      <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     const username = new URLSearchParams(window.location.search).get("user");
     let currentChatUser = null;
-    let typingTimeout;
 
-    // Register user
+    // Notify server about new user
     socket.emit("newUser", username);
 
-    // Update user list
+    // Update online users
     socket.on("updateUsers", (users) => {
-      const userList = document.getElementById("userList");
-      userList.innerHTML = "";
+      const list = document.getElementById("userList");
+      list.innerHTML = "";
       users.forEach(u => {
-        if (u !== username) {
+        if(u !== username){
           const li = document.createElement("li");
-          li.innerText = u;
+          li.textContent = u;
           li.style.cursor = "pointer";
           li.onclick = () => selectUser(u);
-          userList.appendChild(li);
+          list.appendChild(li);
         }
       });
     });
 
-    function selectUser(u) {
-      currentChatUser = u;
-      document.getElementById("chatTitle").innerText = "Chat with " + u;
-      document.getElementById("status").innerText = "Online";
-      socket.emit("loadChat", { user1: username, user2: u });
+    // Select user to chat
+    function selectUser(user){
+      currentChatUser = user;
+      document.getElementById("chatWith").innerText = "Chat with " + user;
       document.getElementById("messages").innerHTML = "";
+      socket.emit("loadChat", { user1: username, user2: user });
     }
 
-    // Load chat history
+    // Load old messages
     socket.on("chatHistory", (chats) => {
-      const msgBox = document.getElementById("messages");
+      const msgDiv = document.getElementById("messages");
+      msgDiv.innerHTML = "";
       chats.forEach(c => addMessage(c.sender, c.text));
-      msgBox.scrollTop = msgBox.scrollHeight;
     });
 
-    // Receive message
+    // Receive new message
     socket.on("privateMessage", ({ sender, text }) => {
       addMessage(sender, text);
     });
 
-    // Typing
-    function notifyTyping() {
-      if (!currentChatUser) return;
-      socket.emit("typing", { sender: username, receiver: currentChatUser });
-    }
-    socket.on("typing", ({ sender }) => {
-      const typingDiv = document.getElementById("typing");
-      typingDiv.innerText = sender + " is typing...";
-      clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => typingDiv.innerText = "", 2000);
+    // Show last seen
+    socket.on("lastSeen", ({ user, lastSeen }) => {
+      if(user === currentChatUser){
+        document.getElementById("lastSeen").innerText =
+          "Last seen: " + new Date(lastSeen).toLocaleTimeString();
+      }
     });
 
+    // Typing indicator
+    socket.on("typing", ({ sender }) => {
+      if(sender === currentChatUser){
+        document.getElementById("typing").innerText = sender + " is typing...";
+        setTimeout(() => { document.getElementById("typing").innerText = ""; }, 2000);
+      }
+    });
+
+    function notifyTyping(){
+      if(currentChatUser){
+        socket.emit("typing", { sender: username, receiver: currentChatUser });
+      }
+    }
+
     // Send message
-    function sendMessage() {
+    function sendMessage(){
       const text = document.getElementById("msg").value;
-      if (!text || !currentChatUser) return alert("⚠️ Select user first!");
+      if(!text || !currentChatUser) return;
       socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text });
+      addMessage(username, text);
       document.getElementById("msg").value = "";
     }
 
-    function addMessage(sender, text) {
+    // Add message to chat
+    function addMessage(sender, text){
       const div = document.createElement("div");
-      div.classList.add("msg");
-      div.classList.add(sender === username ? "me" : "other");
-      div.innerText = sender + ": " + text;
+      div.classList.add("msg-bubble");
+      div.classList.add(sender === username ? "sent" : "received");
+      div.textContent = text;
       document.getElementById("messages").appendChild(div);
       document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     }
 
-    // File send
-    function sendFile(event) {
-      const file = event.target.files[0];
-      if (file && currentChatUser) {
-        addMessage(username, "📎 Sent file: " + file.name);
-      }
-    }
+    // Emoji picker
+    const picker = new EmojiButton();
+    document.getElementById("emojiBtn").addEventListener("click", () => {
+      picker.togglePicker(document.getElementById("emojiBtn"));
+    });
+    picker.on("emoji", emoji => {
+      document.getElementById("msg").value += emoji;
+    });
 
-    // Emoji picker (basic)
-    function openEmoji() {
-      const emojis = ["😀","😁","😂","😍","😎","😭","👍","🔥"];
-      const msgInput = document.getElementById("msg");
-      msgInput.value += emojis[Math.floor(Math.random()*emojis.length)];
-    }
-
-    // Voice input
-    function startVoice() {
-      if (!('webkitSpeechRecognition' in window)) {
-        alert("Speech recognition not supported!");
-        return;
+    // File upload
+    document.getElementById("fileInput").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if(file && currentChatUser){
+        socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text: "📎 File: " + file.name });
+        addMessage(username, "📎 File: " + file.name);
       }
-      const recognition = new webkitSpeechRecognition();
-      recognition.lang = "en-US";
-      recognition.onresult = function(e) {
-        document.getElementById("msg").value = e.results[0][0].transcript;
+    });
+
+    // Voice recording (basic)
+    let mediaRecorder;
+    document.getElementById("micBtn").addEventListener("click", async () => {
+      if(!navigator.mediaDevices) return alert("Mic not supported");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+      alert("🎤 Recording started, click OK to stop.");
+      mediaRecorder.ondataavailable = (e) => {
+        const url = URL.createObjectURL(e.data);
+        if(currentChatUser){
+          socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text: "🎤 Voice message" });
+          addMessage(username, "🎤 Voice message (not saved, preview only)");
+        }
       };
-      recognition.start();
-    }
+      setTimeout(() => mediaRecorder.stop(), 5000); // auto stop after 5s
+    });
   </script>
 </body>
 </html>
