@@ -13,7 +13,7 @@ const io = socketIO(server);
 
 app.use(bodyParser.json());
 app.use(cors());
-app.use(express.static("public"));
+app.use(express.static("public")); // serve frontend
 
 // ✅ MongoDB Atlas connection
 mongoose.connect(
@@ -25,27 +25,28 @@ mongoose.connect(
 // ✅ User Schema
 const UserSchema = new mongoose.Schema({
   username: String,
-  password: String
+  password: String,
+  lastSeen: { type: Date, default: Date.now }
 });
 const User = mongoose.model("User", UserSchema);
 
-// ✅ Private Message Schema
+// ✅ Message Schema
 const MessageSchema = new mongoose.Schema({
+  id: String,
   sender: String,
   receiver: String,
   text: String,
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
+  status: { type: String, default: "sent" } // sent, delivered, seen
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// ✅ Signup Route
+// ✅ Signup
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
     const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.json({ success: false, message: "User already exists" });
-    }
+    if (existingUser) return res.json({ success: false, message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword });
@@ -57,13 +58,13 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// ✅ Login Route
+// ✅ Login
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-    if (!user) return res.json({ success: false, message: "User not found" });
 
+    if (!user) return res.json({ success: false, message: "User not found" });
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.json({ success: false, message: "Invalid password" });
 
@@ -74,16 +75,13 @@ app.post("/login", async (req, res) => {
 });
 
 // ✅ Routes
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
-app.get("/client.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "client.html"));
-});
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
+app.get("/client.html", (req, res) => res.sendFile(path.join(__dirname, "public", "client.html")));
 
 // ✅ Online Users
 let onlineUsers = {};
 
+// ✅ Socket
 io.on("connection", (socket) => {
   console.log("New user connected");
 
@@ -93,39 +91,38 @@ io.on("connection", (socket) => {
     io.emit("updateUsers", Object.keys(onlineUsers));
   });
 
-  // ✅ Load old chat between 2 users
-  socket.on("loadChat", async ({ user1, user2 }) => {
-    const chats = await Message.find({
-      $or: [
-        { sender: user1, receiver: user2 },
-        { sender: user2, receiver: user1 }
-      ]
-    }).sort({ timestamp: 1 });
-
-    socket.emit("chatHistory", chats);
-  });
-
-  // ✅ Send private message
-  socket.on("privateMessage", async ({ sender, receiver, text }) => {
-    const newMessage = new Message({ sender, receiver, text });
+  // private message
+  socket.on("privateMessage", async ({ id, sender, receiver, text }) => {
+    const newMessage = new Message({ id, sender, receiver, text, status: "sent" });
     await newMessage.save();
 
-    // Send to sender
-    socket.emit("privateMessage", { sender, text });
+    io.emit("privateMessage", { id, sender, text });
 
-    // Send to receiver if online
-    if (onlineUsers[receiver]) {
-      io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
-    }
+    // update status → delivered
+    await Message.updateOne({ id }, { status: "delivered" });
+    io.emit("delivered", { id });
   });
 
-  socket.on("disconnect", () => {
-    delete onlineUsers[socket.username];
-    io.emit("updateUsers", Object.keys(onlineUsers));
+  // seen message
+  socket.on("seenMessage", async ({ id }) => {
+    await Message.updateOne({ id }, { status: "seen" });
+    io.emit("seen", { id });
+  });
+
+  // typing indicator
+  socket.on("typing", ({ sender, receiver }) => {
+    io.emit("showTyping", { sender });
+  });
+
+  socket.on("disconnect", async () => {
+    if (socket.username) {
+      await User.updateOne({ username: socket.username }, { lastSeen: new Date() });
+      delete onlineUsers[socket.username];
+      io.emit("updateUsers", Object.keys(onlineUsers));
+    }
     console.log("User disconnected");
   });
 });
 
-// ✅ Start Server
-const PORT = process.env.PORT || 4000;
+const PORT = 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
