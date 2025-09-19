@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 40px; 
+      background: #f5f5f5;
+    }
+    h2, h3 { color: #333; }
+    input { 
+      margin: 5px; 
+      padding: 8px; 
+      border: 1px solid #ccc; 
+      border-radius: 4px;
+    }
+    button { 
+      padding: 8px 12px; 
+      border: none; 
+      background: green; 
+      color: white; 
+      border-radius: 4px; 
+      cursor: pointer;
+    }
+    button:hover {
+      background: darkgreen;
+    }
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 300px;
+      box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Login to Chat App 🚀</h2>
+    <div>
+      <input type="text" id="loginUsername" placeholder="Username">
+      <input type="password" id="loginPassword" placeholder="Password">
+      <button onclick="login()">Login</button>
+    </div>
+
+    <h3>Or Register</h3>
+    <div>
+      <input type="text" id="signupUsername" placeholder="New Username">
+      <input type="password" id="signupPassword" placeholder="New Password">
+      <button onclick="signup()">Register</button>
+    </div>
+  </div>
+
+  <script>
+    // ✅ Signup
+    async function signup() {
+      const username = document.getElementById("signupUsername").value;
+      const password = document.getElementById("signupPassword").value;
+
+      const res = await fetch("/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      alert(data.message);
+    }
+
+    // ✅ Login
+    async function login() {
+      const username = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("✅ Login Successful! Welcome " + username);
+        // direct redirect with username
+        window.location.href = "/client.html?user=" + username;
+      } else {
+        alert("❌ " + data.message);
+      }
+    }
+  </script>
+</body>
+</html>
