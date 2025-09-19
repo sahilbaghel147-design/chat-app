@@ -11,6 +11,8 @@
       height: 100vh;
       background: #f5f5f5;
     }
+
+    /* Sidebar */
     #users {
       width: 25%;
       min-width: 150px;
@@ -19,6 +21,7 @@
       border-right: 1px solid #ddd;
       overflow-y: auto;
     }
+
     #userList li {
       padding: 8px;
       border-radius: 6px;
@@ -27,13 +30,20 @@
       margin: 5px 0;
       background: #fff;
     }
-    #userList li:hover { background: #ddd; }
+
+    #userList li:hover {
+      background: #ddd;
+    }
+
+    /* Main Chat */
     #main {
       flex: 1;
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
+
+    /* Header */
     #chatHeader {
       background: #2c3e50;
       color: white;
@@ -43,8 +53,16 @@
       display: flex;
       flex-direction: column;
     }
-    #chatHeader span { font-size: 15px; }
-    #chatHeader small { font-size: 12px; font-weight: normal; color: #ccc; }
+    #chatHeader span {
+      font-size: 15px;
+    }
+    #chatHeader small {
+      font-size: 12px;
+      font-weight: normal;
+      color: #ccc;
+    }
+
+    /* Messages */
     #messages {
       flex: 1;
       padding: 10px;
@@ -61,8 +79,11 @@
     }
     .me { background: #06d6a0; color: white; align-self: flex-end; }
     .other { background: #ddd; align-self: flex-start; }
+
     .tick { font-size: 12px; margin-left: 5px; }
     .seen { color: blue; }
+
+    /* Input */
     #inputArea {
       display: flex;
       padding: 10px;
@@ -91,10 +112,13 @@
   </style>
 </head>
 <body>
+  <!-- Sidebar -->
   <div id="users">
     <h4>Online Users</h4>
     <ul id="userList"></ul>
   </div>
+
+  <!-- Chat Area -->
   <div id="main">
     <div id="chatHeader">
       <span id="chatWith">Chat App 🚀 - Select a user</span>
@@ -119,6 +143,7 @@
 
     socket.emit("newUser", username);
 
+    // ✅ Update user list + last seen
     socket.on("updateUsers", ({ users, lastSeen }) => {
       const list = document.getElementById("userList");
       list.innerHTML = "";
@@ -152,7 +177,7 @@
       const messagesDiv = document.getElementById("messages");
       messagesDiv.innerHTML = "";
       chats.forEach(c => {
-        addMessage(c.sender === username ? "me" : "other", c.text, c.status, c._id);
+        addMessage(c.sender === username ? "me" : "other", c.text, c.status);
       });
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
