@@ -4,97 +4,121 @@
   <meta charset="UTF-8">
   <title>Chat App 🚀</title>
   <style>
-    body { font-family: Arial; margin: 0; padding: 0; display: flex; height: 100vh; }
-    #users { width: 200px; background: #f4f4f4; border-right: 1px solid #ddd; padding: 10px; overflow-y: auto; }
+    body { margin: 0; font-family: Arial, sans-serif; height: 100vh; display: flex; background: linear-gradient(135deg, #1f1c2c, #928dab); }
+    #users { width: 200px; background: #f4f4f4; padding: 10px; border-right: 1px solid #ddd; overflow-y: auto; }
     #chat { flex: 1; display: flex; flex-direction: column; }
-    #messages { flex: 1; padding: 10px; overflow-y: auto; background: #fafafa; }
-    #messages div { margin: 5px 0; padding: 8px; border-radius: 5px; }
-    #messages .me { background: #c8f7c5; text-align: right; }
-    #messages .other { background: #d6eaff; text-align: left; }
-    #input { display: flex; border-top: 1px solid #ddd; }
-    #input input { flex: 1; padding: 10px; border: none; outline: none; }
-    #input button { padding: 10px; background: green; color: white; border: none; cursor: pointer; }
-    .user { padding: 5px; cursor: pointer; border-bottom: 1px solid #ddd; }
-    .user:hover { background: #ddd; }
-    .active { background: #b3e6ff !important; }
+    #messages { flex: 1; padding: 10px; overflow-y: auto; background: #fff; display: flex; flex-direction: column; }
+    .message { margin: 4px 0; padding: 8px; border-radius: 6px; display: inline-block; max-width: 70%; }
+    .me { background: #d1f7d6; align-self: flex-end; }
+    .other { background: #f1f0f0; align-self: flex-start; }
+    .status { font-size: 12px; color: gray; margin-left: 5px; }
+    .seen { color: blue; }
+    #typing { font-size: 13px; color: #555; padding-left: 12px; margin-bottom: 4px; font-style: italic; }
+    #input { display: flex; align-items: center; padding: 10px; background: #f4f4f4; border-top: 1px solid #ddd; }
+    #msg { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+    #input button { margin-left: 8px; padding: 12px 15px; border: none; border-radius: 8px;
+      background: linear-gradient(135deg, #06d6a0, #1b9aaa); color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; }
+    #emojiPicker { position: absolute; bottom: 60px; left: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px; display: none; flex-wrap: wrap; max-width: 220px; padding: 8px; }
+    #emojiPicker span { font-size: 20px; padding: 5px; cursor: pointer; }
+    #emojiBtn, #fileBtn, #voiceBtn { font-size: 20px; background: none; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
-  <div id="users">
-    <h3>Online Users</h3>
-    <div id="userList"></div>
-  </div>
-
+  <div id="users"><b>Online Users</b></div>
   <div id="chat">
     <h3 style="margin:10px;">Chat App 🚀 - <span id="chatWith">Select a user</span></h3>
+    <div id="typing"></div>
     <div id="messages"></div>
     <div id="input">
-      <input id="msg" placeholder="Type a message..." autocomplete="off">
+      <button id="emojiBtn">😊</button>
+      <button id="fileBtn">📎</button>
+      <input type="file" id="fileInput" style="display:none;">
+      <input id="msg" type="text" placeholder="Type a message...">
       <button onclick="sendMessage()">Send</button>
+      <button id="voiceBtn">🎤</button>
+      <div id="emojiPicker"></div>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get("user");
     const socket = io();
-    const params = new URLSearchParams(window.location.search);
-    const username = params.get("user");
-
     let currentChatUser = null;
 
     socket.emit("newUser", username);
 
     socket.on("updateUsers", (users) => {
-      const userList = document.getElementById("userList");
-      userList.innerHTML = "";
-      users.forEach(user => {
-        if (user !== username) {
+      const usersDiv = document.getElementById("users");
+      usersDiv.innerHTML = "<b>Online Users</b><br>";
+      users.forEach(u => {
+        if (u !== username) {
           const div = document.createElement("div");
-          div.className = "user";
-          if (user === currentChatUser) div.classList.add("active");
-          div.innerText = user;
-          div.onclick = () => {
-            currentChatUser = user;
-            document.getElementById("chatWith").innerText = "Chat with " + user;
-            document.querySelectorAll(".user").forEach(u => u.classList.remove("active"));
-            div.classList.add("active");
-            document.getElementById("messages").innerHTML = "";
-
-            // Load old chat
-            socket.emit("loadChat", { user1: username, user2: currentChatUser });
-          };
-          userList.appendChild(div);
+          div.innerText = u;
+          div.style.cursor = "pointer";
+          div.onclick = () => { currentChatUser = u; document.getElementById("chatWith").innerText = "Chat with " + u; document.getElementById("messages").innerHTML = ""; };
+          usersDiv.appendChild(div);
         }
       });
     });
 
-    socket.on("chatHistory", (chats) => {
-      const messagesDiv = document.getElementById("messages");
-      messagesDiv.innerHTML = "";
-      chats.forEach(c => {
-        const div = document.createElement("div");
-        div.className = c.sender === username ? "me" : "other";
-        div.innerText = c.sender + ": " + c.text;
-        messagesDiv.appendChild(div);
-      });
-    });
+    function scrollToBottom() { document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight; }
 
-    socket.on("privateMessage", ({ sender, text }) => {
+    // ✅ Receive messages
+    socket.on("privateMessage", ({ id, sender, text }) => {
       if (sender === currentChatUser || sender === username) {
         const div = document.createElement("div");
-        div.className = sender === username ? "me" : "other";
-        div.innerText = sender + ": " + text;
+        div.className = "message " + (sender === username ? "me" : "other");
+        div.innerHTML = sender + ": " + text;
+
+        if (sender === username) {
+          const span = document.createElement("span");
+          span.className = "status";
+          span.id = "status-" + id;
+          span.innerText = " ✓"; // sent
+          div.appendChild(span);
+        }
+
         document.getElementById("messages").appendChild(div);
+        scrollToBottom();
+
+        if (sender !== username) socket.emit("seenMessage", { id });
       }
     });
 
+    // ✅ Delivered update
+    socket.on("delivered", ({ id }) => {
+      const el = document.getElementById("status-" + id);
+      if (el) el.innerText = " ✓✓";
+    });
+
+    // ✅ Seen update
+    socket.on("seen", ({ id }) => {
+      const el = document.getElementById("status-" + id);
+      if (el) { el.innerText = " ✓✓"; el.classList.add("seen"); }
+    });
+
+    // ✅ Typing
+    const typingDiv = document.getElementById("typing");
+    let typingTimeout;
+    document.getElementById("msg").addEventListener("input", () => { if (currentChatUser) socket.emit("typing", { sender: username, receiver: currentChatUser }); });
+    socket.on("showTyping", ({ sender }) => {
+      if (sender === currentChatUser) {
+        typingDiv.innerText = sender + " is typing...";
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => typingDiv.innerText = "", 2000);
+      }
+    });
+
+    // ✅ Send message
     function sendMessage() {
       const text = document.getElementById("msg").value;
-      if (!text || !currentChatUser) {
-        alert("Select a user first!");
-        return;
-      }
-      socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text });
+      if (!text) return;
+      if (!currentChatUser) return alert("⚠️ Select user!");
+
+      const id = Date.now();
+      socket.emit("privateMessage", { id, sender: username, receiver: currentChatUser, text });
       document.getElementById("msg").value = "";
     }
   </script>
