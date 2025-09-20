@@ -1,5 +1,5 @@
 {
-  "name": "chatapp",
+  "name": "chat-app",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -13,7 +13,8 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "openai": "^4.0.0"
+    "path": "^0.12.7",
+    "dotenv": "^16.3.1",          ✅ यह सबसे जरूरी है
+    "openai": "^4.0.0"           ✅ AI के लिए
   }
 }
