@@ -9,7 +9,9 @@ const path = require("path");
 
 // ✅ OpenAI SDK
 const OpenAI = require("openai");
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY   // Render env variables me set karo
+});
 
 const app = express();
 const server = http.createServer(app);
@@ -88,14 +90,13 @@ app.get("/client.html", (req, res) => {
 // ✅ Online Users
 let onlineUsers = {};
 
-// ✅ Socket.io
 io.on("connection", (socket) => {
   console.log("New user connected");
 
   socket.on("newUser", (username) => {
     socket.username = username;
     onlineUsers[username] = socket.id;
-    io.emit("updateUsers", Object.keys(onlineUsers).concat("AI_BOT")); // ✅ AI Bot always visible
+    io.emit("updateUsers", Object.keys(onlineUsers).concat("AI_BOT")); // ✅ AI Bot list me dikhana
   });
 
   // ✅ Load old chat between 2 users
@@ -110,7 +111,7 @@ io.on("connection", (socket) => {
     socket.emit("chatHistory", chats);
   });
 
-  // ✅ Send private message
+  // ✅ Send private message (with AI Bot integration)
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
@@ -118,37 +119,38 @@ io.on("connection", (socket) => {
     // Send to sender
     socket.emit("privateMessage", { sender, text });
 
-    // Send to receiver if online (normal users)
-    if (onlineUsers[receiver]) {
-      io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
-    }
-
-    // ✅ AI BOT Reply
+    // ✅ Agar receiver AI Bot hai
     if (receiver === "AI_BOT") {
       try {
         const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",  // fast + cheap model
+          model: "gpt-4o-mini",
           messages: [{ role: "user", content: text }]
         });
 
         const aiReply = completion.choices[0].message.content;
 
-        // Save AI reply
+        // Save AI reply in DB
         const botMessage = new Message({ sender: "AI Bot", receiver: sender, text: aiReply });
         await botMessage.save();
 
-        // Send back to user
+        // Send reply to user
         io.to(socket.id).emit("privateMessage", { sender: "AI Bot", text: aiReply });
+
       } catch (err) {
         console.error("AI Bot Error:", err);
-        io.to(socket.id).emit("privateMessage", { sender: "AI Bot", text: "⚠️ AI service not available right now." });
+        io.to(socket.id).emit("privateMessage", { sender: "AI Bot", text: "⚠️ AI service not available." });
       }
+    }
+
+    // ✅ Agar normal user ko bhejna hai
+    else if (onlineUsers[receiver]) {
+      io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
   });
 
   socket.on("disconnect", () => {
     delete onlineUsers[socket.username];
-    io.emit("updateUsers", Object.keys(onlineUsers).concat("AI_BOT")); // ✅ keep AI Bot online
+    io.emit("updateUsers", Object.keys(onlineUsers).concat("AI_BOT"));
     console.log("User disconnected");
   });
 });
