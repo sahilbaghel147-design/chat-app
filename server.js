@@ -6,13 +6,9 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();   // 🔑 Load environment variables (OPENAI_API_KEY)
 
-// OpenAI SDK
+// ✅ OpenAI import
 const OpenAI = require("openai");
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // API key from Render
-});
 
 const app = express();
 const server = http.createServer(app);
@@ -23,16 +19,18 @@ app.use(cors());
 app.use(express.static("public"));
 
 // ✅ MongoDB Atlas connection
-mongoose.connect(
-  "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
-  { useNewUrlParser: true, useUnifiedTopology: true }
-).then(() => console.log("MongoDB Connected"))
-  .catch(err => console.error("MongoDB Error:", err));
+mongoose
+  .connect(
+    "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
+    { useNewUrlParser: true, useUnifiedTopology: true }
+  )
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.error("MongoDB Error:", err));
 
 // ✅ User Schema
 const UserSchema = new mongoose.Schema({
   username: String,
-  password: String
+  password: String,
 });
 const User = mongoose.model("User", UserSchema);
 
@@ -41,7 +39,7 @@ const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
   text: String,
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
 });
 const Message = mongoose.model("Message", MessageSchema);
 
@@ -72,7 +70,8 @@ app.post("/login", async (req, res) => {
     if (!user) return res.json({ success: false, message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.json({ success: false, message: "Invalid password" });
+    if (!isMatch)
+      return res.json({ success: false, message: "Invalid password" });
 
     res.json({ success: true, message: "Login successful", username });
   } catch (err) {
@@ -88,34 +87,13 @@ app.get("/client.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "client.html"));
 });
 
-// ✅ AI Chat Route
-app.post("/ai-chat", async (req, res) => {
-  try {
-    const { message } = req.body;
-
-    if (!message || message.trim() === "") {
-      return res.json({ reply: "⚠️ Please type something." });
-    }
-
-    // OpenAI response
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // ✅ light model, fast for chat
-      messages: [
-        { role: "system", content: "You are a helpful AI assistant." },
-        { role: "user", content: message }
-      ],
-    });
-
-    const reply = completion.choices[0].message.content;
-    res.json({ reply });
-  } catch (err) {
-    console.error("AI Error:", err);
-    res.json({ reply: "⚠️ AI error: No response." });
-  }
-});
-
 // ✅ Online Users
 let onlineUsers = {};
+
+// ✅ OpenAI Setup
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // Render env me add karna h
+});
 
 io.on("connection", (socket) => {
   console.log("New user connected");
@@ -131,8 +109,8 @@ io.on("connection", (socket) => {
     const chats = await Message.find({
       $or: [
         { sender: user1, receiver: user2 },
-        { sender: user2, receiver: user1 }
-      ]
+        { sender: user2, receiver: user1 },
+      ],
     }).sort({ timestamp: 1 });
 
     socket.emit("chatHistory", chats);
@@ -149,6 +127,30 @@ io.on("connection", (socket) => {
     // Send to receiver if online
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
+    }
+
+    // ✅ AI Bot Handling
+    if (receiver === "AI Bot") {
+      try {
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o-mini", // Fast & cheap model
+          messages: [
+            { role: "system", content: "You are a helpful AI assistant." },
+            { role: "user", content: text },
+          ],
+        });
+
+        const aiReply = response.choices[0].message.content;
+
+        // Send AI reply back
+        socket.emit("privateMessage", { sender: "🤖 AI Bot", text: aiReply });
+      } catch (err) {
+        console.error("AI Error:", err);
+        socket.emit("privateMessage", {
+          sender: "🤖 AI Bot",
+          text: "⚠️ AI error: No response.",
+        });
+      }
     }
   });
 
