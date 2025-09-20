@@ -1,45 +1,192 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #f0f2f5;
+/* 🌙 Reset */
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
 }
 
-.login-container {
-  width: 300px;
-  margin: 100px auto;
-  padding: 20px;
-  background: #fff;
-  text-align: center;
-  border-radius: 10px;
-}
-
-.login-container input, .login-container button {
-  width: 90%;
-  padding: 10px;
-  margin: 10px 0;
-}
-
-.chat-container {
-  display: flex;
-  height: 100vh;
-}
-
-.sidebar {
-  width: 20%;
-  background: #fff;
-  padding: 10px;
-}
-
-.chat-box {
-  width: 80%;
+body {
+  background: linear-gradient(135deg, #1f1c2c, #928dab);
+  color: #fff;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* 🔹 Header */
+header {
+  width: 100%;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+header h2 {
+  font-size: 22px;
+}
+
+header .btn {
+  padding: 8px 16px;
+  background: #06d6a0;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #fff;
+  transition: 0.3s;
+}
+
+header .btn:hover {
+  background: #05b387;
+}
+
+/* 🔹 Users Sidebar */
+#users {
+  position: fixed;
+  left: 0;
+  top: 70px;
+  width: 200px;
+  height: calc(100% - 70px);
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(10px);
+  padding: 10px;
+  overflow-y: auto;
+}
+
+#users h3 {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#userList {
+  list-style: none;
+}
+
+#userList li {
+  background: rgba(255,255,255,0.1);
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#userList li:hover {
+  background: #06d6a0;
+}
+
+/* 🔹 Chat Box */
+#chat {
+  margin-left: 220px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 220px);
 }
 
 #messages {
   flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#messages div {
+  padding: 10px 14px;
+  border-radius: 10px;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+#messages div:nth-child(odd) {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.15);
+}
+
+#messages div:nth-child(even) {
+  align-self: flex-end;
+  background: #06d6a0;
+}
+
+/* Typing... */
+#typing {
+  padding: 5px 15px;
+  font-style: italic;
+  color: #ddd;
+}
+
+/* Input Box */
+#inputBox {
+  display: flex;
+  padding: 12px;
+  background: rgba(0,0,0,0.6);
+  align-items: center;
+}
+
+#msgInput {
+  flex: 1;
   padding: 10px;
-  background: #e9ecef;
-  overflow-y: scroll;
+  border: none;
+  border-radius: 8px;
+  outline: none;
+}
+
+#sendBtn {
+  margin-left: 10px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #06d6a0;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#sendBtn:hover {
+  background: #05b387;
+}
+
+/* 🔹 Game Page */
+#gameCanvas {
+  border: 3px solid #06d6a0;
+  border-radius: 10px;
+}
+
+#score {
+  margin-top: 10px;
+  font-size: 20px;
+  text-align: center;
+}
+
+#leaderboard {
+  background: rgba(0,0,0,0.5);
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  width: 250px;
+}
+
+#leaderboard h3 {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#leaderboard ul {
+  list-style: none;
+  padding: 0;
+}
+
+#leaderboard li {
+  background: rgba(255,255,255,0.1);
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 6px;
+  text-align: center;
 }
