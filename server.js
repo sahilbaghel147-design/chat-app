@@ -6,7 +6,6 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-const fetch = require("node-fetch");
 
 const app = express();
 const server = http.createServer(app);
@@ -23,10 +22,11 @@ mongoose.connect(
 ).then(() => console.log("MongoDB Connected"))
   .catch(err => console.error("MongoDB Error:", err));
 
-// ✅ User Schema
+// ✅ User Schema (with Highscore)
 const UserSchema = new mongoose.Schema({
   username: String,
-  password: String
+  password: String,
+  highscore: { type: Number, default: 0 }
 });
 const User = mongoose.model("User", UserSchema);
 
@@ -71,6 +71,35 @@ app.post("/login", async (req, res) => {
     res.json({ success: true, message: "Login successful", username });
   } catch (err) {
     res.json({ success: false, message: "Error in login" });
+  }
+});
+
+// ✅ Update Highscore
+app.post("/updateScore", async (req, res) => {
+  try {
+    const { username, score } = req.body;
+    const user = await User.findOne({ username });
+    if (user) {
+      if (score > user.highscore) {
+        user.highscore = score;
+        await user.save();
+      }
+      res.json({ success: true, highscore: user.highscore });
+    } else {
+      res.json({ success: false, message: "User not found" });
+    }
+  } catch (err) {
+    res.json({ success: false, message: "Error updating score" });
+  }
+});
+
+// ✅ Get Leaderboard
+app.get("/leaderboard", async (req, res) => {
+  try {
+    const topPlayers = await User.find().sort({ highscore: -1 }).limit(10);
+    res.json(topPlayers);
+  } catch (err) {
+    res.json({ success: false, message: "Error fetching leaderboard" });
   }
 });
 
@@ -125,31 +154,6 @@ io.on("connection", (socket) => {
     io.emit("updateUsers", Object.keys(onlineUsers));
     console.log("User disconnected");
   });
-});
-
-// ✅ AI Chat Route
-app.post("/ai-reply", async (req, res) => {
-  const { message } = req.body;
-  try {
-    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: message }]
-      })
-    });
-
-    const data = await aiRes.json();
-    const reply = data.choices?.[0]?.message?.content || "⚠️ AI error";
-    res.json({ reply });
-  } catch (err) {
-    console.error("AI Error:", err);
-    res.json({ reply: "⚠️ Error with AI service" });
-  }
 });
 
 // ✅ Start Server
