@@ -1,4 +1,3 @@
-require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
@@ -7,9 +6,14 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();   // ✅ dotenv add kiya
+require("dotenv").config();   // 🔑 Load environment variables (OPENAI_API_KEY)
 
-const { Configuration, OpenAIApi } = require("openai"); // ✅ OpenAI import
+// OpenAI SDK
+const OpenAI = require("openai");
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // API key from Render
+});
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
@@ -88,19 +92,24 @@ app.get("/client.html", (req, res) => {
 app.post("/ai-chat", async (req, res) => {
   try {
     const { message } = req.body;
-    const configuration = new Configuration({
-      apiKey: process.env.OPENAI_API_KEY,  // ✅ Render me set key use hogi
-    });
-    const openai = new OpenAIApi(configuration);
 
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: message }],
+    if (!message || message.trim() === "") {
+      return res.json({ reply: "⚠️ Please type something." });
+    }
+
+    // OpenAI response
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini", // ✅ light model, fast for chat
+      messages: [
+        { role: "system", content: "You are a helpful AI assistant." },
+        { role: "user", content: message }
+      ],
     });
 
-    res.json({ reply: completion.data.choices[0].message.content });
-  } catch (error) {
-    console.error("AI Error:", error.response?.data || error.message);
+    const reply = completion.choices[0].message.content;
+    res.json({ reply });
+  } catch (err) {
+    console.error("AI Error:", err);
     res.json({ reply: "⚠️ AI error: No response." });
   }
 });
@@ -153,4 +162,3 @@ io.on("connection", (socket) => {
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-
