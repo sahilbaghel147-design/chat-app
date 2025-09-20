@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
+const fetch = require("node-fetch"); // for AI bot
 
 const app = express();
 const server = http.createServer(app);
@@ -37,14 +38,6 @@ const MessageSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 const Message = mongoose.model("Message", MessageSchema);
-
-// ✅ Snake Game Score Schema
-const ScoreSchema = new mongoose.Schema({
-  username: String,
-  score: Number,
-  date: { type: Date, default: Date.now }
-});
-const Score = mongoose.model("Score", ScoreSchema);
 
 // ✅ Signup Route
 app.post("/signup", async (req, res) => {
@@ -81,27 +74,29 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Save Score API
-app.post("/score", async (req, res) => {
+// ✅ AI Bot Reply Route
+app.post("/ai-reply", async (req, res) => {
   try {
-    const { username, score } = req.body;
-    const newScore = new Score({ username, score });
-    await newScore.save();
-    res.json({ success: true, message: "Score saved!" });
-  } catch (err) {
-    res.json({ success: false, message: "Error saving score" });
-  }
-});
+    const { userMessage } = req.body;
 
-// ✅ Get Leaderboard API
-app.get("/leaderboard", async (req, res) => {
-  try {
-    const topScores = await Score.find()
-      .sort({ score: -1 })
-      .limit(10);
-    res.json(topScores);
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`, // Render env var
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: userMessage }]
+      })
+    });
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || "⚠️ Sorry, AI error.";
+    res.json({ reply });
   } catch (err) {
-    res.json({ success: false, message: "Error fetching leaderboard" });
+    console.error("AI Error:", err);
+    res.json({ reply: "⚠️ AI service unavailable." });
   }
 });
 
@@ -145,10 +140,8 @@ io.on("connection", (socket) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
 
-    // Send to sender
     socket.emit("privateMessage", { sender, text });
 
-    // Send to receiver if online
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
