@@ -6,6 +6,7 @@
   <style>
     body {
       margin: 0;
+      padding: 0;
       height: 100vh;
       display: flex;
       align-items: center;
@@ -13,18 +14,22 @@
       background: linear-gradient(135deg, #1f1c2c, #928dab);
       font-family: 'Poppins', sans-serif;
     }
+
     .login-box {
       background: rgba(255, 255, 255, 0.1);
       padding: 30px;
       border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       backdrop-filter: blur(10px);
       text-align: center;
       width: 300px;
       color: #fff;
     }
+
     .login-box h2 {
       margin-bottom: 20px;
     }
+
     input {
       width: 90%;
       padding: 10px;
@@ -33,6 +38,7 @@
       outline: none;
       border-radius: 8px;
     }
+
     button {
       margin-top: 10px;
       width: 95%;
@@ -45,6 +51,7 @@
       cursor: pointer;
       transition: 0.3s;
     }
+
     button:hover {
       background: #05b387;
     }
@@ -94,9 +101,6 @@
 
       const data = await res.json();
       if (data.success) {
-        // ✅ Username save ho jayega
-        localStorage.setItem("username", username);
-
         alert("✅ Login Successful! Welcome " + username);
         window.location.href = "/client.html?user=" + username;
       } else {
