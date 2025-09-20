@@ -1,5 +1,3 @@
-// server.js
-require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
@@ -10,14 +8,12 @@ const cors = require("cors");
 const path = require("path");
 const OpenAI = require("openai");
 
-
+// ✅ Initialize Express + Server
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
+// ✅ Middlewares
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static("public"));
@@ -91,7 +87,12 @@ app.get("/client.html", (req, res) => {
 // ✅ Online Users
 let onlineUsers = {};
 
-// ✅ Socket.io logic
+// ✅ OpenAI setup (declare only once!)
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// ✅ Socket.io
 io.on("connection", (socket) => {
   console.log("New user connected");
 
@@ -115,6 +116,7 @@ io.on("connection", (socket) => {
 
   // ✅ Send private message
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
+    // Save in DB
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
 
@@ -125,8 +127,30 @@ io.on("connection", (socket) => {
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
+
+    // ✅ If user is chatting with AI Bot
+    if (receiver === "AI Bot") {
+      try {
+        const response = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [{ role: "user", content: text }],
+        });
+
+        const aiReply = response.choices[0].message.content;
+
+        // Send AI reply back
+        socket.emit("privateMessage", { sender: "AI Bot", text: aiReply });
+      } catch (error) {
+        console.error("AI error:", error.message);
+        socket.emit("privateMessage", {
+          sender: "AI Bot",
+          text: "⚠️ AI error: No response.",
+        });
+      }
+    }
   });
 
+  // ✅ Disconnect
   socket.on("disconnect", () => {
     delete onlineUsers[socket.username];
     io.emit("updateUsers", Object.keys(onlineUsers));
@@ -134,32 +158,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ AI Chat Route
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-app.post("/ai-chat", async (req, res) => {
-  try {
-    const { message } = req.body;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "You are a helpful AI assistant." },
-        { role: "user", content: message }
-      ],
-    });
-
-    const reply = response.choices[0].message.content;
-    res.json({ reply });
-  } catch (error) {
-    console.error("AI Error:", error);
-    res.status(500).json({ reply: "⚠️ AI error: No response." });
-  }
-});
-
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-
