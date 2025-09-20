@@ -2,27 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat App + Snake Game 🐍</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:0; display:flex; height:100vh; }
-    #users { width:200px; background:#f4f4f4; padding:10px; overflow-y:auto; }
-    #chat { flex:1; display:flex; flex-direction:column; }
-    #messages { flex:1; padding:10px; overflow-y:auto; border-bottom:1px solid #ccc; }
-    #input { display:flex; }
-    #input input { flex:1; padding:10px; }
-    #input button { padding:10px; }
-
-    /* Snake Game */
-    #snakeGame { margin-top:20px; }
-    canvas { border:2px solid #000; background:#111; display:block; margin:auto; }
-    #snakeScore, #snakeGameOver { text-align:center; color:white; margin-top:10px; }
-
-    /* Leaderboard */
-    #leaderboardBox { background:#222; color:#fff; padding:10px; margin-top:20px; border-radius:10px; }
-    #leaderboardBox h3 { margin:0 0 10px; text-align:center; }
-  </style>
+  <title>Chat App</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <header>
+    <h2>Chat App 💬</h2>
+    <a href="game.html" class="btn">🎮 Play Snake Game</a>
+  </header>
+
   <div id="users">
     <h3>Online Users</h3>
     <ul id="userList"></ul>
@@ -30,22 +18,10 @@
 
   <div id="chat">
     <div id="messages"></div>
-    <div id="input">
-      <input id="msg" placeholder="Type a message...">
-      <button onclick="sendMsg()">Send</button>
-    </div>
-
-    <!-- Snake Game -->
-    <div id="snakeGame">
-      <canvas id="snakeCanvas" width="300" height="300"></canvas>
-      <div id="snakeScore">Score: 0</div>
-      <div id="snakeGameOver" style="display:none;">Game Over! Refresh to play again</div>
-    </div>
-
-    <!-- Leaderboard -->
-    <div id="leaderboardBox">
-      <h3>🏆 Leaderboard</h3>
-      <ul id="leaderboard"></ul>
+    <div id="typing"></div>
+    <div id="inputBox">
+      <input type="text" id="msgInput" placeholder="Type a message...">
+      <button id="sendBtn">Send</button>
     </div>
   </div>
 
@@ -57,90 +33,51 @@
 
     socket.emit("newUser", username);
 
-    socket.on("updateUsers", users => {
-      document.getElementById("userList").innerHTML = users.map(u=>`<li>${u}</li>`).join("");
-    });
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const messages = document.getElementById("messages");
+    const typing = document.getElementById("typing");
+    const userList = document.getElementById("userList");
 
-    socket.on("chatHistory", chats => {
-      const msgBox = document.getElementById("messages");
-      msgBox.innerHTML = "";
-      chats.forEach(c=>{
-        msgBox.innerHTML += `<div><b>${c.sender}:</b> ${c.text}</div>`;
+    let currentChatUser = null;
+
+    socket.on("updateUsers", (users) => {
+      userList.innerHTML = "";
+      users.forEach(u => {
+        if (u !== username) {
+          const li = document.createElement("li");
+          li.innerText = u;
+          li.onclick = () => {
+            currentChatUser = u;
+            messages.innerHTML = "";
+            socket.emit("loadChat", { user1: username, user2: u });
+          };
+          userList.appendChild(li);
+        }
       });
     });
 
-    socket.on("privateMessage", msg => {
-      document.getElementById("messages").innerHTML += `<div><b>${msg.sender}:</b> ${msg.text}</div>`;
+    socket.on("chatHistory", (chats) => {
+      chats.forEach(c => {
+        const div = document.createElement("div");
+        div.innerText = `${c.sender}: ${c.text}`;
+        messages.appendChild(div);
+      });
     });
 
-    function sendMsg(){
-      const text = document.getElementById("msg").value;
-      if(text){
-        socket.emit("privateMessage",{sender:username,receiver:"AI-BOT",text});
-        document.getElementById("msg").value="";
+    sendBtn.onclick = () => {
+      const text = msgInput.value;
+      if (text && currentChatUser) {
+        socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text });
+        msgInput.value = "";
       }
-    }
+    };
 
-    // Snake Game
-    const cvs = document.getElementById("snakeCanvas");
-    const ctx = cvs.getContext("2d");
-    let snake=[{x:150,y:150}],dir="RIGHT",food={x:100,y:100},snakeScore=0;
-    document.addEventListener("keydown",e=>{
-      if(e.key=="ArrowUp" && dir!="DOWN") dir="UP";
-      else if(e.key=="ArrowDown" && dir!="UP") dir="DOWN";
-      else if(e.key=="ArrowLeft" && dir!="RIGHT") dir="LEFT";
-      else if(e.key=="ArrowRight" && dir!="LEFT") dir="RIGHT";
+    socket.on("privateMessage", ({ sender, text }) => {
+      const div = document.createElement("div");
+      div.innerText = `${sender}: ${text}`;
+      messages.appendChild(div);
     });
-
-    function drawSnake(){
-      ctx.clearRect(0,0,300,300);
-      snake.forEach((s,i)=>{
-        ctx.fillStyle=i==0?"lime":"white";
-        ctx.fillRect(s.x,s.y,10,10);
-      });
-      ctx.fillStyle="red"; ctx.fillRect(food.x,food.y,10,10);
-    }
-
-    function moveSnake(){
-      let head={...snake[0]};
-      if(dir=="UP") head.y-=10;
-      if(dir=="DOWN") head.y+=10;
-      if(dir=="LEFT") head.x-=10;
-      if(dir=="RIGHT") head.x+=10;
-      snake.unshift(head);
-
-      if(head.x==food.x && head.y==food.y){
-        food={x:Math.floor(Math.random()*30)*10,y:Math.floor(Math.random()*30)*10};
-        snakeScore++;
-        document.getElementById("snakeScore").innerText="Score: "+snakeScore;
-      } else snake.pop();
-
-      if(head.x<0||head.x>=300||head.y<0||head.y>=300||snake.slice(1).some(s=>s.x==head.x&&s.y==head.y)){
-        clearInterval(snakeInterval);
-        document.getElementById("snakeGameOver").style.display="block";
-        saveScore(username,snakeScore);
-      }
-    }
-
-    function game(){ drawSnake(); moveSnake(); }
-    let snakeInterval=setInterval(game,100);
-
-    async function saveScore(username, score){
-      await fetch("/updateScore",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({username,score})
-      });
-      loadLeaderboard();
-    }
-
-    async function loadLeaderboard(){
-      const res = await fetch("/leaderboard");
-      const players = await res.json();
-      let list="";
-      players.forEach((p,i)=>{ list+=`<li>${i+1}. ${p.username} - ${p.highscore}</li>`; });
-      document.getElementById("leaderboard").innerHTML=list;
-    }
-    loadLeaderboard();
   </script>
 </body>
 </html>
