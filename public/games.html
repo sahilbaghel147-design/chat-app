@@ -2,306 +2,110 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Games | Chat App</title>
+  <title>Snake Game 🎮</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #1e1e2f;
-      color: #fff;
-      display: flex;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: 200px;
-      background: #111;
-      padding: 20px;
-      height: 100vh;
-    }
-
-    .sidebar h2 {
-      color: #06d6a0;
-      margin-bottom: 20px;
-    }
-
-    .sidebar a {
-      display: block;
-      color: #fff;
-      text-decoration: none;
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 5px;
-      transition: background 0.3s;
-    }
-
-    .sidebar a:hover {
-      background: #06d6a0;
-      color: #000;
-    }
-
-    /* Main content */
-    .content {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-    }
-
-    h3 {
-      margin-top: 30px;
-    }
-
-    /* Tic Tac Toe */
-    #ticTacToe {
-      display: grid;
-      grid-template-columns: repeat(3, 80px);
-      gap: 5px;
-      margin-top: 10px;
-    }
-
-    #ticTacToe button {
-      width: 80px;
-      height: 80px;
-      font-size: 24px;
-      background: #333;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-    }
-
-    /* Snake Game */
-    #snakeCanvas {
-      border: 2px solid #06d6a0;
-      background: #000;
-      display: block;
-      margin-top: 10px;
-    }
-
-    /* Rock Paper Scissors */
-    .rps-buttons button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 16px;
-      cursor: pointer;
-      border: none;
-      border-radius: 5px;
-      background: #06d6a0;
-      color: #000;
-    }
-
-    /* Memory Game */
-    .memory-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 80px);
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .memory-card {
-      width: 80px;
-      height: 80px;
-      background: #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      cursor: pointer;
-      border-radius: 8px;
-    }
-
-    .memory-card.flipped {
-      background: #06d6a0;
-      color: #000;
-    }
+    canvas { background: #111; display: block; margin: 20px auto; }
+    #leaderboard { text-align: center; margin-top: 20px; }
+    .btn { display: inline-block; margin: 10px; padding: 10px 20px; background: #28a745; color: #fff; text-decoration: none; border-radius: 5px; }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>Menu</h2>
-    <a href="/client.html">💬 Chat</a>
-    <a href="/games.html">🎮 Games</a>
+  <header>
+    <h2>Snake Game 🎮</h2>
+    <a href="client.html?user=" class="btn">💬 Back to Chat</a>
+  </header>
+
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <div id="score">Score: 0</div>
+
+  <div id="leaderboard">
+    <h3>🏆 Leaderboard</h3>
+    <ul id="scores"></ul>
   </div>
 
-  <!-- Main Content -->
-  <div class="content">
-    <h2>🎮 Fun Games Section</h2>
-    
-    <!-- Tic Tac Toe -->
-    <h3>Tic Tac Toe</h3>
-    <div id="ticTacToe"></div>
-    <p id="tttStatus"></p>
-
-    <!-- Snake Game -->
-    <h3>Snake Game</h3>
-    <canvas id="snakeCanvas" width="300" height="300"></canvas>
-    <p>Use Arrow Keys to Play</p>
-
-    <!-- Rock Paper Scissors -->
-    <h3>Rock Paper Scissors</h3>
-    <div class="rps-buttons">
-      <button onclick="playRPS('rock')">✊ Rock</button>
-      <button onclick="playRPS('paper')">✋ Paper</button>
-      <button onclick="playRPS('scissors')">✌ Scissors</button>
-    </div>
-    <p id="rpsResult"></p>
-
-    <!-- Memory Game -->
-    <h3>Memory Card Flip</h3>
-    <div class="memory-grid" id="memoryGrid"></div>
-    <p id="memoryStatus"></p>
-  </div>
-
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    // ================== Tic Tac Toe ==================
-    const tttBoard = document.getElementById("ticTacToe");
-    const tttStatus = document.getElementById("tttStatus");
-    let ttt = Array(9).fill(null);
-    let currentPlayer = "X";
+    const socket = io();
+    const params = new URLSearchParams(window.location.search);
+    const username = params.get("user");
 
-    function renderTicTacToe() {
-      tttBoard.innerHTML = "";
-      ttt.forEach((val, i) => {
-        const btn = document.createElement("button");
-        btn.textContent = val || "";
-        btn.onclick = () => makeMove(i);
-        tttBoard.appendChild(btn);
-      });
-    }
-
-    function makeMove(i) {
-      if (!ttt[i]) {
-        ttt[i] = currentPlayer;
-        currentPlayer = currentPlayer === "X" ? "O" : "X";
-        renderTicTacToe();
-        checkWinner();
-      }
-    }
-
-    function checkWinner() {
-      const wins = [
-        [0,1,2],[3,4,5],[6,7,8],
-        [0,3,6],[1,4,7],[2,5,8],
-        [0,4,8],[2,4,6]
-      ];
-      for (let [a,b,c] of wins) {
-        if (ttt[a] && ttt[a] === ttt[b] && ttt[a] === ttt[c]) {
-          tttStatus.textContent = `🎉 Player ${ttt[a]} Wins!`;
-          return;
-        }
-      }
-    }
-    renderTicTacToe();
-
-    // ================== Snake Game ==================
-    const canvas = document.getElementById("snakeCanvas");
+    const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    let box = 15;
-    let snake = [{x:9*box, y:9*box}];
+    let box = 20;
+    let snake = [{x: 9*box, y: 10*box}];
     let food = {x: Math.floor(Math.random()*19)*box, y: Math.floor(Math.random()*19)*box};
+    let score = 0;
     let d;
 
-    document.addEventListener("keydown", (e) => {
-      if(e.keyCode == 37 && d!="RIGHT") d="LEFT";
-      else if(e.keyCode == 38 && d!="DOWN") d="UP";
-      else if(e.keyCode == 39 && d!="LEFT") d="RIGHT";
-      else if(e.keyCode == 40 && d!="UP") d="DOWN";
-    });
+    document.addEventListener("keydown", direction);
 
-    function draw() {
-      ctx.clearRect(0,0,300,300);
-      for(let s of snake){
-        ctx.fillStyle = "lime";
-        ctx.fillRect(s.x, s.y, box, box);
+    function direction(event){
+      if(event.keyCode == 37 && d != "RIGHT") d = "LEFT";
+      else if(event.keyCode == 38 && d != "DOWN") d = "UP";
+      else if(event.keyCode == 39 && d != "LEFT") d = "RIGHT";
+      else if(event.keyCode == 40 && d != "UP") d = "DOWN";
+    }
+
+    function draw(){
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, 400, 400);
+
+      for(let i=0; i<snake.length; i++){
+        ctx.fillStyle = (i==0)? "lime":"white";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
       }
+
       ctx.fillStyle = "red";
       ctx.fillRect(food.x, food.y, box, box);
 
-      let headX = snake[0].x;
-      let headY = snake[0].y;
-      if(d=="LEFT") headX -= box;
-      if(d=="UP") headY -= box;
-      if(d=="RIGHT") headX += box;
-      if(d=="DOWN") headY += box;
+      let snakeX = snake[0].x;
+      let snakeY = snake[0].y;
 
-      let newHead = {x: headX, y: headY};
+      if(d=="LEFT") snakeX -= box;
+      if(d=="UP") snakeY -= box;
+      if(d=="RIGHT") snakeX += box;
+      if(d=="DOWN") snakeY += box;
 
-      if(headX<0 || headY<0 || headX>=300 || headY>=300 || snake.some(s=>s.x==newHead.x && s.y==newHead.y)){
-        clearInterval(game);
-        alert("Game Over!");
-      }
-
-      if(headX == food.x && headY == food.y){
+      if(snakeX == food.x && snakeY == food.y){
+        score++;
         food = {x: Math.floor(Math.random()*19)*box, y: Math.floor(Math.random()*19)*box};
       } else {
         snake.pop();
       }
+
+      let newHead = {x: snakeX, y: snakeY};
+
+      if(snakeX < 0 || snakeY < 0 || snakeX >= 400 || snakeY >= 400 || collision(newHead, snake)){
+        clearInterval(game);
+        socket.emit("saveScore", { username, score });
+      }
+
       snake.unshift(newHead);
+
+      document.getElementById("score").innerText = "Score: " + score;
     }
+
+    function collision(head, array){
+      for(let i=0; i<array.length; i++){
+        if(head.x == array[i].x && head.y == array[i].y){
+          return true;
+        }
+      }
+      return false;
+    }
+
     let game = setInterval(draw, 100);
 
-    // ================== Rock Paper Scissors ==================
-    function playRPS(choice){
-      const options = ["rock","paper","scissors"];
-      const ai = options[Math.floor(Math.random()*3)];
-      let result;
-      if(choice === ai) result = "🤝 Draw!";
-      else if(
-        (choice=="rock" && ai=="scissors") ||
-        (choice=="paper" && ai=="rock") ||
-        (choice=="scissors" && ai=="paper")
-      ) result = `🎉 You Win! (AI chose ${ai})`;
-      else result = `😢 You Lose! (AI chose ${ai})`;
-      document.getElementById("rpsResult").textContent = result;
-    }
-
-    // ================== Memory Card Game ==================
-    const memoryGrid = document.getElementById("memoryGrid");
-    const memoryStatus = document.getElementById("memoryStatus");
-    let cards = ["🍎","🍌","🍇","🍉","🍒","🍍","🥭","🍑"];
-    cards = [...cards, ...cards]; // duplicate for pairs
-    cards.sort(() => 0.5 - Math.random());
-
-    let flipped = [];
-    let matched = [];
-
-    function renderMemory() {
-      memoryGrid.innerHTML = "";
-      cards.forEach((val, i) => {
-        const div = document.createElement("div");
-        div.className = "memory-card";
-        div.textContent = flipped.includes(i) || matched.includes(i) ? val : "?";
-        div.onclick = () => flipCard(i);
-        memoryGrid.appendChild(div);
+    socket.on("updateLeaderboard", (scores) => {
+      const list = document.getElementById("scores");
+      list.innerHTML = "";
+      scores.forEach(s => {
+        const li = document.createElement("li");
+        li.innerText = `${s.username} - ${s.score}`;
+        list.appendChild(li);
       });
-    }
-
-    function flipCard(i) {
-      if (flipped.length < 2 && !flipped.includes(i) && !matched.includes(i)) {
-        flipped.push(i);
-        renderMemory();
-        if (flipped.length === 2) checkMatch();
-      }
-    }
-
-    function checkMatch() {
-      const [a,b] = flipped;
-      if (cards[a] === cards[b]) {
-        matched.push(a,b);
-        memoryStatus.textContent = "✅ Match Found!";
-      } else {
-        memoryStatus.textContent = "❌ Not a Match!";
-      }
-      setTimeout(() => {
-        flipped = [];
-        renderMemory();
-        if (matched.length === cards.length) {
-          memoryStatus.textContent = "🎉 You Win! All pairs matched!";
-        }
-      }, 800);
-    }
-
-    renderMemory();
+    });
   </script>
 </body>
 </html>
