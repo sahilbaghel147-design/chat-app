@@ -2,241 +2,145 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat App 🚀</title>
-  <script src="/socket.io/socket.io.js"></script>
+  <title>Chat App + Snake Game 🐍</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; display: flex; height: 100vh; overflow: hidden; }
-    #sidebar { width: 220px; background: #1f1f1f; color: #fff; padding: 10px; overflow-y: auto; }
-    #sidebar h3 { text-align: center; margin-bottom: 10px; }
-    #sidebar ul { list-style: none; padding: 0; }
-    #sidebar li { padding: 8px; margin: 5px 0; background: #2c2c2c; border-radius: 6px; cursor: pointer; }
-    #sidebar li:hover { background: #444; }
-    #chatSection, #gameSection { flex: 1; display: none; flex-direction: column; background: #f0f2f5; }
-    #chatHeader { background: #075e54; color: white; padding: 12px; font-weight: bold; position: sticky; top: 0; }
-    #chatBox { flex: 1; padding: 10px; overflow-y: auto; }
-    .msg { margin: 5px 0; padding: 8px 12px; border-radius: 8px; max-width: 70%; word-wrap: break-word; }
-    .me { background: #dcf8c6; align-self: flex-end; }
-    .other { background: #fff; align-self: flex-start; }
-    .ai { background: #e1f0ff; border-left: 4px solid #007bff; }
-    #typing { font-size: 12px; color: gray; padding: 5px 15px; }
-    #chatInput { display: flex; padding: 8px; background: #fff; border-top: 1px solid #ddd; }
-    #message { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
-    #sendBtn { background: #25d366; color: white; border: none; padding: 10px 16px; margin-left: 8px; border-radius: 50%; cursor: pointer; }
-    #sendBtn:hover { background: #20b954; }
-    #gameSection { padding: 20px; background: #fafafa; overflow-y: auto; }
-    canvas { border: 2px solid #333; margin: 10px auto; display: block; }
-    .rps-btn { padding: 10px 20px; margin: 5px; font-size: 18px; cursor: pointer; border: none; border-radius: 8px; background: #007bff; color: white; }
-    .rps-btn:hover { background: #0056b3; }
-    #rpsResult, #rpsScore, #snakeScore, #tttResult, #tttScore { margin-top: 10px; font-size: 18px; font-weight: bold; text-align: center; }
+    body { font-family: Arial, sans-serif; margin:0; padding:0; display:flex; height:100vh; }
+    #users { width:200px; background:#f4f4f4; padding:10px; overflow-y:auto; }
+    #chat { flex:1; display:flex; flex-direction:column; }
+    #messages { flex:1; padding:10px; overflow-y:auto; border-bottom:1px solid #ccc; }
+    #input { display:flex; }
+    #input input { flex:1; padding:10px; }
+    #input button { padding:10px; }
+
+    /* Snake Game */
+    #snakeGame { margin-top:20px; }
+    canvas { border:2px solid #000; background:#111; display:block; margin:auto; }
+    #snakeScore, #snakeGameOver { text-align:center; color:white; margin-top:10px; }
+
+    /* Leaderboard */
+    #leaderboardBox { background:#222; color:#fff; padding:10px; margin-top:20px; border-radius:10px; }
+    #leaderboardBox h3 { margin:0 0 10px; text-align:center; }
   </style>
 </head>
 <body>
-  <div id="sidebar">
-    <h3>Menu</h3>
-    <ul>
-      <li onclick="openTab('chatSection')">💬 Chat</li>
-      <li onclick="openTab('gameSection')">🎮 Games</li>
-    </ul>
+  <div id="users">
     <h3>Online Users</h3>
     <ul id="userList"></ul>
   </div>
 
-  <!-- Chat -->
-  <div id="chatSection">
-    <div id="chatHeader">Chat with AI Bot 🤖</div>
-    <div id="chatBox"></div>
-    <div id="typing"></div>
-    <div id="chatInput">
-      <input type="text" id="message" placeholder="Type a message..." />
-      <button id="sendBtn">➤</button>
+  <div id="chat">
+    <div id="messages"></div>
+    <div id="input">
+      <input id="msg" placeholder="Type a message...">
+      <button onclick="sendMsg()">Send</button>
+    </div>
+
+    <!-- Snake Game -->
+    <div id="snakeGame">
+      <canvas id="snakeCanvas" width="300" height="300"></canvas>
+      <div id="snakeScore">Score: 0</div>
+      <div id="snakeGameOver" style="display:none;">Game Over! Refresh to play again</div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div id="leaderboardBox">
+      <h3>🏆 Leaderboard</h3>
+      <ul id="leaderboard"></ul>
     </div>
   </div>
 
-  <!-- Games -->
-  <div id="gameSection">
-    <h2>🎮 Mini Games</h2>
-
-    <h3>Tic Tac Toe</h3>
-    <canvas id="ticTacToe" width="300" height="300"></canvas>
-    <div id="tttResult"></div>
-    <div id="tttScore">X Wins: 0 | O Wins: 0 | Draws: 0</div>
-
-    <h3>Snake Game</h3>
-    <canvas id="snake" width="300" height="300"></canvas>
-    <div id="snakeScore">Score: 0 | Highscore: 0</div>
-
-    <h3>Rock Paper Scissors</h3>
-    <button class="rps-btn" onclick="playRPS('Rock')">✊ Rock</button>
-    <button class="rps-btn" onclick="playRPS('Paper')">✋ Paper</button>
-    <button class="rps-btn" onclick="playRPS('Scissors')">✌️ Scissors</button>
-    <div id="rpsResult"></div>
-    <div id="rpsScore">Wins: 0 | Losses: 0 | Draws: 0</div>
-  </div>
-
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     const params = new URLSearchParams(window.location.search);
     const username = params.get("user");
-    let currentReceiver = "AI Bot"; 
-    document.getElementById("chatSection").style.display = "flex";
+
     socket.emit("newUser", username);
 
-    function openTab(tabId) {
-      document.getElementById("chatSection").style.display = "none";
-      document.getElementById("gameSection").style.display = "none";
-      document.getElementById(tabId).style.display = "flex";
-    }
+    socket.on("updateUsers", users => {
+      document.getElementById("userList").innerHTML = users.map(u=>`<li>${u}</li>`).join("");
+    });
 
-    // ====== Chat ======
-    socket.on("updateUsers", (users) => {
-      const list = document.getElementById("userList");
-      list.innerHTML = "";
-      users.forEach(u => {
-        if (u !== username) {
-          const li = document.createElement("li");
-          li.innerText = u;
-          li.onclick = () => {
-            currentReceiver = u;
-            document.getElementById("chatHeader").innerText = "Chat with " + u;
-            document.getElementById("chatBox").innerHTML = "";
-            socket.emit("loadChat", { user1: username, user2: u });
-          };
-          list.appendChild(li);
-        }
+    socket.on("chatHistory", chats => {
+      const msgBox = document.getElementById("messages");
+      msgBox.innerHTML = "";
+      chats.forEach(c=>{
+        msgBox.innerHTML += `<div><b>${c.sender}:</b> ${c.text}</div>`;
       });
-      if (users.length <= 1) {
-        currentReceiver = "AI Bot";
-        document.getElementById("chatHeader").innerText = "Chat with AI Bot 🤖";
-      }
     });
 
-    socket.on("chatHistory", (messages) => {
-      const chatBox = document.getElementById("chatBox");
-      chatBox.innerHTML = "";
-      messages.forEach(m => {
-        const div = document.createElement("div");
-        div.className = "msg " + (m.sender === username ? "me" : "other");
-        div.innerText = `${m.sender}: ${m.text}`;
-        chatBox.appendChild(div);
+    socket.on("privateMessage", msg => {
+      document.getElementById("messages").innerHTML += `<div><b>${msg.sender}:</b> ${msg.text}</div>`;
+    });
+
+    function sendMsg(){
+      const text = document.getElementById("msg").value;
+      if(text){
+        socket.emit("privateMessage",{sender:username,receiver:"AI-BOT",text});
+        document.getElementById("msg").value="";
+      }
+    }
+
+    // Snake Game
+    const cvs = document.getElementById("snakeCanvas");
+    const ctx = cvs.getContext("2d");
+    let snake=[{x:150,y:150}],dir="RIGHT",food={x:100,y:100},snakeScore=0;
+    document.addEventListener("keydown",e=>{
+      if(e.key=="ArrowUp" && dir!="DOWN") dir="UP";
+      else if(e.key=="ArrowDown" && dir!="UP") dir="DOWN";
+      else if(e.key=="ArrowLeft" && dir!="RIGHT") dir="LEFT";
+      else if(e.key=="ArrowRight" && dir!="LEFT") dir="RIGHT";
+    });
+
+    function drawSnake(){
+      ctx.clearRect(0,0,300,300);
+      snake.forEach((s,i)=>{
+        ctx.fillStyle=i==0?"lime":"white";
+        ctx.fillRect(s.x,s.y,10,10);
       });
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
-    socket.on("privateMessage", ({ sender, text }) => {
-      const chatBox = document.getElementById("chatBox");
-      const div = document.createElement("div");
-      div.className = "msg " + (sender === username ? "me" : "other");
-      div.innerText = `${sender}: ${text}`;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
-    document.getElementById("sendBtn").onclick = sendMessage;
-    document.getElementById("message").addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendMessage();
-    });
-
-    async function sendMessage() {
-      const msg = document.getElementById("message").value;
-      if (!msg.trim()) return;
-      document.getElementById("message").value = "";
-      if (currentReceiver === "AI Bot") {
-        addMessage(username, msg, "me");
-        const res = await fetch("/ai-reply", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: msg })
-        });
-        const data = await res.json();
-        addMessage("AI Bot", data.reply, "ai");
-      } else {
-        socket.emit("privateMessage", { sender: username, receiver: currentReceiver, text: msg });
-      }
+      ctx.fillStyle="red"; ctx.fillRect(food.x,food.y,10,10);
     }
 
-    function addMessage(sender, text, type) {
-      const chatBox = document.getElementById("chatBox");
-      const div = document.createElement("div");
-      div.className = "msg " + type;
-      div.innerText = `${sender}: ${text}`;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // ====== Tic Tac Toe with Score ======
-    const tttCanvas = document.getElementById("ticTacToe");
-    const ttt = tttCanvas.getContext("2d");
-    let board = Array(9).fill(null), current = "X";
-    let xWins=0, oWins=0, draws=0;
-
-    function drawBoard() {
-      ttt.clearRect(0,0,300,300);
-      ttt.strokeStyle="black"; ttt.lineWidth=2;
-      for(let i=1;i<3;i++){ ttt.beginPath(); ttt.moveTo(i*100,0);ttt.lineTo(i*100,300);ttt.stroke();
-        ttt.beginPath(); ttt.moveTo(0,i*100);ttt.lineTo(300,i*100);ttt.stroke();}
-      board.forEach((val,idx)=>{ if(val){ ttt.font="40px Arial"; ttt.fillText(val,(idx%3)*100+35,Math.floor(idx/3)*100+65);} });
-    }
-
-    function checkWinner(){
-      const winPatterns=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-      for(const [a,b,c] of winPatterns){
-        if(board[a] && board[a]===board[b] && board[a]===board[c]) return board[a];
-      }
-      return board.every(cell=>cell)!==false?"draw":null;
-    }
-
-    tttCanvas.addEventListener("click",(e)=>{
-      let x=Math.floor(e.offsetX/100), y=Math.floor(e.offsetY/100), idx=y*3+x;
-      if(!board[idx]){
-        board[idx]=current;
-        current=current==="X"?"O":"X";
-        drawBoard();
-        let winner=checkWinner();
-        if(winner){
-          if(winner==="X"){ xWins++; document.getElementById("tttResult").innerText="X Wins! 🎉"; }
-          else if(winner==="O"){ oWins++; document.getElementById("tttResult").innerText="O Wins! 🎉"; }
-          else { draws++; document.getElementById("tttResult").innerText="It's a Draw 🤝"; }
-          document.getElementById("tttScore").innerText=`X Wins: ${xWins} | O Wins: ${oWins} | Draws: ${draws}`;
-          setTimeout(()=>{ board=Array(9).fill(null); current="X"; document.getElementById("tttResult").innerText=""; drawBoard(); },2000);
-        }
-      }
-    });
-    drawBoard();
-
-    // ====== Snake ======
-    const snakeCanvas = document.getElementById("snake");
-    const sctx = snakeCanvas.getContext("2d");
-    let snake = [{x:150,y:150}], food={x:100,y:100}, dx=10,dy=0;
-    let snakeScore=0, snakeHigh=0;
-    function drawSnake(){ sctx.clearRect(0,0,300,300); snake.forEach(part=>{ sctx.fillStyle="green"; sctx.fillRect(part.x,part.y,10,10); }); sctx.fillStyle="red"; sctx.fillRect(food.x,food.y,10,10);}
     function moveSnake(){
-      let head={x:snake[0].x+dx,y:snake[0].y+dy}; snake.unshift(head);
-      if(head.x===food.x && head.y===food.y){ snakeScore++; food={x:Math.floor(Math.random()*30)*10,y:Math.floor(Math.random()*30)*10}; }
-      else snake.pop();
-      if(snakeScore>snakeHigh) snakeHigh=snakeScore;
-      document.getElementById("snakeScore").innerText=`Score: ${snakeScore} | Highscore: ${snakeHigh}`;
-    }
-    function gameLoop(){ moveSnake(); drawSnake(); }
-    setInterval(gameLoop,100);
-    document.addEventListener("keydown",(e)=>{
-      if(e.key==="ArrowUp"&&dy===0){dx=0;dy=-10;}
-      else if(e.key==="ArrowDown"&&dy===0){dx=0;dy=10;}
-      else if(e.key==="ArrowLeft"&&dx===0){dx=-10;dy=0;}
-      else if(e.key==="ArrowRight"&&dx===0){dx=10;dy=0;}
-    });
+      let head={...snake[0]};
+      if(dir=="UP") head.y-=10;
+      if(dir=="DOWN") head.y+=10;
+      if(dir=="LEFT") head.x-=10;
+      if(dir=="RIGHT") head.x+=10;
+      snake.unshift(head);
 
-    // ====== RPS ======
-    let rpsWins=0, rpsLosses=0, rpsDraws=0;
-    function playRPS(playerChoice){
-      const choices=["Rock","Paper","Scissors"];
-      const computerChoice=choices[Math.floor(Math.random()*3)];
-      let result="";
-      if(playerChoice===computerChoice){ result="It's a Draw! 🤝"; rpsDraws++; }
-      else if((playerChoice==="Rock"&&computerChoice==="Scissors")||(playerChoice==="Paper"&&computerChoice==="Rock")||(playerChoice==="Scissors"&&computerChoice==="Paper")){ result="You Win! 🎉"; rpsWins++; }
-      else { result="You Lose! 😢"; rpsLosses++; }
-      document.getElementById("rpsResult").innerText=`You: ${playerChoice} | Computer: ${computerChoice} → ${result}`;
-      document.getElementById("rpsScore").innerText=`Wins: ${rpsWins} | Losses: ${rpsLosses} | Draws: ${rpsDraws}`;
+      if(head.x==food.x && head.y==food.y){
+        food={x:Math.floor(Math.random()*30)*10,y:Math.floor(Math.random()*30)*10};
+        snakeScore++;
+        document.getElementById("snakeScore").innerText="Score: "+snakeScore;
+      } else snake.pop();
+
+      if(head.x<0||head.x>=300||head.y<0||head.y>=300||snake.slice(1).some(s=>s.x==head.x&&s.y==head.y)){
+        clearInterval(snakeInterval);
+        document.getElementById("snakeGameOver").style.display="block";
+        saveScore(username,snakeScore);
+      }
     }
+
+    function game(){ drawSnake(); moveSnake(); }
+    let snakeInterval=setInterval(game,100);
+
+    async function saveScore(username, score){
+      await fetch("/updateScore",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({username,score})
+      });
+      loadLeaderboard();
+    }
+
+    async function loadLeaderboard(){
+      const res = await fetch("/leaderboard");
+      const players = await res.json();
+      let list="";
+      players.forEach((p,i)=>{ list+=`<li>${i+1}. ${p.username} - ${p.highscore}</li>`; });
+      document.getElementById("leaderboard").innerHTML=list;
+    }
+    loadLeaderboard();
   </script>
 </body>
 </html>
