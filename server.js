@@ -15,22 +15,20 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static("public"));
 
-// ✅ MongoDB Atlas connection
+// ✅ MongoDB Connection
 mongoose.connect(
   "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
   { useNewUrlParser: true, useUnifiedTopology: true }
 ).then(() => console.log("MongoDB Connected"))
   .catch(err => console.error("MongoDB Error:", err));
 
-// ✅ User Schema (with Highscore)
+// ✅ Schemas
 const UserSchema = new mongoose.Schema({
   username: String,
-  password: String,
-  highscore: { type: Number, default: 0 }
+  password: String
 });
 const User = mongoose.model("User", UserSchema);
 
-// ✅ Private Message Schema
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
@@ -39,68 +37,35 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// ✅ Signup Route
+const ScoreSchema = new mongoose.Schema({
+  username: String,
+  score: Number,
+  timestamp: { type: Date, default: Date.now }
+});
+const Score = mongoose.model("Score", ScoreSchema);
+
+// ✅ Signup
 app.post("/signup", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.json({ success: false, message: "User already exists" });
-    }
+  const { username, password } = req.body;
+  const existingUser = await User.findOne({ username });
+  if (existingUser) return res.json({ success: false, message: "User already exists" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, password: hashedPassword });
-    await newUser.save();
-
-    res.json({ success: true, message: "User registered successfully" });
-  } catch (err) {
-    res.json({ success: false, message: "Error in signup" });
-  }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = new User({ username, password: hashedPassword });
+  await newUser.save();
+  res.json({ success: true, message: "User registered successfully" });
 });
 
-// ✅ Login Route
+// ✅ Login
 app.post("/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (!user) return res.json({ success: false, message: "User not found" });
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+  if (!user) return res.json({ success: false, message: "User not found" });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.json({ success: false, message: "Invalid password" });
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) return res.json({ success: false, message: "Invalid password" });
 
-    res.json({ success: true, message: "Login successful", username });
-  } catch (err) {
-    res.json({ success: false, message: "Error in login" });
-  }
-});
-
-// ✅ Update Highscore
-app.post("/updateScore", async (req, res) => {
-  try {
-    const { username, score } = req.body;
-    const user = await User.findOne({ username });
-    if (user) {
-      if (score > user.highscore) {
-        user.highscore = score;
-        await user.save();
-      }
-      res.json({ success: true, highscore: user.highscore });
-    } else {
-      res.json({ success: false, message: "User not found" });
-    }
-  } catch (err) {
-    res.json({ success: false, message: "Error updating score" });
-  }
-});
-
-// ✅ Get Leaderboard
-app.get("/leaderboard", async (req, res) => {
-  try {
-    const topPlayers = await User.find().sort({ highscore: -1 }).limit(10);
-    res.json(topPlayers);
-  } catch (err) {
-    res.json({ success: false, message: "Error fetching leaderboard" });
-  }
+  res.json({ success: true, message: "Login successful", username });
 });
 
 // ✅ Routes
@@ -123,7 +88,7 @@ io.on("connection", (socket) => {
     io.emit("updateUsers", Object.keys(onlineUsers));
   });
 
-  // ✅ Load old chat between 2 users
+  // Load old chat
   socket.on("loadChat", async ({ user1, user2 }) => {
     const chats = await Message.find({
       $or: [
@@ -131,22 +96,26 @@ io.on("connection", (socket) => {
         { sender: user2, receiver: user1 }
       ]
     }).sort({ timestamp: 1 });
-
     socket.emit("chatHistory", chats);
   });
 
-  // ✅ Send private message
+  // Send private message
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
 
-    // Send to sender
     socket.emit("privateMessage", { sender, text });
-
-    // Send to receiver if online
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
+  });
+
+  // ✅ Save game score
+  socket.on("saveScore", async ({ username, score }) => {
+    const newScore = new Score({ username, score });
+    await newScore.save();
+    const topScores = await Score.find().sort({ score: -1 }).limit(5);
+    io.emit("updateLeaderboard", topScores);
   });
 
   socket.on("disconnect", () => {
