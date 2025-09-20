@@ -2,218 +2,370 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>Chat + Games</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat App</title>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
+      background: #1e1e2f;
+      color: #fff;
       display: flex;
+      flex-direction: column;
       height: 100vh;
-      overflow: hidden;
     }
-    /* Sidebar */
-    #users {
-      width: 25%;
-      background: #2c3e50;
-      color: white;
-      padding: 15px;
-      overflow-y: auto;
-    }
-    #users h2 {
-      margin: 0 0 10px 0;
-    }
-    .user {
+
+    /* Header */
+    header {
+      background: #111;
       padding: 10px;
+      display: flex;
+      justify-content: space-around;
+    }
+    header button {
+      background: #06d6a0;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
       cursor: pointer;
-      border-bottom: 1px solid #34495e;
+      font-size: 15px;
     }
-    .user:hover {
-      background: #34495e;
+    header button.active {
+      background: #04b383;
     }
 
-    /* Chat Area */
-    #chatArea {
-      width: 75%;
-      display: flex;
-      flex-direction: column;
-      background: #ecf0f1;
-    }
-    #chatHeader {
-      background: #34495e;
-      color: white;
-      padding: 10px;
-      text-align: center;
-      font-weight: bold;
-    }
-    #chat {
+    /* Sections */
+    .section {
       flex: 1;
-      padding: 10px;
+      display: none;
       overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    .message {
-      max-width: 70%;
-      margin: 5px;
       padding: 10px;
-      border-radius: 20px;
-      word-wrap: break-word;
     }
-    .my-message {
-      background: #2ecc71;
-      color: white;
-      align-self: flex-end;
-    }
-    .other-message {
-      background: #bdc3c7;
-      color: black;
-      align-self: flex-start;
+    .section.active {
+      display: block;
     }
 
-    /* Input Area */
-    #inputArea {
-      display: flex;
+    /* Chat Styles */
+    #chatMessages {
+      height: 70vh;
+      overflow-y: auto;
       padding: 10px;
-      background: white;
-      border-top: 1px solid #ccc;
+      border: 1px solid #444;
+      border-radius: 8px;
+      background: #222;
     }
-    #message {
+    #chatMessages p {
+      margin: 5px 0;
+      padding: 6px 10px;
+      border-radius: 5px;
+    }
+    .me { background: #06d6a0; color: #000; text-align: right; }
+    .other { background: #333; color: #fff; text-align: left; }
+
+    .chat-input {
+      display: flex;
+      margin-top: 10px;
+    }
+    .chat-input input {
       flex: 1;
       padding: 10px;
-      border-radius: 20px;
-      border: 1px solid #ccc;
+      border: none;
+      border-radius: 6px 0 0 6px;
       outline: none;
     }
-    #sendBtn {
-      margin-left: 10px;
-      padding: 10px 20px;
-      background: #2ecc71;
-      color: white;
+    .chat-input button {
+      padding: 10px 15px;
       border: none;
-      border-radius: 50%;
+      border-radius: 0 6px 6px 0;
+      background: #06d6a0;
       cursor: pointer;
-    }
-    #sendBtn:hover {
-      background: #27ae60;
+      font-size: 15px;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      #users {
-        width: 30%;
-      }
-      #chatArea {
-        width: 70%;
-      }
+    /* Games Section */
+    h2, h3 { margin-top: 20px; }
+
+    /* Tic Tac Toe */
+    #ticTacToe {
+      display: grid;
+      grid-template-columns: repeat(3, 70px);
+      gap: 5px;
+      margin: 10px auto;
     }
-    @media (max-width: 600px) {
-      body {
-        flex-direction: column;
+    #ticTacToe button {
+      width: 70px;
+      height: 70px;
+      font-size: 22px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    /* Snake */
+    #snakeCanvas {
+      border: 2px solid #06d6a0;
+      background: #000;
+      display: block;
+      margin: 10px auto;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Rock Paper Scissors */
+    .rps-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .rps-buttons button {
+      padding: 8px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background: #06d6a0;
+      color: #000;
+    }
+
+    /* Memory */
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 70px);
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .memory-card {
+      width: 70px;
+      height: 70px;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .memory-card.flipped {
+      background: #06d6a0;
+      color: #000;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      #ticTacToe button, .memory-card {
+        width: 60px;
+        height: 60px;
+        font-size: 20px;
       }
-      #users {
-        width: 100%;
-        height: 100px;
-        display: flex;
-        overflow-x: auto;
+      #ticTacToe {
+        grid-template-columns: repeat(3, 60px);
       }
-      .user {
-        flex: 1;
-        text-align: center;
-      }
-      #chatArea {
-        width: 100%;
-        height: calc(100vh - 100px);
+      .memory-grid {
+        grid-template-columns: repeat(4, 60px);
       }
     }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
-  <div id="users">
-    <h2>Users</h2>
-    <div class="user" onclick="selectUser('AI Bot')">🤖 AI Bot</div>
-  </div>
+  <!-- Header Toggle -->
+  <header>
+    <button id="chatBtn" class="active">💬 Chat</button>
+    <button id="gamesBtn">🎮 Games</button>
+  </header>
 
-  <!-- Chat Area -->
-  <div id="chatArea">
-    <div id="chatHeader">Chat</div>
-    <div id="chat"></div>
-
-    <!-- Input -->
-    <div id="inputArea">
-      <input type="text" id="message" placeholder="Type a message..." />
-      <button id="sendBtn">➤</button>
+  <!-- Chat Section -->
+  <div id="chatSection" class="section active">
+    <h2>💬 Chat</h2>
+    <div id="chatMessages"></div>
+    <div class="chat-input">
+      <input type="text" id="chatInput" placeholder="Type your message...">
+      <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- Games Section -->
+  <div id="gamesSection" class="section">
+    <h2>🎮 Games Section</h2>
+
+    <!-- Tic Tac Toe -->
+    <h3>Tic Tac Toe</h3>
+    <div id="ticTacToe"></div>
+    <p id="tttStatus"></p>
+
+    <!-- Snake -->
+    <h3>Snake Game</h3>
+    <canvas id="snakeCanvas" width="300" height="300"></canvas>
+    <p style="text-align:center;">Use Arrow Keys to Play</p>
+
+    <!-- Rock Paper Scissors -->
+    <h3>Rock Paper Scissors</h3>
+    <div class="rps-buttons">
+      <button onclick="playRPS('rock')">✊ Rock</button>
+      <button onclick="playRPS('paper')">✋ Paper</button>
+      <button onclick="playRPS('scissors')">✌ Scissors</button>
+    </div>
+    <p id="rpsResult" style="text-align:center;"></p>
+
+    <!-- Memory Game -->
+    <h3>Memory Card Flip</h3>
+    <div class="memory-grid" id="memoryGrid"></div>
+    <p id="memoryStatus" style="text-align:center;"></p>
+  </div>
+
   <script>
-    const socket = io();
-    let currentUser = "AI Bot"; // Default AI bot
+    // Toggle Sections
+    const chatBtn = document.getElementById("chatBtn");
+    const gamesBtn = document.getElementById("gamesBtn");
+    const chatSection = document.getElementById("chatSection");
+    const gamesSection = document.getElementById("gamesSection");
 
-    const chat = document.getElementById("chat");
-    const messageInput = document.getElementById("message");
-    const sendBtn = document.getElementById("sendBtn");
-    const chatHeader = document.getElementById("chatHeader");
+    chatBtn.onclick = () => {
+      chatBtn.classList.add("active");
+      gamesBtn.classList.remove("active");
+      chatSection.classList.add("active");
+      gamesSection.classList.remove("active");
+    };
+    gamesBtn.onclick = () => {
+      gamesBtn.classList.add("active");
+      chatBtn.classList.remove("active");
+      gamesSection.classList.add("active");
+      chatSection.classList.remove("active");
+    };
 
-    function selectUser(user) {
-      currentUser = user;
-      chatHeader.innerText = "Chat with " + user;
-      chat.innerHTML = ""; // clear old chat
-      if (user !== "AI Bot") {
-        socket.emit("loadChat", { user1: "Me", user2: user });
-      }
+    // ========== Chat Logic ==========
+    const messagesDiv = document.getElementById("chatMessages");
+    const input = document.getElementById("chatInput");
+
+    function sendMessage(){
+      const msg = input.value.trim();
+      if(!msg) return;
+      const p = document.createElement("p");
+      p.className = "me";
+      p.textContent = "You: " + msg;
+      messagesDiv.appendChild(p);
+      input.value = "";
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      // Fake AI reply
+      setTimeout(() => {
+        const reply = document.createElement("p");
+        reply.className = "other";
+        reply.textContent = "AI Bot: " + "Hmm... " + msg;
+        messagesDiv.appendChild(reply);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }, 1000);
     }
 
-    sendBtn.addEventListener("click", sendMessage);
-    messageInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendMessage();
-    });
-
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-
-      addMessage("Me", text, true);
-      messageInput.value = "";
-
-      if (currentUser === "AI Bot") {
-        // Call AI backend
-        fetch("/ai-chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text })
-        })
-          .then(res => res.json())
-          .then(data => addMessage("AI Bot", data.reply, false))
-          .catch(() => addMessage("AI Bot", "⚠️ AI error: No response.", false));
-      } else {
-        // Private chat
-        socket.emit("privateMessage", { sender: "Me", receiver: currentUser, text });
-      }
-    }
-
-    function addMessage(sender, text, isMe) {
-      const msgDiv = document.createElement("div");
-      msgDiv.classList.add("message", isMe ? "my-message" : "other-message");
-      msgDiv.textContent = text;
-      chat.appendChild(msgDiv);
-      chat.scrollTop = chat.scrollHeight;
-    }
-
-    // Socket receive
-    socket.on("privateMessage", ({ sender, text }) => {
-      if (sender === currentUser) {
-        addMessage(sender, text, false);
-      }
-    });
-
-    socket.on("chatHistory", (messages) => {
-      messages.forEach(msg => {
-        addMessage(msg.sender, msg.text, msg.sender === "Me");
+    // ========== Tic Tac Toe ==========
+    const tttBoard = document.getElementById("ticTacToe");
+    const tttStatus = document.getElementById("tttStatus");
+    let ttt = Array(9).fill(null);
+    let currentPlayer = "X";
+    function renderTicTacToe(){
+      tttBoard.innerHTML="";
+      ttt.forEach((val,i)=>{
+        const btn=document.createElement("button");
+        btn.textContent=val||"";
+        btn.onclick=()=>makeMove(i);
+        tttBoard.appendChild(btn);
       });
+    }
+    function makeMove(i){
+      if(!ttt[i]){
+        ttt[i]=currentPlayer;
+        currentPlayer=currentPlayer==="X"?"O":"X";
+        renderTicTacToe();
+        checkWinner();
+      }
+    }
+    function checkWinner(){
+      const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      for(let [a,b,c] of wins){
+        if(ttt[a]&&ttt[a]===ttt[b]&&ttt[a]===ttt[c]){
+          tttStatus.textContent=`🎉 Player ${ttt[a]} Wins!`;
+        }
+      }
+    }
+    renderTicTacToe();
+
+    // ========== Snake ==========
+    const canvas=document.getElementById("snakeCanvas");
+    const ctx=canvas.getContext("2d");
+    let box=15;
+    let snake=[{x:9*box,y:9*box}];
+    let food={x:Math.floor(Math.random()*19)*box,y:Math.floor(Math.random()*19)*box};
+    let d;
+    document.addEventListener("keydown",(e)=>{
+      if(e.keyCode==37&&d!="RIGHT")d="LEFT";
+      else if(e.keyCode==38&&d!="DOWN")d="UP";
+      else if(e.keyCode==39&&d!="LEFT")d="RIGHT";
+      else if(e.keyCode==40&&d!="UP")d="DOWN";
     });
+    function draw(){
+      ctx.clearRect(0,0,300,300);
+      for(let s of snake){ctx.fillStyle="lime";ctx.fillRect(s.x,s.y,box,box);}
+      ctx.fillStyle="red";ctx.fillRect(food.x,food.y,box,box);
+      let headX=snake[0].x,headY=snake[0].y;
+      if(d=="LEFT")headX-=box;if(d=="UP")headY-=box;
+      if(d=="RIGHT")headX+=box;if(d=="DOWN")headY+=box;
+      let newHead={x:headX,y:headY};
+      if(headX<0||headY<0||headX>=300||headY>=300||snake.some(s=>s.x==newHead.x&&s.y==newHead.y)){
+        clearInterval(game);alert("Game Over!");
+      }
+      if(headX==food.x&&headY==food.y){
+        food={x:Math.floor(Math.random()*19)*box,y:Math.floor(Math.random()*19)*box};
+      }else{snake.pop();}
+      snake.unshift(newHead);
+    }
+    let game=setInterval(draw,100);
+
+    // ========== RPS ==========
+    function playRPS(choice){
+      const options=["rock","paper","scissors"];
+      const ai=options[Math.floor(Math.random()*3)];
+      let result;
+      if(choice===ai)result="🤝 Draw!";
+      else if((choice=="rock"&&ai=="scissors")||(choice=="paper"&&ai=="rock")||(choice=="scissors"&&ai=="paper"))result=`🎉 You Win! (AI chose ${ai})`;
+      else result=`😢 You Lose! (AI chose ${ai})`;
+      document.getElementById("rpsResult").textContent=result;
+    }
+
+    // ========== Memory ==========
+    const memoryGrid=document.getElementById("memoryGrid");
+    const memoryStatus=document.getElementById("memoryStatus");
+    let cards=["🍎","🍌","🍇","🍉","🍒","🍍","🥭","🍑"];
+    cards=[...cards,...cards];
+    cards.sort(()=>0.5-Math.random());
+    let flipped=[];let matched=[];
+    function renderMemory(){
+      memoryGrid.innerHTML="";
+      cards.forEach((val,i)=>{
+        const div=document.createElement("div");
+        div.className="memory-card";
+        div.textContent=flipped.includes(i)||matched.includes(i)?val:"?";
+        div.onclick=()=>flipCard(i);
+        memoryGrid.appendChild(div);
+      });
+    }
+    function flipCard(i){
+      if(flipped.length<2&&!flipped.includes(i)&&!matched.includes(i)){
+        flipped.push(i);renderMemory();
+        if(flipped.length===2)checkMatch();
+      }
+    }
+    function checkMatch(){
+      const[a,b]=flipped;
+      if(cards[a]===cards[b]){matched.push(a,b);memoryStatus.textContent="✅ Match Found!";}
+      else{memoryStatus.textContent="❌ Not a Match!";}
+      setTimeout(()=>{
+        flipped=[];renderMemory();
+        if(matched.length===cards.length){memoryStatus.textContent="🎉 You Win!";}
+      },800);
+    }
+    renderMemory();
   </script>
 </body>
 </html>
