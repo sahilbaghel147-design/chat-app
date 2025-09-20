@@ -6,9 +6,13 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();
+require("dotenv").config();   // 🔑 .env से API Key लोड करने के लिए
 
-const { Configuration, OpenAIApi } = require("openai");
+// 🔥 OpenAI SDK import
+const OpenAI = require("openai");
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY   // Render में जो key डाली है वही use होगी
+});
 
 const app = express();
 const server = http.createServer(app);
@@ -40,12 +44,6 @@ const MessageSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 const Message = mongoose.model("Message", MessageSchema);
-
-// ✅ OpenAI Config
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,  // Render ke Environment Variables me set kiya hua key use karega
-});
-const openai = new OpenAIApi(configuration);
 
 // ✅ Signup Route
 app.post("/signup", async (req, res) => {
@@ -114,7 +112,7 @@ io.on("connection", (socket) => {
     socket.emit("chatHistory", chats);
   });
 
-  // ✅ Send private message (AI bot integration here)
+  // ✅ Send private message
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
@@ -122,37 +120,31 @@ io.on("connection", (socket) => {
     // Send to sender
     socket.emit("privateMessage", { sender, text });
 
-    // Agar AI Bot hai
+    // Send to receiver if online
+    if (onlineUsers[receiver]) {
+      io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
+    }
+
+    // 🤖 If chatting with AI Bot
     if (receiver === "AI Bot") {
       try {
-        const aiResponse = await openai.createChatCompletion({
+        const completion = await openai.chat.completions.create({
           model: "gpt-3.5-turbo",
           messages: [{ role: "user", content: text }]
         });
 
-        const botReply = aiResponse.data.choices[0].message.content;
+        const aiReply = completion.choices[0].message.content;
 
-        const botMessage = new Message({
-          sender: "AI Bot",
-          receiver: sender,
-          text: botReply
-        });
+        // Save AI reply also in DB
+        const botMessage = new Message({ sender: "AI Bot", receiver: sender, text: aiReply });
         await botMessage.save();
 
-        socket.emit("privateMessage", { sender: "AI Bot", text: botReply });
+        // Send AI reply to user
+        socket.emit("privateMessage", { sender: "AI Bot", text: aiReply });
       } catch (error) {
-        console.error("AI Error:", error);
-        socket.emit("privateMessage", {
-          sender: "AI Bot",
-          text: "⚠️ Sorry, AI reply failed."
-        });
+        console.error("AI Error:", error.message);
+        socket.emit("privateMessage", { sender: "AI Bot", text: "⚠️ Sorry, AI is not available right now." });
       }
-      return; // Stop further execution
-    }
-
-    // Send to real receiver if online
-    if (onlineUsers[receiver]) {
-      io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
   });
 
