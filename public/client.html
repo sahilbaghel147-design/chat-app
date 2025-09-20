@@ -8,102 +8,74 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #f1f1f1;
       display: flex;
       height: 100vh;
       overflow: hidden;
     }
-
-    /* Sidebar */
     #users {
-      width: 25%;
-      max-width: 250px;
-      background: #333;
-      color: #fff;
+      width: 200px;
+      background: #2c3e50;
+      color: white;
       padding: 10px;
       overflow-y: auto;
     }
-
     #users h3 {
-      margin-top: 0;
-      font-size: 18px;
-      text-align: center;
-      border-bottom: 1px solid #555;
-      padding-bottom: 5px;
+      margin: 0;
+      margin-bottom: 10px;
     }
-
-    #userList {
+    #users ul {
       list-style: none;
       padding: 0;
       margin: 0;
     }
-
-    #userList li {
-      padding: 8px;
-      border-bottom: 1px solid #444;
+    #users ul li {
+      padding: 10px;
       cursor: pointer;
+      border-bottom: 1px solid #34495e;
     }
-
-    #userList li:hover {
-      background: #444;
+    #users ul li:hover {
+      background: #34495e;
     }
-
-    /* Chat area */
     #chat-container {
       flex: 1;
       display: flex;
       flex-direction: column;
+      background: #ecf0f1;
     }
-
-    #chatHeader {
-      background: #1e3d59;
-      color: #fff;
-      padding: 12px;
-      font-weight: bold;
+    #chat-header {
+      background: #34495e;
+      color: white;
+      padding: 10px;
       text-align: center;
     }
-
-    #chat {
+    #chat-box {
       flex: 1;
-      padding: 10px;
       overflow-y: auto;
-      background: #fff;
+      padding: 10px;
     }
-
     .message {
-      margin: 8px 0;
-      padding: 10px 14px;
+      margin: 5px 0;
+      padding: 10px;
       border-radius: 20px;
-      max-width: 75%;
-      word-wrap: break-word;
+      max-width: 70%;
+      clear: both;
     }
-
     .sent {
-      background: #4CAF50;
+      background: #2ecc71;
       color: white;
-      align-self: flex-end;
+      float: right;
     }
-
     .received {
-      background: #e5e5ea;
+      background: #bdc3c7;
       color: black;
-      align-self: flex-start;
+      float: left;
     }
-
-    .error {
-      background: #ffebee;
-      color: #c62828;
-      font-style: italic;
-    }
-
-    /* Input box fixed bottom */
     #input-area {
       display: flex;
       padding: 10px;
+      background: white;
       border-top: 1px solid #ccc;
-      background: #f9f9f9;
     }
-
     #messageInput {
       flex: 1;
       padding: 10px;
@@ -111,59 +83,39 @@
       border: 1px solid #ccc;
       outline: none;
     }
-
     #sendBtn {
-      background: #4CAF50;
-      border: none;
-      color: white;
+      margin-left: 10px;
       padding: 0 20px;
-      margin-left: 8px;
+      border: none;
       border-radius: 50%;
+      background: #2ecc71;
+      color: white;
       font-size: 20px;
       cursor: pointer;
     }
-
-    #sendBtn:hover {
-      background: #45a049;
-    }
-
-    /* Mobile Responsive */
     @media (max-width: 768px) {
-      body {
-        flex-direction: column;
-      }
-
       #users {
-        width: 100%;
-        max-width: 100%;
-        height: auto;
+        width: 120px;
       }
-
-      #chat-container {
-        flex: 1;
-      }
-
-      #chat {
-        height: calc(100vh - 160px);
+      #chat-header {
+        font-size: 14px;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
   <div id="users">
     <h3>Users</h3>
     <ul id="userList">
-      <li id="aiBotUser">🤖 AI Bot</li>
+      <li onclick="openChat('AI Bot')">🤖 AI Bot</li>
     </ul>
   </div>
 
-  <!-- Chat container -->
   <div id="chat-container">
-    <div id="chatHeader">Chat with AI Bot</div>
-    <div id="chat"></div>
+    <div id="chat-header">Chat with AI Bot</div>
+    <div id="chat-box"></div>
     <div id="input-area">
-      <input id="messageInput" type="text" placeholder="Type a message..." />
+      <input type="text" id="messageInput" placeholder="Type a message...">
       <button id="sendBtn">➤</button>
     </div>
   </div>
@@ -171,71 +123,68 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    let currentReceiver = "AI Bot"; // Default AI Bot
+    let currentUser = prompt("Enter your username:");
+    let currentChat = "AI Bot";
 
-    const chat = document.getElementById("chat");
-    const input = document.getElementById("messageInput");
+    socket.emit("newUser", currentUser);
+
+    const chatHeader = document.getElementById("chat-header");
+    const chatBox = document.getElementById("chat-box");
+    const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
-    const chatHeader = document.getElementById("chatHeader");
+    const userList = document.getElementById("userList");
 
-    // Send message
-    function sendMessage() {
-      const text = input.value.trim();
-      if (!text) return;
+    // Update online users
+    socket.on("updateUsers", (users) => {
+      userList.innerHTML = `<li onclick="openChat('AI Bot')">🤖 AI Bot</li>`;
+      users.forEach(user => {
+        if (user !== currentUser) {
+          userList.innerHTML += `<li onclick="openChat('${user}')">${user}</li>`;
+        }
+      });
+    });
 
-      // Display my message
-      appendMessage(text, "sent");
-
-      // Send to server
-      if (currentReceiver === "AI Bot") {
-        socket.emit("chatWithAI", text);
-      } else {
-        socket.emit("privateMessage", {
-          sender: "Me",
-          receiver: currentReceiver,
-          text
-        });
-      }
-
-      input.value = "";
+    function openChat(user) {
+      currentChat = user;
+      chatHeader.innerText = "Chat with " + user;
+      chatBox.innerHTML = "";
+      socket.emit("loadChat", { user1: currentUser, user2: currentChat });
     }
 
+    socket.on("chatHistory", (chats) => {
+      chatBox.innerHTML = "";
+      chats.forEach(chat => {
+        appendMessage(chat.sender === currentUser ? "sent" : "received", chat.text, chat.sender);
+      });
+    });
+
     sendBtn.addEventListener("click", sendMessage);
-    input.addEventListener("keypress", (e) => {
+    messageInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") sendMessage();
     });
 
-    // Append messages
-    function appendMessage(text, type) {
-      const div = document.createElement("div");
-      div.classList.add("message", type);
-      div.textContent = text;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      appendMessage("sent", text, currentUser);
+      socket.emit("privateMessage", { sender: currentUser, receiver: currentChat, text });
+      messageInput.value = "";
     }
 
-    // Handle AI response
-    socket.on("aiResponse", (data) => {
-      if (data.error) {
-        appendMessage("⚠️ AI error: " + data.error, "error");
-      } else {
-        appendMessage(data.text, "received");
-      }
-    });
-
-    // Handle private messages
     socket.on("privateMessage", ({ sender, text }) => {
-      if (sender === currentReceiver) {
-        appendMessage(sender + ": " + text, "received");
+      if (sender === currentChat || sender === "🤖 AI Bot") {
+        appendMessage("received", text, sender);
       }
     });
 
-    // Click user in sidebar
-    document.getElementById("aiBotUser").addEventListener("click", () => {
-      currentReceiver = "AI Bot";
-      chatHeader.textContent = "Chat with AI Bot";
-      chat.innerHTML = "";
-    });
+    function appendMessage(type, text, sender) {
+      const div = document.createElement("div");
+      div.className = `message ${type}`;
+      div.textContent = text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
   </script>
 </body>
 </html>
