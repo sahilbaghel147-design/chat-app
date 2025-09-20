@@ -1,4 +1,3 @@
-require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
@@ -7,13 +6,7 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();   // 🔑 .env से API Key लोड करने के लिए
-
-// 🔥 OpenAI SDK import
-const OpenAI = require("openai");
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY   // Render में जो key डाली है वही use होगी
-});
+const fetch = require("node-fetch");   // <-- AI call ke liye
 
 const app = express();
 const server = http.createServer(app);
@@ -81,6 +74,37 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// ✅ AI Chat Route
+app.post("/ai-chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` // Render me jo key dali hai
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: message }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.choices && data.choices.length > 0) {
+      res.json({ reply: data.choices[0].message.content });
+    } else {
+      res.json({ reply: "⚠️ AI error: No response." });
+    }
+
+  } catch (err) {
+    console.error("AI Chat Error:", err);
+    res.json({ reply: "⚠️ Something went wrong with AI." });
+  }
+});
+
 // ✅ Routes
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
@@ -125,28 +149,6 @@ io.on("connection", (socket) => {
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
-
-    // 🤖 If chatting with AI Bot
-    if (receiver === "AI Bot") {
-      try {
-        const completion = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
-          messages: [{ role: "user", content: text }]
-        });
-
-        const aiReply = completion.choices[0].message.content;
-
-        // Save AI reply also in DB
-        const botMessage = new Message({ sender: "AI Bot", receiver: sender, text: aiReply });
-        await botMessage.save();
-
-        // Send AI reply to user
-        socket.emit("privateMessage", { sender: "AI Bot", text: aiReply });
-      } catch (error) {
-        console.error("AI Error:", error.message);
-        socket.emit("privateMessage", { sender: "AI Bot", text: "⚠️ Sorry, AI is not available right now." });
-      }
-    }
   });
 
   socket.on("disconnect", () => {
@@ -159,4 +161,3 @@ io.on("connection", (socket) => {
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-
