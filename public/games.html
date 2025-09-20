@@ -88,6 +88,31 @@
       background: #06d6a0;
       color: #000;
     }
+
+    /* Memory Game */
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 80px);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .memory-card {
+      width: 80px;
+      height: 80px;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .memory-card.flipped {
+      background: #06d6a0;
+      color: #000;
+    }
   </style>
 </head>
 <body>
@@ -120,6 +145,11 @@
       <button onclick="playRPS('scissors')">✌ Scissors</button>
     </div>
     <p id="rpsResult"></p>
+
+    <!-- Memory Game -->
+    <h3>Memory Card Flip</h3>
+    <div class="memory-grid" id="memoryGrid"></div>
+    <p id="memoryStatus"></p>
   </div>
 
   <script>
@@ -224,6 +254,54 @@
       else result = `😢 You Lose! (AI chose ${ai})`;
       document.getElementById("rpsResult").textContent = result;
     }
+
+    // ================== Memory Card Game ==================
+    const memoryGrid = document.getElementById("memoryGrid");
+    const memoryStatus = document.getElementById("memoryStatus");
+    let cards = ["🍎","🍌","🍇","🍉","🍒","🍍","🥭","🍑"];
+    cards = [...cards, ...cards]; // duplicate for pairs
+    cards.sort(() => 0.5 - Math.random());
+
+    let flipped = [];
+    let matched = [];
+
+    function renderMemory() {
+      memoryGrid.innerHTML = "";
+      cards.forEach((val, i) => {
+        const div = document.createElement("div");
+        div.className = "memory-card";
+        div.textContent = flipped.includes(i) || matched.includes(i) ? val : "?";
+        div.onclick = () => flipCard(i);
+        memoryGrid.appendChild(div);
+      });
+    }
+
+    function flipCard(i) {
+      if (flipped.length < 2 && !flipped.includes(i) && !matched.includes(i)) {
+        flipped.push(i);
+        renderMemory();
+        if (flipped.length === 2) checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      const [a,b] = flipped;
+      if (cards[a] === cards[b]) {
+        matched.push(a,b);
+        memoryStatus.textContent = "✅ Match Found!";
+      } else {
+        memoryStatus.textContent = "❌ Not a Match!";
+      }
+      setTimeout(() => {
+        flipped = [];
+        renderMemory();
+        if (matched.length === cards.length) {
+          memoryStatus.textContent = "🎉 You Win! All pairs matched!";
+        }
+      }, 800);
+    }
+
+    renderMemory();
   </script>
 </body>
 </html>
