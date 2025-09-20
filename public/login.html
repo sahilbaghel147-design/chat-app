@@ -4,52 +4,8 @@
   <meta charset="UTF-8">
   <title>Login | Chat App 🚀</title>
   <style>
-    /* ====== Loader Styles ====== */
-    #loaderOverlay {
-      position: fixed; inset: 0; z-index: 9999;
-      display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #0d1117, #1b2735);
-      font-family: 'Poppins', sans-serif;
-      color: white;
-      flex-direction: column;
-    }
-
-    #lottieContainer {
-      width: 220px;
-      height: 220px;
-      margin-bottom: 20px;
-    }
-
-    .progressText {
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
-    .funnyMsg {
-      font-size: 14px;
-      color: #aaa;
-      margin-bottom: 15px;
-    }
-
-    .progressBar {
-      width: 260px;
-      height: 10px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-    .progressFill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #06d6a0, #1b9aaa);
-      transition: width 0.4s ease;
-    }
-
-    /* ====== Login Page Styles ====== */
     body {
       margin: 0;
-      padding: 0;
       height: 100vh;
       display: flex;
       align-items: center;
@@ -57,22 +13,18 @@
       background: linear-gradient(135deg, #1f1c2c, #928dab);
       font-family: 'Poppins', sans-serif;
     }
-
     .login-box {
       background: rgba(255, 255, 255, 0.1);
       padding: 30px;
       border-radius: 15px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       backdrop-filter: blur(10px);
       text-align: center;
       width: 300px;
       color: #fff;
     }
-
     .login-box h2 {
       margin-bottom: 20px;
     }
-
     input {
       width: 90%;
       padding: 10px;
@@ -81,7 +33,6 @@
       outline: none;
       border-radius: 8px;
     }
-
     button {
       margin-top: 10px;
       width: 95%;
@@ -94,24 +45,12 @@
       cursor: pointer;
       transition: 0.3s;
     }
-
     button:hover {
       background: #05b387;
     }
   </style>
 </head>
 <body>
-  <!-- ===== Loader Screen ===== -->
-  <div id="loaderOverlay">
-    <div id="lottieContainer"></div>
-    <div class="progressText" id="percentText">0%</div>
-    <div class="funnyMsg" id="funnyMsg">🚀 Warming up the rocket...</div>
-    <div class="progressBar">
-      <div class="progressFill" id="progressFill"></div>
-    </div>
-  </div>
-
-  <!-- ===== Login/Register Box ===== -->
   <div class="login-box">
     <h2>Login to Chat App 🚀</h2>
     <div>
@@ -128,67 +67,7 @@
     </div>
   </div>
 
-  <!-- ====== Lottie Script ====== -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.8/lottie.min.js"></script>
-
   <script>
-    // Loader Animation
-    const animation = lottie.loadAnimation({
-      container: document.getElementById('lottieContainer'),
-      renderer: 'svg',
-      loop: true,
-      autoplay: true,
-      path: 'https://assets1.lottiefiles.com/packages/lf20_touohxv0.json' // Rocket animation
-    });
-
-    const progressFill = document.getElementById('progressFill');
-    const percentText = document.getElementById('percentText');
-    const funnyMsg = document.getElementById('funnyMsg');
-    const overlay = document.getElementById('loaderOverlay');
-
-    const messages = [
-      "🚀 Warming up the rocket...",
-      "⚡ Charging energy cells...",
-      "🌐 Connecting to server...",
-      "💬 Preparing your chat..."
-    ];
-
-    let progress = 0, msgIndex = 0;
-
-    const fakeProgress = setInterval(() => {
-      if(progress < 95){
-        progress += Math.random() * 5;
-        updateProgress(progress);
-      }
-    }, 500);
-
-    setInterval(() => {
-      funnyMsg.innerText = messages[msgIndex % messages.length];
-      msgIndex++;
-    }, 2000);
-
-    function updateProgress(val){
-      progress = Math.min(100, val);
-      progressFill.style.width = progress + "%";
-      percentText.innerText = Math.round(progress) + "%";
-    }
-
-    async function checkServer(){
-      try {
-        const res = await fetch(window.location.origin, {cache:'no-store'});
-        if(res.ok){
-          updateProgress(100);
-          setTimeout(()=> overlay.remove(), 800);
-          clearInterval(fakeProgress);
-        }
-      } catch(err){
-        console.log("Still waking...");
-      }
-    }
-
-    setInterval(checkServer, 2000);
-
-    // ===== Login/Register API Calls =====
     async function signup() {
       const username = document.getElementById("signupUsername").value;
       const password = document.getElementById("signupPassword").value;
@@ -215,6 +94,9 @@
 
       const data = await res.json();
       if (data.success) {
+        // ✅ Username save ho jayega
+        localStorage.setItem("username", username);
+
         alert("✅ Login Successful! Welcome " + username);
         window.location.href = "/client.html?user=" + username;
       } else {
