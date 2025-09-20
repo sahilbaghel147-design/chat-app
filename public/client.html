@@ -91,15 +91,24 @@
     const username = new URLSearchParams(window.location.search).get("user");
     let currentChatUser = null;
 
-    // Notify server about new user
+    // Register user
     socket.emit("newUser", username);
 
-    // Update online users
+    // Update online users (always include AI Bot)
     socket.on("updateUsers", (users) => {
       const list = document.getElementById("userList");
       list.innerHTML = "";
+
+      // Add AI Bot
+      const bot = document.createElement("li");
+      bot.textContent = "🤖 AI Bot";
+      bot.style.cursor = "pointer";
+      bot.onclick = () => selectUser("AI Bot");
+      list.appendChild(bot);
+
+      // Add normal users
       users.forEach(u => {
-        if(u !== username){
+        if (u !== username && u !== "AI Bot") {
           const li = document.createElement("li");
           li.textContent = u;
           li.style.cursor = "pointer";
@@ -129,14 +138,6 @@
       addMessage(sender, text);
     });
 
-    // Show last seen
-    socket.on("lastSeen", ({ user, lastSeen }) => {
-      if(user === currentChatUser){
-        document.getElementById("lastSeen").innerText =
-          "Last seen: " + new Date(lastSeen).toLocaleTimeString();
-      }
-    });
-
     // Typing indicator
     socket.on("typing", ({ sender }) => {
       if(sender === currentChatUser){
@@ -146,7 +147,7 @@
     });
 
     function notifyTyping(){
-      if(currentChatUser){
+      if(currentChatUser && currentChatUser !== "AI Bot"){
         socket.emit("typing", { sender: username, receiver: currentChatUser });
       }
     }
@@ -160,7 +161,7 @@
       document.getElementById("msg").value = "";
     }
 
-    // Add message to chat
+    // Add message bubble
     function addMessage(sender, text){
       const div = document.createElement("div");
       div.classList.add("msg-bubble");
@@ -188,22 +189,21 @@
       }
     });
 
-    // Voice recording (basic)
+    // Mic button (basic demo)
     let mediaRecorder;
     document.getElementById("micBtn").addEventListener("click", async () => {
       if(!navigator.mediaDevices) return alert("Mic not supported");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.start();
-      alert("🎤 Recording started, click OK to stop.");
+      alert("🎤 Recording started, will auto stop in 5s");
       mediaRecorder.ondataavailable = (e) => {
-        const url = URL.createObjectURL(e.data);
         if(currentChatUser){
           socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text: "🎤 Voice message" });
-          addMessage(username, "🎤 Voice message (not saved, preview only)");
+          addMessage(username, "🎤 Voice message (preview only)");
         }
       };
-      setTimeout(() => mediaRecorder.stop(), 5000); // auto stop after 5s
+      setTimeout(() => mediaRecorder.stop(), 5000);
     });
   </script>
 </body>
