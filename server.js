@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
+const axios = require("axios");  // ✅ AI ke liye
 
 const app = express();
 const server = http.createServer(app);
@@ -84,15 +85,29 @@ app.get("/client.html", (req, res) => {
 // ✅ Online Users
 let onlineUsers = {};
 
-// ✅ AI Bot Reply (dummy for now, can connect to OpenAI API later)
-async function getAIReply(userMsg) {
-  // Simple rule-based reply for now
-  if (userMsg.toLowerCase().includes("hello")) {
-    return "👋 Hi! I am your AI Assistant. How can I help you today?";
-  } else if (userMsg.toLowerCase().includes("bye")) {
-    return "👋 Goodbye! Have a great day!";
+// ✅ OpenAI API Config
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+async function getAIResponse(message) {
+  try {
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: message }]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    return response.data.choices[0].message.content.trim();
+  } catch (err) {
+    console.error("AI Error:", err.response?.data || err.message);
+    return "⚠️ Sorry, AI bot is not responding right now.";
   }
-  return `🤖 AI Bot: You said - "${userMsg}"`;
 }
 
 io.on("connection", (socket) => {
@@ -101,20 +116,11 @@ io.on("connection", (socket) => {
   socket.on("newUser", (username) => {
     socket.username = username;
     onlineUsers[username] = socket.id;
-
-    // ✅ Always include AI Bot in user list
-    const usersList = Object.keys(onlineUsers);
-    if (!usersList.includes("AI Bot")) usersList.push("AI Bot");
-
-    io.emit("updateUsers", usersList);
+    io.emit("updateUsers", Object.keys(onlineUsers));
   });
 
-  // ✅ Load old chat between 2 users (not storing AI Bot chats in DB for now)
+  // ✅ Load old chat between 2 users
   socket.on("loadChat", async ({ user1, user2 }) => {
-    if (user1 === "AI Bot" || user2 === "AI Bot") {
-      return socket.emit("chatHistory", []); // AI Bot has no history
-    }
-
     const chats = await Message.find({
       $or: [
         { sender: user1, receiver: user2 },
@@ -125,28 +131,31 @@ io.on("connection", (socket) => {
     socket.emit("chatHistory", chats);
   });
 
-  // ✅ Send private message (with AI Bot support)
+  // ✅ Send private message (AI bot included)
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
-    if (receiver === "AI Bot") {
-      const aiReply = await getAIReply(text);
-      socket.emit("privateMessage", { sender: "AI Bot", text: aiReply });
-    } else {
-      const newMessage = new Message({ sender, receiver, text });
-      await newMessage.save();
+    const newMessage = new Message({ sender, receiver, text });
+    await newMessage.save();
 
-      socket.emit("privateMessage", { sender, text });
-      if (onlineUsers[receiver]) {
-        io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
-      }
+    // Send to sender
+    socket.emit("privateMessage", { sender, text });
+
+    // Agar user AI_BOT se baat kar raha hai
+    if (receiver === "AI_BOT") {
+      const aiReply = await getAIResponse(text);
+      const aiMessage = new Message({ sender: "AI_BOT", receiver: sender, text: aiReply });
+      await aiMessage.save();
+
+      socket.emit("privateMessage", { sender: "AI_BOT", text: aiReply });
+    } 
+    // Normal user ko bhejo
+    else if (onlineUsers[receiver]) {
+      io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
   });
 
   socket.on("disconnect", () => {
     delete onlineUsers[socket.username];
-    const usersList = Object.keys(onlineUsers);
-    if (!usersList.includes("AI Bot")) usersList.push("AI Bot");
-    io.emit("updateUsers", usersList);
-
+    io.emit("updateUsers", Object.keys(onlineUsers));
     console.log("User disconnected");
   });
 });
