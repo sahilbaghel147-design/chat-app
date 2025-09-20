@@ -10,9 +10,13 @@ const cors = require("cors");
 const path = require("path");
 const OpenAI = require("openai");
 
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -158,3 +162,4 @@ app.post("/ai-chat", async (req, res) => {
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+
