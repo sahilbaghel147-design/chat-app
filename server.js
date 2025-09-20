@@ -6,8 +6,9 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-const fetch = require("node-fetch");   // <-- AI call ke liye
+require("dotenv").config();   // ✅ dotenv add kiya
 
+const { Configuration, OpenAIApi } = require("openai"); // ✅ OpenAI import
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
@@ -74,43 +75,33 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ AI Chat Route
-app.post("/ai-chat", async (req, res) => {
-  try {
-    const { message } = req.body;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` // Render me jo key dali hai
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: message }]
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.choices && data.choices.length > 0) {
-      res.json({ reply: data.choices[0].message.content });
-    } else {
-      res.json({ reply: "⚠️ AI error: No response." });
-    }
-
-  } catch (err) {
-    console.error("AI Chat Error:", err);
-    res.json({ reply: "⚠️ Something went wrong with AI." });
-  }
-});
-
 // ✅ Routes
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 app.get("/client.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "client.html"));
+});
+
+// ✅ AI Chat Route
+app.post("/ai-chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+    const configuration = new Configuration({
+      apiKey: process.env.OPENAI_API_KEY,  // ✅ Render me set key use hogi
+    });
+    const openai = new OpenAIApi(configuration);
+
+    const completion = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: message }],
+    });
+
+    res.json({ reply: completion.data.choices[0].message.content });
+  } catch (error) {
+    console.error("AI Error:", error.response?.data || error.message);
+    res.json({ reply: "⚠️ AI error: No response." });
+  }
 });
 
 // ✅ Online Users
