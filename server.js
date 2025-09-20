@@ -22,11 +22,10 @@ mongoose.connect(
 ).then(() => console.log("MongoDB Connected"))
   .catch(err => console.error("MongoDB Error:", err));
 
-// ✅ User Schema (lastSeen add kiya)
+// ✅ User Schema
 const UserSchema = new mongoose.Schema({
   username: String,
-  password: String,
-  lastSeen: { type: Date, default: Date.now }
+  password: String
 });
 const User = mongoose.model("User", UserSchema);
 
@@ -85,21 +84,37 @@ app.get("/client.html", (req, res) => {
 // ✅ Online Users
 let onlineUsers = {};
 
+// ✅ AI Bot Reply (dummy for now, can connect to OpenAI API later)
+async function getAIReply(userMsg) {
+  // Simple rule-based reply for now
+  if (userMsg.toLowerCase().includes("hello")) {
+    return "👋 Hi! I am your AI Assistant. How can I help you today?";
+  } else if (userMsg.toLowerCase().includes("bye")) {
+    return "👋 Goodbye! Have a great day!";
+  }
+  return `🤖 AI Bot: You said - "${userMsg}"`;
+}
+
 io.on("connection", (socket) => {
   console.log("New user connected");
 
-  socket.on("newUser", async (username) => {
+  socket.on("newUser", (username) => {
     socket.username = username;
     onlineUsers[username] = socket.id;
 
-    // user online → lastSeen update karo abhi ke time par
-    await User.findOneAndUpdate({ username }, { lastSeen: new Date() });
+    // ✅ Always include AI Bot in user list
+    const usersList = Object.keys(onlineUsers);
+    if (!usersList.includes("AI Bot")) usersList.push("AI Bot");
 
-    io.emit("updateUsers", Object.keys(onlineUsers));
+    io.emit("updateUsers", usersList);
   });
 
-  // ✅ Load old chat between 2 users
+  // ✅ Load old chat between 2 users (not storing AI Bot chats in DB for now)
   socket.on("loadChat", async ({ user1, user2 }) => {
+    if (user1 === "AI Bot" || user2 === "AI Bot") {
+      return socket.emit("chatHistory", []); // AI Bot has no history
+    }
+
     const chats = await Message.find({
       $or: [
         { sender: user1, receiver: user2 },
@@ -108,48 +123,30 @@ io.on("connection", (socket) => {
     }).sort({ timestamp: 1 });
 
     socket.emit("chatHistory", chats);
-
-    // lastSeen bhi bhej do
-    const user = await User.findOne({ username: user2 });
-    if (user) {
-      socket.emit("lastSeen", { user: user2, lastSeen: user.lastSeen });
-    }
   });
 
-  // ✅ Send private message
+  // ✅ Send private message (with AI Bot support)
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
-    const newMessage = new Message({ sender, receiver, text });
-    await newMessage.save();
+    if (receiver === "AI Bot") {
+      const aiReply = await getAIReply(text);
+      socket.emit("privateMessage", { sender: "AI Bot", text: aiReply });
+    } else {
+      const newMessage = new Message({ sender, receiver, text });
+      await newMessage.save();
 
-    // Send to sender
-    socket.emit("privateMessage", { sender, text });
-
-    // Send to receiver if online
-    if (onlineUsers[receiver]) {
-      io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
+      socket.emit("privateMessage", { sender, text });
+      if (onlineUsers[receiver]) {
+        io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
+      }
     }
   });
 
-  // ✅ Typing Indicator
-  socket.on("typing", ({ sender, receiver }) => {
-    if (onlineUsers[receiver]) {
-      io.to(onlineUsers[receiver]).emit("typing", { sender });
-    }
-  });
+  socket.on("disconnect", () => {
+    delete onlineUsers[socket.username];
+    const usersList = Object.keys(onlineUsers);
+    if (!usersList.includes("AI Bot")) usersList.push("AI Bot");
+    io.emit("updateUsers", usersList);
 
-  // ✅ Disconnect
-  socket.on("disconnect", async () => {
-    if (socket.username) {
-      delete onlineUsers[socket.username];
-
-      // user ka lastSeen save karo disconnect time par
-      await User.findOneAndUpdate(
-        { username: socket.username },
-        { lastSeen: new Date() }
-      );
-
-      io.emit("updateUsers", Object.keys(onlineUsers));
-    }
     console.log("User disconnected");
   });
 });
