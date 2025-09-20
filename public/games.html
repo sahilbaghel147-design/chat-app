@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Games | Chat App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #1e1e2f;
+      color: #fff;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 200px;
+      background: #111;
+      padding: 20px;
+      height: 100vh;
+    }
+
+    .sidebar h2 {
+      color: #06d6a0;
+      margin-bottom: 20px;
+    }
+
+    .sidebar a {
+      display: block;
+      color: #fff;
+      text-decoration: none;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+
+    .sidebar a:hover {
+      background: #06d6a0;
+      color: #000;
+    }
+
+    /* Main content */
+    .content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    h3 {
+      margin-top: 30px;
+    }
+
+    /* Tic Tac Toe */
+    #ticTacToe {
+      display: grid;
+      grid-template-columns: repeat(3, 80px);
+      gap: 5px;
+      margin-top: 10px;
+    }
+
+    #ticTacToe button {
+      width: 80px;
+      height: 80px;
+      font-size: 24px;
+      background: #333;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* Snake Game */
+    #snakeCanvas {
+      border: 2px solid #06d6a0;
+      background: #000;
+      display: block;
+      margin-top: 10px;
+    }
+
+    /* Rock Paper Scissors */
+    .rps-buttons button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background: #06d6a0;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Menu</h2>
+    <a href="/client.html">💬 Chat</a>
+    <a href="/games.html">🎮 Games</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content">
+    <h2>🎮 Fun Games Section</h2>
+    
+    <!-- Tic Tac Toe -->
+    <h3>Tic Tac Toe</h3>
+    <div id="ticTacToe"></div>
+    <p id="tttStatus"></p>
+
+    <!-- Snake Game -->
+    <h3>Snake Game</h3>
+    <canvas id="snakeCanvas" width="300" height="300"></canvas>
+    <p>Use Arrow Keys to Play</p>
+
+    <!-- Rock Paper Scissors -->
+    <h3>Rock Paper Scissors</h3>
+    <div class="rps-buttons">
+      <button onclick="playRPS('rock')">✊ Rock</button>
+      <button onclick="playRPS('paper')">✋ Paper</button>
+      <button onclick="playRPS('scissors')">✌ Scissors</button>
+    </div>
+    <p id="rpsResult"></p>
+  </div>
+
+  <script>
+    // ================== Tic Tac Toe ==================
+    const tttBoard = document.getElementById("ticTacToe");
+    const tttStatus = document.getElementById("tttStatus");
+    let ttt = Array(9).fill(null);
+    let currentPlayer = "X";
+
+    function renderTicTacToe() {
+      tttBoard.innerHTML = "";
+      ttt.forEach((val, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = val || "";
+        btn.onclick = () => makeMove(i);
+        tttBoard.appendChild(btn);
+      });
+    }
+
+    function makeMove(i) {
+      if (!ttt[i]) {
+        ttt[i] = currentPlayer;
+        currentPlayer = currentPlayer === "X" ? "O" : "X";
+        renderTicTacToe();
+        checkWinner();
+      }
+    }
+
+    function checkWinner() {
+      const wins = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      for (let [a,b,c] of wins) {
+        if (ttt[a] && ttt[a] === ttt[b] && ttt[a] === ttt[c]) {
+          tttStatus.textContent = `🎉 Player ${ttt[a]} Wins!`;
+          return;
+        }
+      }
+    }
+    renderTicTacToe();
+
+    // ================== Snake Game ==================
+    const canvas = document.getElementById("snakeCanvas");
+    const ctx = canvas.getContext("2d");
+    let box = 15;
+    let snake = [{x:9*box, y:9*box}];
+    let food = {x: Math.floor(Math.random()*19)*box, y: Math.floor(Math.random()*19)*box};
+    let d;
+
+    document.addEventListener("keydown", (e) => {
+      if(e.keyCode == 37 && d!="RIGHT") d="LEFT";
+      else if(e.keyCode == 38 && d!="DOWN") d="UP";
+      else if(e.keyCode == 39 && d!="LEFT") d="RIGHT";
+      else if(e.keyCode == 40 && d!="UP") d="DOWN";
+    });
+
+    function draw() {
+      ctx.clearRect(0,0,300,300);
+      for(let s of snake){
+        ctx.fillStyle = "lime";
+        ctx.fillRect(s.x, s.y, box, box);
+      }
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, box, box);
+
+      let headX = snake[0].x;
+      let headY = snake[0].y;
+      if(d=="LEFT") headX -= box;
+      if(d=="UP") headY -= box;
+      if(d=="RIGHT") headX += box;
+      if(d=="DOWN") headY += box;
+
+      let newHead = {x: headX, y: headY};
+
+      if(headX<0 || headY<0 || headX>=300 || headY>=300 || snake.some(s=>s.x==newHead.x && s.y==newHead.y)){
+        clearInterval(game);
+        alert("Game Over!");
+      }
+
+      if(headX == food.x && headY == food.y){
+        food = {x: Math.floor(Math.random()*19)*box, y: Math.floor(Math.random()*19)*box};
+      } else {
+        snake.pop();
+      }
+      snake.unshift(newHead);
+    }
+    let game = setInterval(draw, 100);
+
+    // ================== Rock Paper Scissors ==================
+    function playRPS(choice){
+      const options = ["rock","paper","scissors"];
+      const ai = options[Math.floor(Math.random()*3)];
+      let result;
+      if(choice === ai) result = "🤝 Draw!";
+      else if(
+        (choice=="rock" && ai=="scissors") ||
+        (choice=="paper" && ai=="rock") ||
+        (choice=="scissors" && ai=="paper")
+      ) result = `🎉 You Win! (AI chose ${ai})`;
+      else result = `😢 You Lose! (AI chose ${ai})`;
+      document.getElementById("rpsResult").textContent = result;
+    }
+  </script>
+</body>
+</html>
