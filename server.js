@@ -6,12 +6,9 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
+require("dotenv").config();
 
-// ✅ OpenAI SDK
-const OpenAI = require("openai");
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY   // Render env variables me set karo
-});
+const { Configuration, OpenAIApi } = require("openai");
 
 const app = express();
 const server = http.createServer(app);
@@ -43,6 +40,12 @@ const MessageSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 const Message = mongoose.model("Message", MessageSchema);
+
+// ✅ OpenAI Config
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,  // Render ke Environment Variables me set kiya hua key use karega
+});
+const openai = new OpenAIApi(configuration);
 
 // ✅ Signup Route
 app.post("/signup", async (req, res) => {
@@ -96,7 +99,7 @@ io.on("connection", (socket) => {
   socket.on("newUser", (username) => {
     socket.username = username;
     onlineUsers[username] = socket.id;
-    io.emit("updateUsers", Object.keys(onlineUsers).concat("AI_BOT")); // ✅ AI Bot list me dikhana
+    io.emit("updateUsers", Object.keys(onlineUsers));
   });
 
   // ✅ Load old chat between 2 users
@@ -111,7 +114,7 @@ io.on("connection", (socket) => {
     socket.emit("chatHistory", chats);
   });
 
-  // ✅ Send private message (with AI Bot integration)
+  // ✅ Send private message (AI bot integration here)
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
@@ -119,38 +122,43 @@ io.on("connection", (socket) => {
     // Send to sender
     socket.emit("privateMessage", { sender, text });
 
-    // ✅ Agar receiver AI Bot hai
-    if (receiver === "AI_BOT") {
+    // Agar AI Bot hai
+    if (receiver === "AI Bot") {
       try {
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
+        const aiResponse = await openai.createChatCompletion({
+          model: "gpt-3.5-turbo",
           messages: [{ role: "user", content: text }]
         });
 
-        const aiReply = completion.choices[0].message.content;
+        const botReply = aiResponse.data.choices[0].message.content;
 
-        // Save AI reply in DB
-        const botMessage = new Message({ sender: "AI Bot", receiver: sender, text: aiReply });
+        const botMessage = new Message({
+          sender: "AI Bot",
+          receiver: sender,
+          text: botReply
+        });
         await botMessage.save();
 
-        // Send reply to user
-        io.to(socket.id).emit("privateMessage", { sender: "AI Bot", text: aiReply });
-
-      } catch (err) {
-        console.error("AI Bot Error:", err);
-        io.to(socket.id).emit("privateMessage", { sender: "AI Bot", text: "⚠️ AI service not available." });
+        socket.emit("privateMessage", { sender: "AI Bot", text: botReply });
+      } catch (error) {
+        console.error("AI Error:", error);
+        socket.emit("privateMessage", {
+          sender: "AI Bot",
+          text: "⚠️ Sorry, AI reply failed."
+        });
       }
+      return; // Stop further execution
     }
 
-    // ✅ Agar normal user ko bhejna hai
-    else if (onlineUsers[receiver]) {
+    // Send to real receiver if online
+    if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
   });
 
   socket.on("disconnect", () => {
     delete onlineUsers[socket.username];
-    io.emit("updateUsers", Object.keys(onlineUsers).concat("AI_BOT"));
+    io.emit("updateUsers", Object.keys(onlineUsers));
     console.log("User disconnected");
   });
 });
