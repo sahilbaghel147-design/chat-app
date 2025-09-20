@@ -6,10 +6,7 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();
-
-// ✅ Fix for node-fetch (for Node.js v18+ / v22)
-const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
+const fetch = require("node-fetch"); // ✅ AI bot ke liye
 
 const app = express();
 const server = http.createServer(app);
@@ -23,9 +20,8 @@ app.use(express.static("public"));
 mongoose.connect(
   "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
   { useNewUrlParser: true, useUnifiedTopology: true }
-)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.error("MongoDB Error:", err));
+).then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.error("❌ MongoDB Error:", err));
 
 // ✅ User Schema
 const UserSchema = new mongoose.Schema({
@@ -34,7 +30,7 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", UserSchema);
 
-// ✅ Private Message Schema
+// ✅ Message Schema
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
@@ -43,7 +39,7 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// ✅ Signup Route
+// ✅ Signup
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -51,66 +47,30 @@ app.post("/signup", async (req, res) => {
     if (existingUser) {
       return res.json({ success: false, message: "User already exists" });
     }
-
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword });
     await newUser.save();
-
     res.json({ success: true, message: "User registered successfully" });
   } catch (err) {
     res.json({ success: false, message: "Error in signup" });
   }
 });
 
-// ✅ Login Route
+// ✅ Login
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
     if (!user) return res.json({ success: false, message: "User not found" });
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.json({ success: false, message: "Invalid password" });
-
     res.json({ success: true, message: "Login successful", username });
   } catch (err) {
     res.json({ success: false, message: "Error in login" });
   }
 });
 
-// ✅ AI Chat Endpoint
-app.post("/ai-chat", async (req, res) => {
-  try {
-    const { message } = req.body;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: message }]
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.error) {
-      console.error("AI Error:", data.error);
-      return res.json({ reply: "⚠️ AI error: No response." });
-    }
-
-    const reply = data.choices[0].message.content;
-    res.json({ reply });
-  } catch (err) {
-    console.error("AI Request Failed:", err);
-    res.json({ reply: "⚠️ AI error: Request failed." });
-  }
-});
-
-// ✅ Routes
+// ✅ Pages
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
@@ -122,7 +82,7 @@ app.get("/client.html", (req, res) => {
 let onlineUsers = {};
 
 io.on("connection", (socket) => {
-  console.log("New user connected");
+  console.log("🔵 New user connected");
 
   socket.on("newUser", (username) => {
     socket.username = username;
@@ -130,7 +90,7 @@ io.on("connection", (socket) => {
     io.emit("updateUsers", Object.keys(onlineUsers));
   });
 
-  // ✅ Load old chat between 2 users
+  // Load old chat
   socket.on("loadChat", async ({ user1, user2 }) => {
     const chats = await Message.find({
       $or: [
@@ -142,15 +102,13 @@ io.on("connection", (socket) => {
     socket.emit("chatHistory", chats);
   });
 
-  // ✅ Send private message
+  // Private message
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
 
-    // Send to sender
     socket.emit("privateMessage", { sender, text });
 
-    // Send to receiver if online
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
@@ -159,10 +117,40 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     delete onlineUsers[socket.username];
     io.emit("updateUsers", Object.keys(onlineUsers));
-    console.log("User disconnected");
+    console.log("🔴 User disconnected");
   });
+});
+
+// ✅ AI Chat Route
+app.post("/ai-chat", async (req, res) => {
+  try {
+    const userMessage = req.body.message;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`, // ✅ API Key Render me set karna
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: userMessage }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.choices && data.choices.length > 0) {
+      res.json({ reply: data.choices[0].message.content });
+    } else {
+      res.json({ reply: "⚠️ AI error: No response." });
+    }
+  } catch (error) {
+    console.error("AI Chat Error:", error);
+    res.json({ reply: "⚠️ AI error: Server issue." });
+  }
 });
 
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
