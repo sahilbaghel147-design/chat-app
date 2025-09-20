@@ -6,14 +6,12 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-const OpenAI = require("openai");
+const fetch = require("node-fetch");
 
-// ✅ Initialize Express + Server
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// ✅ Middlewares
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static("public"));
@@ -87,12 +85,6 @@ app.get("/client.html", (req, res) => {
 // ✅ Online Users
 let onlineUsers = {};
 
-// ✅ OpenAI setup (declare only once!)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// ✅ Socket.io
 io.on("connection", (socket) => {
   console.log("New user connected");
 
@@ -116,7 +108,6 @@ io.on("connection", (socket) => {
 
   // ✅ Send private message
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
-    // Save in DB
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
 
@@ -127,35 +118,38 @@ io.on("connection", (socket) => {
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
-
-    // ✅ If user is chatting with AI Bot
-    if (receiver === "AI Bot") {
-      try {
-        const response = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
-          messages: [{ role: "user", content: text }],
-        });
-
-        const aiReply = response.choices[0].message.content;
-
-        // Send AI reply back
-        socket.emit("privateMessage", { sender: "AI Bot", text: aiReply });
-      } catch (error) {
-        console.error("AI error:", error.message);
-        socket.emit("privateMessage", {
-          sender: "AI Bot",
-          text: "⚠️ AI error: No response.",
-        });
-      }
-    }
   });
 
-  // ✅ Disconnect
   socket.on("disconnect", () => {
     delete onlineUsers[socket.username];
     io.emit("updateUsers", Object.keys(onlineUsers));
     console.log("User disconnected");
   });
+});
+
+// ✅ AI Chat Route
+app.post("/ai-reply", async (req, res) => {
+  const { message } = req.body;
+  try {
+    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: message }]
+      })
+    });
+
+    const data = await aiRes.json();
+    const reply = data.choices?.[0]?.message?.content || "⚠️ AI error";
+    res.json({ reply });
+  } catch (err) {
+    console.error("AI Error:", err);
+    res.json({ reply: "⚠️ Error with AI service" });
+  }
 });
 
 // ✅ Start Server
