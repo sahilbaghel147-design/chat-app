@@ -2,82 +2,149 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat App</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Chat App 🚀</title>
+  <style>
+    body {
+      margin: 0; font-family: 'Poppins', sans-serif;
+      display: flex; height: 100vh;
+    }
+    .sidebar {
+      width: 220px; background: #1f1c2c; color: white; padding: 10px;
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .sidebar h3 { margin: 10px 0; }
+    .users { flex: 1; overflow-y: auto; margin-top: 10px; }
+    .users div {
+      padding: 8px; background: rgba(255,255,255,0.1); margin: 4px 0;
+      border-radius: 6px; cursor: pointer;
+    }
+    .chat-container {
+      flex: 1; display: flex; flex-direction: column;
+      background: #f2f2f2;
+    }
+    .header {
+      padding: 12px; background: #06d6a0; color: white; font-weight: bold;
+    }
+    .messages {
+      flex: 1; overflow-y: auto; padding: 10px;
+    }
+    .message {
+      margin: 6px 0; padding: 8px 12px;
+      border-radius: 10px; max-width: 70%;
+      word-wrap: break-word;
+    }
+    .sent { background: #06d6a0; color: white; margin-left: auto; }
+    .received { background: #ddd; margin-right: auto; }
+    .input-box {
+      display: flex; padding: 10px; background: white;
+      border-top: 1px solid #ccc;
+    }
+    .input-box input {
+      flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;
+    }
+    .input-box button {
+      margin-left: 10px; padding: 10px 15px; border: none;
+      background: #06d6a0; color: white; border-radius: 6px; cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h2>Chat App 💬</h2>
-    <a href="game.html" class="btn">🎮 Play Snake Game</a>
-  </header>
-
-  <div id="users">
-    <h3>Online Users</h3>
-    <ul id="userList"></ul>
+  <div class="sidebar">
+    <div>
+      <h3>👤 Online Users</h3>
+      <div class="users" id="usersList"></div>
+    </div>
+    <button onclick="location.href='game.html'">🎮 Play Snake Game</button>
   </div>
 
-  <div id="chat">
-    <div id="messages"></div>
-    <div id="typing"></div>
-    <div id="inputBox">
-      <input type="text" id="msgInput" placeholder="Type a message...">
-      <button id="sendBtn">Send</button>
+  <div class="chat-container">
+    <div class="header" id="chatHeader">Welcome 🚀</div>
+    <div class="messages" id="messages"></div>
+    <div class="input-box">
+      <input type="text" id="messageInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter'){sendMessage()}">
+      <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    const params = new URLSearchParams(window.location.search);
-    const username = params.get("user");
+    const username = localStorage.getItem("username") || "Guest";
 
+    let currentChatUser = "AI_BOT"; // default AI chat
+
+    document.getElementById("chatHeader").innerText = "Chat with " + currentChatUser;
     socket.emit("newUser", username);
 
-    const msgInput = document.getElementById("msgInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const messages = document.getElementById("messages");
-    const typing = document.getElementById("typing");
-    const userList = document.getElementById("userList");
-
-    let currentChatUser = null;
-
     socket.on("updateUsers", (users) => {
-      userList.innerHTML = "";
+      const list = document.getElementById("usersList");
+      list.innerHTML = "";
       users.forEach(u => {
         if (u !== username) {
-          const li = document.createElement("li");
-          li.innerText = u;
-          li.onclick = () => {
-            currentChatUser = u;
-            messages.innerHTML = "";
-            socket.emit("loadChat", { user1: username, user2: u });
-          };
-          userList.appendChild(li);
+          const div = document.createElement("div");
+          div.innerText = u;
+          div.onclick = () => openChat(u);
+          list.appendChild(div);
         }
       });
+      // AI bot always available
+      const botDiv = document.createElement("div");
+      botDiv.innerText = "🤖 AI_BOT";
+      botDiv.onclick = () => openChat("AI_BOT");
+      list.appendChild(botDiv);
     });
 
+    function openChat(user) {
+      currentChatUser = user;
+      document.getElementById("chatHeader").innerText = "Chat with " + user;
+      document.getElementById("messages").innerHTML = "";
+      socket.emit("loadChat", { user1: username, user2: user });
+    }
+
     socket.on("chatHistory", (chats) => {
-      chats.forEach(c => {
-        const div = document.createElement("div");
-        div.innerText = `${c.sender}: ${c.text}`;
-        messages.appendChild(div);
+      const messagesDiv = document.getElementById("messages");
+      messagesDiv.innerHTML = "";
+      chats.forEach(msg => {
+        addMessage(msg.sender === username ? "sent" : "received", msg.text);
       });
     });
 
-    sendBtn.onclick = () => {
-      const text = msgInput.value;
-      if (text && currentChatUser) {
-        socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text });
-        msgInput.value = "";
+    socket.on("privateMessage", (msg) => {
+      if (msg.sender === currentChatUser || msg.sender === username) {
+        addMessage(msg.sender === username ? "sent" : "received", msg.text);
       }
-    };
-
-    socket.on("privateMessage", ({ sender, text }) => {
-      const div = document.createElement("div");
-      div.innerText = `${sender}: ${text}`;
-      messages.appendChild(div);
     });
+
+    function sendMessage() {
+      const input = document.getElementById("messageInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      if (currentChatUser === "AI_BOT") {
+        fetch("/ai-reply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userMessage: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+          addMessage("sent", text);
+          addMessage("received", data.reply);
+        });
+      } else {
+        socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text });
+        addMessage("sent", text);
+      }
+      input.value = "";
+    }
+
+    function addMessage(type, text) {
+      const div = document.createElement("div");
+      div.className = "message " + type;
+      div.innerText = text;
+      document.getElementById("messages").appendChild(div);
+      div.scrollIntoView();
+    }
   </script>
 </body>
 </html>
