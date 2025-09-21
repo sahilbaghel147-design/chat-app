@@ -43,23 +43,29 @@
 
     // Load images
     const carImg = new Image();
-    carImg.src = "https://i.ibb.co/Yt6dXzL/red-car.png"; // Red car
+    carImg.src = "https://i.ibb.co/Yt6dXzL/red-car.png"; 
 
     const roadImg = new Image();
-    roadImg.src = "https://i.ibb.co/7t8GyXj/road-bg.png"; // Road background
+    roadImg.src = "https://i.ibb.co/7t8GyXj/road-bg.png"; 
+
+    // Load sounds
+    const engineSound = new Audio("https://www.soundjay.com/transportation/car-engine-1.mp3");
+    const crashSound = new Audio("https://www.soundjay.com/transportation/car-crash-1.mp3");
+    const scoreSound = new Audio("https://www.soundjay.com/button/button-09.mp3");
+
+    engineSound.loop = true;
 
     let car = { x: 130, y: 400, width: 40, height: 70, speed: 5 };
     let obstacles = [];
     let score = 0;
     let gameOver = false;
 
-    // Road background scroll
+    // Road scroll
     let roadY = 0;
 
     function drawRoad() {
       roadY += 4;
       if (roadY >= canvas.height) roadY = 0;
-
       ctx.drawImage(roadImg, 0, roadY, canvas.width, canvas.height);
       ctx.drawImage(roadImg, 0, roadY - canvas.height, canvas.width, canvas.height);
     }
@@ -85,6 +91,7 @@
         obstacles.shift();
         score++;
         scoreEl.textContent = "Score: " + score;
+        scoreSound.play();
       }
     }
 
@@ -96,7 +103,9 @@
           car.y < o.y + o.height &&
           car.height + car.y > o.y
         ) {
+          crashSound.play();
           gameOver = true;
+          engineSound.pause();
         }
       }
     }
@@ -107,7 +116,7 @@
         ctx.font = "30px Arial";
         ctx.fillText("Game Over", 70, 250);
         ctx.font = "20px Arial";
-        ctx.fillText("Refresh to Restart", 70, 290);
+        ctx.fillText("Refresh to Restart", 60, 290);
         return;
       }
 
@@ -128,7 +137,7 @@
       if (e.key === "ArrowRight" && car.x < canvas.width - car.width) car.x += car.speed;
     });
 
-    // Mobile controls (tap left/right)
+    // Mobile controls
     canvas.addEventListener("touchstart", e => {
       let touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
       if (touchX < canvas.width / 2 && car.x > 0) {
@@ -138,8 +147,9 @@
       }
     });
 
-    // Start when road is loaded
+    // Start when assets loaded
     roadImg.onload = () => {
+      engineSound.play();
       gameLoop();
     };
   </script>
