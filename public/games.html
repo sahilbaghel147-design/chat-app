@@ -2,156 +2,168 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Car Racing Game</title>
+  <title>Car Game 🚗</title>
   <style>
-    body {
+    * {
       margin: 0;
       padding: 0;
-      background: #111;
+      box-sizing: border-box;
+    }
+
+    body {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      background: #222;
+      font-family: Arial, sans-serif;
       overflow: hidden;
     }
 
-    canvas {
+    #gameContainer {
+      position: relative;
+      width: 360px;
+      height: 600px;
+      background: url("https://images.pexels.com/photos/56832/road-asphalt-space-sky-56832.jpeg") no-repeat center center;
+      background-size: cover;
+      overflow: hidden;
       border: 3px solid #fff;
-      display: block;
+      border-radius: 12px;
     }
 
-    #score {
+    #car {
       position: absolute;
-      top: 15px;
+      bottom: 20px;
+      left: 150px;
+      width: 60px;
+      height: 100px;
+      background: url("https://www.freeiconspng.com/uploads/sports-car-top-view-png-27.png") no-repeat center center;
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    .obstacle {
+      position: absolute;
+      top: -100px;
+      width: 60px;
+      height: 100px;
+      background: red;
+      border-radius: 10px;
+    }
+
+    #scoreBoard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    /* Mobile buttons */
+    #controls {
+      position: absolute;
+      bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 22px;
+      display: flex;
+      gap: 20px;
+    }
+
+    .btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid #fff;
       color: #fff;
-      font-family: Arial, sans-serif;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="score">Score: 0</div>
-  <canvas id="gameCanvas" width="300" height="500"></canvas>
+  <div id="gameContainer">
+    <div id="scoreBoard">Score: 0</div>
+    <div id="car"></div>
+    <div id="controls">
+      <button class="btn" id="leftBtn">⟵</button>
+      <button class="btn" id="rightBtn">⟶</button>
+    </div>
+  </div>
 
   <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const scoreEl = document.getElementById("score");
+    const car = document.getElementById("car");
+    const gameContainer = document.getElementById("gameContainer");
+    const scoreBoard = document.getElementById("scoreBoard");
 
-    // Load images
-    const carImg = new Image();
-    carImg.src = "https://i.ibb.co/Yt6dXzL/red-car.png"; 
-
-    const roadImg = new Image();
-    roadImg.src = "https://i.ibb.co/7t8GyXj/road-bg.png"; 
-
-    // Load sounds
-    const engineSound = new Audio("https://www.soundjay.com/transportation/car-engine-1.mp3");
-    const crashSound = new Audio("https://www.soundjay.com/transportation/car-crash-1.mp3");
-    const scoreSound = new Audio("https://www.soundjay.com/button/button-09.mp3");
-
-    engineSound.loop = true;
-
-    let car = { x: 130, y: 400, width: 40, height: 70, speed: 5 };
-    let obstacles = [];
+    let carX = 150;
     let score = 0;
     let gameOver = false;
 
-    // Road scroll
-    let roadY = 0;
-
-    function drawRoad() {
-      roadY += 4;
-      if (roadY >= canvas.height) roadY = 0;
-      ctx.drawImage(roadImg, 0, roadY, canvas.width, canvas.height);
-      ctx.drawImage(roadImg, 0, roadY - canvas.height, canvas.width, canvas.height);
-    }
-
-    function drawCar() {
-      ctx.drawImage(carImg, car.x, car.y, car.width, car.height);
-    }
-
-    function drawObstacles() {
-      ctx.fillStyle = "yellow";
-      obstacles.forEach(o => {
-        ctx.fillRect(o.x, o.y, o.width, o.height);
-      });
-    }
-
-    function updateObstacles() {
-      obstacles.forEach(o => o.y += 4);
-      if (obstacles.length === 0 || obstacles[obstacles.length - 1].y > 120) {
-        let x = Math.random() * 240;
-        obstacles.push({ x: x, y: -50, width: 50, height: 50 });
+    // Move car
+    function moveCar(dir) {
+      if (dir === "left" && carX > 0) {
+        carX -= 20;
+      } else if (dir === "right" && carX < gameContainer.offsetWidth - car.offsetWidth) {
+        carX += 20;
       }
-      if (obstacles[0].y > 500) {
-        obstacles.shift();
-        score++;
-        scoreEl.textContent = "Score: " + score;
-        scoreSound.play();
-      }
+      car.style.left = carX + "px";
     }
 
-    function detectCollision() {
-      for (let o of obstacles) {
-        if (
-          car.x < o.x + o.width &&
-          car.x + car.width > o.x &&
-          car.y < o.y + o.height &&
-          car.height + car.y > o.y
-        ) {
-          crashSound.play();
-          gameOver = true;
-          engineSound.pause();
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") moveCar("left");
+      if (e.key === "ArrowRight") moveCar("right");
+    });
+
+    document.getElementById("leftBtn").addEventListener("click", () => moveCar("left"));
+    document.getElementById("rightBtn").addEventListener("click", () => moveCar("right"));
+
+    // Obstacles
+    function createObstacle() {
+      const obstacle = document.createElement("div");
+      obstacle.classList.add("obstacle");
+      obstacle.style.left = Math.floor(Math.random() * (gameContainer.offsetWidth - 60)) + "px";
+      gameContainer.appendChild(obstacle);
+
+      let obstacleY = -100;
+      const fall = setInterval(() => {
+        if (gameOver) {
+          clearInterval(fall);
+          obstacle.remove();
+          return;
         }
-      }
+
+        obstacleY += 5;
+        obstacle.style.top = obstacleY + "px";
+
+        // Collision detection
+        const carRect = car.getBoundingClientRect();
+        const obsRect = obstacle.getBoundingClientRect();
+        if (
+          carRect.left < obsRect.right &&
+          carRect.right > obsRect.left &&
+          carRect.top < obsRect.bottom &&
+          carRect.bottom > obsRect.top
+        ) {
+          gameOver = true;
+          alert("💥 Game Over! Final Score: " + score);
+          window.location.reload();
+        }
+
+        if (obstacleY > gameContainer.offsetHeight) {
+          obstacle.remove();
+          score++;
+          scoreBoard.innerText = "Score: " + score;
+        }
+      }, 30);
     }
 
-    function gameLoop() {
-      if (gameOver) {
-        ctx.fillStyle = "white";
-        ctx.font = "30px Arial";
-        ctx.fillText("Game Over", 70, 250);
-        ctx.font = "20px Arial";
-        ctx.fillText("Refresh to Restart", 60, 290);
-        return;
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      drawRoad();
-      drawCar();
-      drawObstacles();
-      updateObstacles();
-      detectCollision();
-
-      requestAnimationFrame(gameLoop);
-    }
-
-    // Keyboard controls
-    document.addEventListener("keydown", e => {
-      if (e.key === "ArrowLeft" && car.x > 0) car.x -= car.speed;
-      if (e.key === "ArrowRight" && car.x < canvas.width - car.width) car.x += car.speed;
-    });
-
-    // Mobile controls
-    canvas.addEventListener("touchstart", e => {
-      let touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
-      if (touchX < canvas.width / 2 && car.x > 0) {
-        car.x -= car.speed * 3;
-      } else if (touchX > canvas.width / 2 && car.x < canvas.width - car.width) {
-        car.x += car.speed * 3;
-      }
-    });
-
-    // Start when assets loaded
-    roadImg.onload = () => {
-      engineSound.play();
-      gameLoop();
-    };
+    // Spawn obstacles every 2s
+    setInterval(() => {
+      if (!gameOver) createObstacle();
+    }, 2000);
   </script>
 </body>
 </html>
