@@ -2,33 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Car Game 🚗</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car Game</title>
   <style>
-    * {
+    body {
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
+      background: #111;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: #222;
-      font-family: Arial, sans-serif;
       overflow: hidden;
     }
 
-    #gameContainer {
+    #gameArea {
       position: relative;
       width: 360px;
       height: 600px;
       background: url("https://images.pexels.com/photos/56832/road-asphalt-space-sky-56832.jpeg") no-repeat center center;
       background-size: cover;
       overflow: hidden;
-      border: 3px solid #fff;
-      border-radius: 12px;
+      border-radius: 15px;
     }
 
     #car {
@@ -37,133 +32,133 @@
       left: 150px;
       width: 60px;
       height: 100px;
-      background: url("https://www.freeiconspng.com/uploads/sports-car-top-view-png-27.png") no-repeat center center;
+      background: url("https://i.ibb.co/4ZpPbDZw/10380615.png") no-repeat center center;
       background-size: contain;
-      background-repeat: no-repeat;
     }
 
     .obstacle {
       position: absolute;
-      top: -100px;
-      width: 60px;
-      height: 100px;
+      top: 0;
+      width: 50px;
+      height: 80px;
       background: red;
-      border-radius: 10px;
+      border-radius: 8px;
     }
 
-    #scoreBoard {
+    #score {
       position: absolute;
       top: 10px;
       left: 10px;
-      font-size: 18px;
+      color: white;
+      font-size: 20px;
       font-weight: bold;
-      color: #fff;
+      z-index: 10;
     }
 
-    /* Mobile buttons */
-    #controls {
+    .controls {
       position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 20px;
+      width: 100%;
       display: flex;
-      gap: 20px;
+      justify-content: space-between;
+      padding: 0 30px;
     }
 
     .btn {
       width: 60px;
       height: 60px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      border: 2px solid #fff;
-      color: #fff;
-      font-size: 22px;
-      font-weight: bold;
-      cursor: pointer;
+      border: 2px solid white;
+      color: white;
+      font-size: 24px;
+      text-align: center;
+      line-height: 60px;
+      user-select: none;
+      background: rgba(0,0,0,0.5);
     }
   </style>
 </head>
 <body>
-  <div id="gameContainer">
-    <div id="scoreBoard">Score: 0</div>
+  <div id="gameArea">
+    <div id="score">Score: 0</div>
     <div id="car"></div>
-    <div id="controls">
-      <button class="btn" id="leftBtn">⟵</button>
-      <button class="btn" id="rightBtn">⟶</button>
+    <div class="controls">
+      <div class="btn" id="leftBtn">←</div>
+      <div class="btn" id="rightBtn">→</div>
     </div>
   </div>
 
   <script>
+    const gameArea = document.getElementById("gameArea");
     const car = document.getElementById("car");
-    const gameContainer = document.getElementById("gameContainer");
-    const scoreBoard = document.getElementById("scoreBoard");
+    const scoreDisplay = document.getElementById("score");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
 
-    let carX = 150;
+    let carLeft = 150;
     let score = 0;
     let gameOver = false;
 
-    // Move car
+    // Move Car
     function moveCar(dir) {
-      if (dir === "left" && carX > 0) {
-        carX -= 20;
-      } else if (dir === "right" && carX < gameContainer.offsetWidth - car.offsetWidth) {
-        carX += 20;
+      if (dir === "left" && carLeft > 20) {
+        carLeft -= 20;
+      } else if (dir === "right" && carLeft < 280) {
+        carLeft += 20;
       }
-      car.style.left = carX + "px";
+      car.style.left = carLeft + "px";
     }
 
+    leftBtn.addEventListener("click", () => moveCar("left"));
+    rightBtn.addEventListener("click", () => moveCar("right"));
     document.addEventListener("keydown", (e) => {
       if (e.key === "ArrowLeft") moveCar("left");
       if (e.key === "ArrowRight") moveCar("right");
     });
 
-    document.getElementById("leftBtn").addEventListener("click", () => moveCar("left"));
-    document.getElementById("rightBtn").addEventListener("click", () => moveCar("right"));
-
-    // Obstacles
+    // Create obstacles
     function createObstacle() {
+      if (gameOver) return;
       const obstacle = document.createElement("div");
       obstacle.classList.add("obstacle");
-      obstacle.style.left = Math.floor(Math.random() * (gameContainer.offsetWidth - 60)) + "px";
-      gameContainer.appendChild(obstacle);
+      obstacle.style.left = Math.floor(Math.random() * 280) + "px";
+      gameArea.appendChild(obstacle);
 
-      let obstacleY = -100;
-      const fall = setInterval(() => {
+      let top = 0;
+      const interval = setInterval(() => {
         if (gameOver) {
-          clearInterval(fall);
+          clearInterval(interval);
           obstacle.remove();
           return;
         }
 
-        obstacleY += 5;
-        obstacle.style.top = obstacleY + "px";
+        top += 5;
+        obstacle.style.top = top + "px";
 
         // Collision detection
         const carRect = car.getBoundingClientRect();
         const obsRect = obstacle.getBoundingClientRect();
+
         if (
-          carRect.left < obsRect.right &&
-          carRect.right > obsRect.left &&
-          carRect.top < obsRect.bottom &&
-          carRect.bottom > obsRect.top
+          carRect.x < obsRect.x + obsRect.width &&
+          carRect.x + carRect.width > obsRect.x &&
+          carRect.y < obsRect.y + obsRect.height &&
+          carRect.height + carRect.y > obsRect.y
         ) {
+          alert("Game Over! Final Score: " + score);
           gameOver = true;
-          alert("💥 Game Over! Final Score: " + score);
           window.location.reload();
         }
 
-        if (obstacleY > gameContainer.offsetHeight) {
+        if (top > 600) {
           obstacle.remove();
           score++;
-          scoreBoard.innerText = "Score: " + score;
+          scoreDisplay.textContent = "Score: " + score;
         }
       }, 30);
     }
 
-    // Spawn obstacles every 2s
-    setInterval(() => {
-      if (!gameOver) createObstacle();
-    }, 2000);
+    setInterval(createObstacle, 2000);
   </script>
 </body>
 </html>
