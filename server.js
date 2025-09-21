@@ -6,8 +6,6 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-const fetch = require("node-fetch"); // ✅ AI bot ke liye
-require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
@@ -48,11 +46,9 @@ app.post("/signup", async (req, res) => {
     if (existingUser) {
       return res.json({ success: false, message: "User already exists" });
     }
-
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword });
     await newUser.save();
-
     res.json({ success: true, message: "User registered successfully" });
   } catch (err) {
     res.json({ success: false, message: "Error in signup" });
@@ -75,12 +71,27 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Routes
+// ✅ Page Routes
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-app.get("/client.html", (req, res) => {
+app.get("/client", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "client.html"));
+});
+app.get("/chat", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "chat.html"));
+});
+app.get("/games", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "games.html"));
+});
+app.get("/videos", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "videos.html"));
+});
+app.get("/about", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "about.html"));
+});
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
 // ✅ Online Users
@@ -118,31 +129,6 @@ io.on("connection", (socket) => {
     // Send to receiver if online
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
-    }
-
-    // ✅ Agar receiver "AI Bot" hai toh OpenAI se reply lo
-    if (receiver === "AI Bot") {
-      try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: text }]
-          })
-        });
-
-        const data = await response.json();
-        const aiReply = data.choices?.[0]?.message?.content || "⚠️ AI error: No response.";
-
-        socket.emit("privateMessage", { sender: "AI Bot", text: aiReply });
-      } catch (error) {
-        console.error("AI Error:", error);
-        socket.emit("privateMessage", { sender: "AI Bot", text: "⚠️ AI error: No response." });
-      }
     }
   });
 
