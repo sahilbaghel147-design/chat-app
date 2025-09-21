@@ -6,7 +6,8 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-const axios = require("axios");   // ✅ AI Bot के लिए
+const fetch = require("node-fetch"); // ✅ AI bot ke liye
+require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
@@ -119,35 +120,28 @@ io.on("connection", (socket) => {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
 
-    // ✅ AI Bot integration
-    if (receiver === "AI-Bot") {
+    // ✅ Agar receiver "AI Bot" hai toh OpenAI se reply lo
+    if (receiver === "AI Bot") {
       try {
-        const response = await axios.post(
-          "https://api.openai.com/v1/chat/completions",
-          {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
             model: "gpt-3.5-turbo",
             messages: [{ role: "user", content: text }]
-          },
-          {
-            headers: {
-              "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-              "Content-Type": "application/json"
-            }
-          }
-        );
+          })
+        });
 
-        const botReply = response.data.choices[0].message.content;
+        const data = await response.json();
+        const aiReply = data.choices?.[0]?.message?.content || "⚠️ AI error: No response.";
 
-        // Save AI message to DB
-        const botMessage = new Message({ sender: "AI-Bot", receiver: sender, text: botReply });
-        await botMessage.save();
-
-        // Send back AI reply
-        io.to(socket.id).emit("privateMessage", { sender: "AI-Bot", text: botReply });
-
+        socket.emit("privateMessage", { sender: "AI Bot", text: aiReply });
       } catch (error) {
-        console.error("AI Error:", error.response?.data || error.message);
-        io.to(socket.id).emit("privateMessage", { sender: "AI-Bot", text: "❌ Sorry, AI is not responding right now." });
+        console.error("AI Error:", error);
+        socket.emit("privateMessage", { sender: "AI Bot", text: "⚠️ AI error: No response." });
       }
     }
   });
