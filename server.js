@@ -54,6 +54,17 @@ app.post("/signup", async (req, res) => {
     res.json({ success: false, message: "Error in signup" });
   }
 });
+// Collision check (with relaxed margin)
+const marginX = 20;  // left-right space
+const marginY = 15;  // top-bottom space
+if (
+  car.x + marginX < e.x + e.width - marginX &&
+  car.x + car.width - marginX > e.x + marginX &&
+  car.y + marginY < e.y + e.height - marginY &&
+  car.y + car.height - marginY > e.y + marginY
+) {
+  gameOver = true;
+}
 
 // ✅ Login Route
 app.post("/login", async (req, res) => {
@@ -142,3 +153,4 @@ io.on("connection", (socket) => {
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+
