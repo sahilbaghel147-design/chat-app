@@ -2,55 +2,146 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat Room</title>
-  <script src="/socket.io/socket.io.js"></script>
+  <title>Chat App</title>
   <style>
-    body { font-family: Arial; background:#f2f2f2; }
-    #users { float:left; width:20%; border-right:1px solid #ccc; }
-    #chat { float:left; width:75%; margin-left:5%; }
-    #messages { height:300px; overflow-y:scroll; background:white; padding:10px; border:1px solid #ccc; }
-    #input { margin-top:10px; }
+    body {
+      margin: 0; font-family: Arial, sans-serif;
+      display: flex; height: 100vh;
+      background: #2c3e50; color: white;
+    }
+    #sidebar {
+      width: 25%; background: #34495e;
+      padding: 15px; border-right: 2px solid #2ecc71;
+      overflow-y: auto;
+    }
+    #sidebar h3 { text-align: center; }
+    #users, #group {
+      list-style: none; padding: 0; margin-top: 10px;
+    }
+    #users li, #group li {
+      padding: 8px; background: #2ecc71; margin: 5px 0;
+      border-radius: 5px; text-align: center; cursor: pointer;
+    }
+    #users li:hover, #group li:hover { background: #27ae60; }
+    #chat-box { flex: 1; display: flex; flex-direction: column; }
+    #header {
+      background: #2ecc71; padding: 10px; text-align: center;
+      font-size: 18px; font-weight: bold;
+    }
+    #messages {
+      flex: 1; padding: 15px; overflow-y: auto;
+      background: #1a252f;
+    }
+    .msg { margin: 5px 0; padding: 8px; border-radius: 6px;
+      max-width: 60%; word-wrap: break-word;
+    }
+    .me { background: #3498db; align-self: flex-end; }
+    .other { background: #95a5a6; align-self: flex-start; }
+    #input-area {
+      display: flex; padding: 10px; background: #34495e;
+    }
+    #input-area input {
+      flex: 1; padding: 10px; border: none; border-radius: 5px;
+      margin-right: 10px;
+    }
+    #input-area button {
+      padding: 10px 20px; background: #2ecc71; border: none;
+      border-radius: 5px; cursor: pointer; color: white;
+    }
   </style>
 </head>
 <body>
-  <h2>Chat Room</h2>
-  <div id="users"></div>
-  <div id="chat">
+
+  <div id="sidebar">
+    <h3>Group</h3>
+    <ul id="group">
+      <li onclick="selectGroup()">🌍 Global Chat</li>
+    </ul>
+    <h3>Private Users</h3>
+    <ul id="users"></ul>
+  </div>
+
+  <div id="chat-box">
+    <div id="header">Chat Room</div>
     <div id="messages"></div>
-    <div id="input">
-      <input id="receiver" placeholder="Receiver username"/>
-      <input id="msg" placeholder="Type a message"/>
+    <div id="input-area">
+      <input type="text" id="messageInput" placeholder="Type a message..." />
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
-<script>
-  const socket = io();
-  let username = prompt("Enter your username:");
-  socket.emit("newUser", username);
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let username = localStorage.getItem("username");
+    if (!username) window.location.href = "/login";
+    else socket.emit("newUser", username);
 
-  socket.on("updateUsers", (users) => {
-    document.getElementById("users").innerHTML = "<b>Online:</b><br>" + users.join("<br>");
-  });
+    let currentChatUser = "GROUP"; // Default group chat
 
-  socket.on("chatHistory", (messages) => {
-    const msgDiv = document.getElementById("messages");
-    msgDiv.innerHTML = "";
-    messages.forEach(m => {
-      msgDiv.innerHTML += `<p><b>${m.sender}:</b> ${m.text}</p>`;
+    // ✅ Online users list
+    socket.on("updateUsers", (users) => {
+      const list = document.getElementById("users");
+      list.innerHTML = "";
+      users.forEach(u => {
+        if (u !== username) {
+          const li = document.createElement("li");
+          li.innerText = u;
+          li.onclick = () => selectUser(u);
+          list.appendChild(li);
+        }
+      });
     });
-  });
 
-  socket.on("privateMessage", (msg) => {
-    document.getElementById("messages").innerHTML += `<p><b>${msg.sender}:</b> ${msg.text}</p>`;
-  });
+    // ✅ Group & Private Messages
+    socket.on("groupMessage", (data) => {
+      if (currentChatUser === "GROUP") showMessage(data, data.sender === username ? "me" : "other");
+    });
 
-  function sendMessage() {
-    const receiver = document.getElementById("receiver").value;
-    const text = document.getElementById("msg").value;
-    socket.emit("privateMessage", { sender: username, receiver, text });
-    document.getElementById("msg").value = "";
-  }
-</script>
+    socket.on("privateMessage", (data) => {
+      if (data.sender === currentChatUser || data.sender === username) {
+        showMessage(data, data.sender === username ? "me" : "other");
+      }
+    });
+
+    // ✅ Load chat history
+    socket.on("chatHistory", (chats) => {
+      const msgBox = document.getElementById("messages");
+      msgBox.innerHTML = "";
+      chats.forEach(c => showMessage(c, c.sender === username ? "me" : "other"));
+    });
+
+    function selectGroup() {
+      currentChatUser = "GROUP";
+      document.getElementById("header").innerText = "🌍 Global Chat";
+      document.getElementById("messages").innerHTML = "<b>Welcome to Global Chat</b><br>";
+    }
+
+    function selectUser(user) {
+      currentChatUser = user;
+      document.getElementById("header").innerText = "Chat with " + user;
+      document.getElementById("messages").innerHTML = `<b>Chat with ${user}</b><br>`;
+      socket.emit("loadChat", { user1: username, user2: user });
+    }
+
+    function sendMessage() {
+      const msg = document.getElementById("messageInput").value;
+      if (!msg) return;
+      if (currentChatUser === "GROUP") {
+        socket.emit("groupMessage", { sender: username, text: msg });
+      } else {
+        socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text: msg });
+      }
+      document.getElementById("messageInput").value = "";
+    }
+
+    function showMessage(data, cls) {
+      const div = document.createElement("div");
+      div.classList.add("msg", cls);
+      div.innerText = `${data.sender}: ${data.text}`;
+      document.getElementById("messages").appendChild(div);
+    }
+  </script>
+
 </body>
 </html>
