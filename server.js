@@ -19,8 +19,8 @@ app.use(express.static("public"));
 mongoose.connect(
   "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
   { useNewUrlParser: true, useUnifiedTopology: true }
-).then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.error("❌ MongoDB Error:", err));
+).then(() => console.log("MongoDB Connected"))
+  .catch(err => console.error("MongoDB Error:", err));
 
 // ✅ User Schema
 const UserSchema = new mongoose.Schema({
@@ -71,12 +71,9 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Page Routes
+// ✅ Routes for Pages
 app.get("/", (req, res) => {
-  res.redirect("/login");   // 👉 Default route -> login page
-});
-app.get("/client", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "client.html"));
+  res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 app.get("/chat", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "chat.html"));
@@ -98,7 +95,7 @@ app.get("/login", (req, res) => {
 let onlineUsers = {};
 
 io.on("connection", (socket) => {
-  console.log("✅ New user connected");
+  console.log("New user connected");
 
   socket.on("newUser", (username) => {
     socket.username = username;
@@ -106,7 +103,6 @@ io.on("connection", (socket) => {
     io.emit("updateUsers", Object.keys(onlineUsers));
   });
 
-  // ✅ Load old chat between 2 users
   socket.on("loadChat", async ({ user1, user2 }) => {
     const chats = await Message.find({
       $or: [
@@ -114,19 +110,13 @@ io.on("connection", (socket) => {
         { sender: user2, receiver: user1 }
       ]
     }).sort({ timestamp: 1 });
-
     socket.emit("chatHistory", chats);
   });
 
-  // ✅ Send private message
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
-
-    // Send to sender
     socket.emit("privateMessage", { sender, text });
-
-    // Send to receiver if online
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
@@ -135,10 +125,10 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     delete onlineUsers[socket.username];
     io.emit("updateUsers", Object.keys(onlineUsers));
-    console.log("❌ User disconnected");
+    console.log("User disconnected");
   });
 });
 
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
