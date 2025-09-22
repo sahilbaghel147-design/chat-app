@@ -46,12 +46,10 @@
     #input-area input[type="text"] {
       flex: 1; padding: 10px; border: none; border-radius: 5px;
     }
-    #input-area input[type="file"] {
-      display: none;
-    }
-    #input-area label {
+    #input-area input[type="file"] { display: none; }
+    #input-area label, #micBtn {
       background: #e67e22; padding: 10px; border-radius: 5px;
-      cursor: pointer; color: white;
+      cursor: pointer; color: white; border: none;
     }
     #input-area button {
       padding: 10px 20px; background: #2ecc71; border: none;
@@ -85,6 +83,7 @@
       <input type="text" id="messageInput" placeholder="Type a message..." />
       <input type="file" id="fileInput" />
       <label for="fileInput">📎</label>
+      <button id="micBtn">🎤</button>
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
@@ -143,6 +142,7 @@
       socket.emit("loadChat", { user1: username, user2: user });
     }
 
+    // ✅ Send Text & File
     function sendMessage() {
       const msg = document.getElementById("messageInput").value;
       const file = document.getElementById("fileInput").files[0];
@@ -176,13 +176,59 @@
       }
     }
 
+    // ✅ Show message
     function showMessage(data, cls) {
       const div = document.createElement("div");
       div.classList.add("msg", cls);
-      div.innerHTML = `${data.sender}: ${data.text}`;
+
+      if (data.text.includes("<audio")) {
+        div.innerHTML = `${data.sender}: ${data.text}`;
+      } else {
+        div.innerHTML = `${data.sender}: ${data.text}`;
+      }
+
       document.getElementById("messages").appendChild(div);
       document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     }
+
+    // 🎤 Voice Message Feature
+    let mediaRecorder;
+    let audioChunks = [];
+    const micBtn = document.getElementById("micBtn");
+
+    micBtn.addEventListener("click", async () => {
+      if (!mediaRecorder || mediaRecorder.state === "inactive") {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+          audioChunks = [];
+          micBtn.innerText = "⏹ Stop";
+
+          mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+            const audioURL = URL.createObjectURL(audioBlob);
+            const audioHTML = `<audio controls src="${audioURL}"></audio>`;
+
+            if (currentChatUser === "GROUP") {
+              socket.emit("groupMessage", { sender: username, text: audioHTML });
+            } else {
+              socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text: audioHTML });
+            }
+
+            micBtn.innerText = "🎤";
+          };
+        } catch (err) {
+          alert("Mic permission denied!");
+        }
+      } else {
+        mediaRecorder.stop();
+      }
+    });
   </script>
 
 </body>
