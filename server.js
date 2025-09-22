@@ -11,25 +11,25 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// ===== Middleware =====
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static("public"));
 
-// ===== MongoDB Atlas connection =====
+// ✅ MongoDB connect
 mongoose.connect(
   "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
   { useNewUrlParser: true, useUnifiedTopology: true }
 ).then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.error("❌ MongoDB Error:", err));
 
-// ===== Schemas =====
+// ✅ User Schema
 const UserSchema = new mongoose.Schema({
   username: String,
   password: String
 });
 const User = mongoose.model("User", UserSchema);
 
+// ✅ Message Schema
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
@@ -38,24 +38,24 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// ===== Signup Route =====
+// ✅ Signup API
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
     const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.json({ success: false, message: "User already exists" });
-    }
+    if (existingUser) return res.json({ success: false, message: "User already exists" });
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword });
     await newUser.save();
+
     res.json({ success: true, message: "User registered successfully" });
-  } catch (err) {
-    res.json({ success: false, message: "Error in signup" });
+  } catch {
+    res.json({ success: false, message: "Signup error" });
   }
 });
 
-// ===== Login Route =====
+// ✅ Login API
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -65,40 +65,24 @@ app.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.json({ success: false, message: "Invalid password" });
 
-    res.json({ success: true, message: "Login successful", username });
-  } catch (err) {
-    res.json({ success: false, message: "Error in login" });
+    res.json({ success: true, username });
+  } catch {
+    res.json({ success: false, message: "Login error" });
   }
 });
 
-// ===== Page Routes =====
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-app.get("/client", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "client.html"));
-});
-app.get("/chat", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "chat.html"));
-});
-app.get("/games", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "games.html"));
-});
-app.get("/videos", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "videos.html"));
-});
-app.get("/about", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "about.html"));
-});
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
+// ✅ Static Pages
+["index","client","chat","games","videos","about","login"].forEach(page=>{
+  app.get("/" + (page==="index"?"":page), (req,res)=>{
+    res.sendFile(path.join(__dirname,"public",`${page}.html`));
+  });
 });
 
-// ===== Online Users Tracking =====
+// ✅ Socket.io Chat
 let onlineUsers = {};
 
 io.on("connection", (socket) => {
-  console.log("🔌 New user connected");
+  console.log("🔌 User connected");
 
   socket.on("newUser", (username) => {
     socket.username = username;
@@ -106,7 +90,6 @@ io.on("connection", (socket) => {
     io.emit("updateUsers", Object.keys(onlineUsers));
   });
 
-  // Load old chats
   socket.on("loadChat", async ({ user1, user2 }) => {
     const chats = await Message.find({
       $or: [
@@ -114,14 +97,12 @@ io.on("connection", (socket) => {
         { sender: user2, receiver: user1 }
       ]
     }).sort({ timestamp: 1 });
-
     socket.emit("chatHistory", chats);
   });
 
-  // Private message
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
-    const newMessage = new Message({ sender, receiver, text });
-    await newMessage.save();
+    const newMsg = new Message({ sender, receiver, text });
+    await newMsg.save();
 
     socket.emit("privateMessage", { sender, text });
     if (onlineUsers[receiver]) {
@@ -136,6 +117,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// ===== Start Server =====
+// ✅ Server Start
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
