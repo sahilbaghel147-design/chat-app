@@ -2,163 +2,113 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Car Game</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #111;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    #gameArea {
-      position: relative;
-      width: 360px;
-      height: 600px;
-      background: url("https://images.pexels.com/photos/56832/road-asphalt-space-sky-56832.jpeg") no-repeat center center;
-      background-size: cover;
-      overflow: hidden;
-      border-radius: 15px;
-    }
-
-    #car {
-      position: absolute;
-      bottom: 20px;
-      left: 150px;
-      width: 60px;
-      height: 100px;
-      background: url("https://i.ibb.co/4ZpPbDZw/10380615.png") no-repeat center center;
-      background-size: contain;
-    }
-
-    .obstacle {
-      position: absolute;
-      top: 0;
-      width: 50px;
-      height: 80px;
-      background: red;
-      border-radius: 8px;
-    }
-
-    #score {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      font-size: 20px;
-      font-weight: bold;
-      z-index: 10;
-    }
-
-    .controls {
-      position: absolute;
-      bottom: 20px;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      padding: 0 30px;
-    }
-
-    .btn {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: 2px solid white;
-      color: white;
-      font-size: 24px;
-      text-align: center;
-      line-height: 60px;
-      user-select: none;
-      background: rgba(0,0,0,0.5);
-    }
+    body { margin:0; background:black; display:flex; justify-content:center; align-items:center; height:100vh; }
+    canvas { background:#333; border-radius:15px; }
+    #controls { position:absolute; bottom:30px; width:100%; display:flex; justify-content:space-between; padding:0 30px; }
+    button { width:70px; height:70px; border-radius:50%; font-size:24px; background:white; opacity:0.7; border:none; }
   </style>
 </head>
 <body>
-  <div id="gameArea">
-    <div id="score">Score: 0</div>
-    <div id="car"></div>
-    <div class="controls">
-      <div class="btn" id="leftBtn">←</div>
-      <div class="btn" id="rightBtn">→</div>
-    </div>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="controls">
+    <button id="left">⟵</button>
+    <button id="right">⟶</button>
   </div>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-  <script>
-    const gameArea = document.getElementById("gameArea");
-    const car = document.getElementById("car");
-    const scoreDisplay = document.getElementById("score");
-    const leftBtn = document.getElementById("leftBtn");
-    const rightBtn = document.getElementById("rightBtn");
+const carImg = new Image();
+carImg.src = "https://i.ibb.co/4ZpPbDZw/10380615.png";
+const enemyImg = new Image();
+enemyImg.src = "https://i.ibb.co/8gMFNKCv/10386122.png";
 
-    let carLeft = 150;
-    let score = 0;
-    let gameOver = false;
+let car = { x: 160, y: 500, width: 60, height: 100, speed: 5 };
+let enemies = [];
+let score = 0;
+let gameOver = false;
 
-    // Move Car
-    function moveCar(dir) {
-      if (dir === "left" && carLeft > 20) {
-        carLeft -= 20;
-      } else if (dir === "right" && carLeft < 280) {
-        carLeft += 20;
-      }
-      car.style.left = carLeft + "px";
+function drawRoad() {
+  ctx.fillStyle = "#555";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 5;
+  ctx.setLineDash([20, 20]);
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / 2, 0);
+  ctx.lineTo(canvas.width / 2, canvas.height);
+  ctx.stroke();
+}
+
+function drawCar() {
+  ctx.drawImage(carImg, car.x, car.y, car.width, car.height);
+}
+
+function drawEnemies() {
+  enemies.forEach(e => {
+    ctx.drawImage(enemyImg, e.x, e.y, e.width, e.height);
+    e.y += 3;
+
+    // Collision check
+    if (
+      car.x < e.x + e.width - 10 &&
+      car.x + car.width > e.x + 10 &&
+      car.y < e.y + e.height - 10 &&
+      car.y + car.height > e.y + 10
+    ) {
+      gameOver = true;
     }
 
-    leftBtn.addEventListener("click", () => moveCar("left"));
-    rightBtn.addEventListener("click", () => moveCar("right"));
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft") moveCar("left");
-      if (e.key === "ArrowRight") moveCar("right");
-    });
-
-    // Create obstacles
-    function createObstacle() {
-      if (gameOver) return;
-      const obstacle = document.createElement("div");
-      obstacle.classList.add("obstacle");
-      obstacle.style.left = Math.floor(Math.random() * 280) + "px";
-      gameArea.appendChild(obstacle);
-
-      let top = 0;
-      const interval = setInterval(() => {
-        if (gameOver) {
-          clearInterval(interval);
-          obstacle.remove();
-          return;
-        }
-
-        top += 5;
-        obstacle.style.top = top + "px";
-
-        // Collision detection
-        const carRect = car.getBoundingClientRect();
-        const obsRect = obstacle.getBoundingClientRect();
-
-        if (
-          carRect.x < obsRect.x + obsRect.width &&
-          carRect.x + carRect.width > obsRect.x &&
-          carRect.y < obsRect.y + obsRect.height &&
-          carRect.height + carRect.y > obsRect.y
-        ) {
-          alert("Game Over! Final Score: " + score);
-          gameOver = true;
-          window.location.reload();
-        }
-
-        if (top > 600) {
-          obstacle.remove();
-          score++;
-          scoreDisplay.textContent = "Score: " + score;
-        }
-      }, 30);
+    if (e.y > canvas.height) {
+      enemies.splice(enemies.indexOf(e), 1);
+      score++;
     }
+  });
+}
 
-    setInterval(createObstacle, 2000);
-  </script>
+function gameLoop() {
+  if (gameOver) {
+    ctx.fillStyle = "red";
+    ctx.font = "40px Arial";
+    ctx.fillText("Game Over", 100, 300);
+    return;
+  }
+
+  drawRoad();
+  drawCar();
+  drawEnemies();
+
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+
+  requestAnimationFrame(gameLoop);
+}
+
+setInterval(() => {
+  if (!gameOver) {
+    let enemyX = Math.floor(Math.random() * (canvas.width - 60));
+    enemies.push({ x: enemyX, y: -100, width: 60, height: 100 });
+  }
+}, 2000);
+
+// Controls
+document.getElementById("left").addEventListener("click", () => {
+  if (car.x > 0) car.x -= car.speed * 10;
+});
+document.getElementById("right").addEventListener("click", () => {
+  if (car.x < canvas.width - car.width) car.x += car.speed * 10;
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft" && car.x > 0) car.x -= car.speed;
+  if (e.key === "ArrowRight" && car.x < canvas.width - car.width) car.x += car.speed;
+});
+
+gameLoop();
+</script>
 </body>
 </html>
