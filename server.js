@@ -11,25 +11,25 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
+// ===== Middleware =====
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static("public"));
 
-// ✅ MongoDB Atlas connection
+// ===== MongoDB Atlas connection =====
 mongoose.connect(
   "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
   { useNewUrlParser: true, useUnifiedTopology: true }
-).then(() => console.log("MongoDB Connected"))
-  .catch(err => console.error("MongoDB Error:", err));
+).then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.error("❌ MongoDB Error:", err));
 
-// ✅ User Schema
+// ===== Schemas =====
 const UserSchema = new mongoose.Schema({
   username: String,
   password: String
 });
 const User = mongoose.model("User", UserSchema);
 
-// ✅ Private Message Schema
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
@@ -38,7 +38,7 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// ✅ Signup Route
+// ===== Signup Route =====
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -54,19 +54,8 @@ app.post("/signup", async (req, res) => {
     res.json({ success: false, message: "Error in signup" });
   }
 });
-// Collision check (with relaxed margin)
-const marginX = 20;  // left-right space
-const marginY = 15;  // top-bottom space
-if (
-  car.x + marginX < e.x + e.width - marginX &&
-  car.x + car.width - marginX > e.x + marginX &&
-  car.y + marginY < e.y + e.height - marginY &&
-  car.y + car.height - marginY > e.y + marginY
-) {
-  gameOver = true;
-}
 
-// ✅ Login Route
+// ===== Login Route =====
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -82,7 +71,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Page Routes
+// ===== Page Routes =====
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -105,11 +94,11 @@ app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// ✅ Online Users
+// ===== Online Users Tracking =====
 let onlineUsers = {};
 
 io.on("connection", (socket) => {
-  console.log("New user connected");
+  console.log("🔌 New user connected");
 
   socket.on("newUser", (username) => {
     socket.username = username;
@@ -117,7 +106,7 @@ io.on("connection", (socket) => {
     io.emit("updateUsers", Object.keys(onlineUsers));
   });
 
-  // ✅ Load old chat between 2 users
+  // Load old chats
   socket.on("loadChat", async ({ user1, user2 }) => {
     const chats = await Message.find({
       $or: [
@@ -129,15 +118,12 @@ io.on("connection", (socket) => {
     socket.emit("chatHistory", chats);
   });
 
-  // ✅ Send private message
+  // Private message
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
 
-    // Send to sender
     socket.emit("privateMessage", { sender, text });
-
-    // Send to receiver if online
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
     }
@@ -146,11 +132,10 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     delete onlineUsers[socket.username];
     io.emit("updateUsers", Object.keys(onlineUsers));
-    console.log("User disconnected");
+    console.log("❌ User disconnected");
   });
 });
 
-// ✅ Start Server
+// ===== Start Server =====
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-
+server.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
