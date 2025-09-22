@@ -2,19 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat - My Website</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Chat Room</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: Arial; background:#f2f2f2; }
+    #users { float:left; width:20%; border-right:1px solid #ccc; }
+    #chat { float:left; width:75%; margin-left:5%; }
+    #messages { height:300px; overflow-y:scroll; background:white; padding:10px; border:1px solid #ccc; }
+    #input { margin-top:10px; }
+  </style>
 </head>
 <body>
-  <nav>
-    <a href="index.html">🏠 Home</a>
-    <a href="chat.html">💬 Chat</a>
-    <a href="games.html">🎮 Games</a>
-    <a href="videos.html">📺 Videos</a>
-    <a href="about.html">ℹ️ About</a>
-  </nav>
+  <h2>Chat Room</h2>
+  <div id="users"></div>
+  <div id="chat">
+    <div id="messages"></div>
+    <div id="input">
+      <input id="receiver" placeholder="Receiver username"/>
+      <input id="msg" placeholder="Type a message"/>
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
 
-  <h1>💬 Chat Room</h1>
-  <p>Yahan tum apna chat app connect karoge (jo tumne pehle banaya hai).</p>
+<script>
+  const socket = io();
+  let username = prompt("Enter your username:");
+  socket.emit("newUser", username);
+
+  socket.on("updateUsers", (users) => {
+    document.getElementById("users").innerHTML = "<b>Online:</b><br>" + users.join("<br>");
+  });
+
+  socket.on("chatHistory", (messages) => {
+    const msgDiv = document.getElementById("messages");
+    msgDiv.innerHTML = "";
+    messages.forEach(m => {
+      msgDiv.innerHTML += `<p><b>${m.sender}:</b> ${m.text}</p>`;
+    });
+  });
+
+  socket.on("privateMessage", (msg) => {
+    document.getElementById("messages").innerHTML += `<p><b>${msg.sender}:</b> ${msg.text}</p>`;
+  });
+
+  function sendMessage() {
+    const receiver = document.getElementById("receiver").value;
+    const text = document.getElementById("msg").value;
+    socket.emit("privateMessage", { sender: username, receiver, text });
+    document.getElementById("msg").value = "";
+  }
+</script>
 </body>
 </html>
