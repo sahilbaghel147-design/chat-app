@@ -2,234 +2,176 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Room</title>
   <style>
     body {
-      margin: 0; font-family: Arial, sans-serif;
-      display: flex; height: 100vh;
-      background: #2c3e50; color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
     }
-    #sidebar {
-      width: 25%; background: #34495e;
-      padding: 15px; border-right: 2px solid #2ecc71;
+    .sidebar {
+      width: 200px;
+      background: #222;
+      color: white;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+    .sidebar h3 {
+      margin-top: 0;
+    }
+    .users {
+      list-style: none;
+      padding: 0;
+    }
+    .users li {
+      padding: 8px;
+      background: #333;
+      margin: 5px 0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .users li:hover {
+      background: #444;
+    }
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #f4f4f4;
+    }
+    .chat-header {
+      padding: 10px;
+      background: #2a5298;
+      color: white;
+      font-size: 18px;
+    }
+    .chat-box {
+      flex: 1;
+      padding: 10px;
       overflow-y: auto;
+      background: #fff;
     }
-    #sidebar h3 { text-align: center; }
-    #users, #group {
-      list-style: none; padding: 0; margin-top: 10px;
+    .chat-box p {
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 6px;
     }
-    #users li, #group li {
-      padding: 8px; background: #2ecc71; margin: 5px 0;
-      border-radius: 5px; text-align: center; cursor: pointer;
+    .chat-box .me {
+      background: #4CAF50;
+      color: white;
+      text-align: right;
     }
-    #users li:hover, #group li:hover { background: #27ae60; }
-    #chat-box { flex: 1; display: flex; flex-direction: column; }
-    #header {
-      background: #2ecc71; padding: 10px; text-align: center;
-      font-size: 18px; font-weight: bold;
+    .chat-box .other {
+      background: #ddd;
+      text-align: left;
     }
-    #messages {
-      flex: 1; padding: 15px; overflow-y: auto;
-      background: #1a252f; display: flex; flex-direction: column;
+    .chat-input {
+      display: flex;
+      padding: 10px;
+      background: #eee;
     }
-    .msg {
-      margin: 5px 0; padding: 8px; border-radius: 6px;
-      max-width: 60%; word-wrap: break-word;
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      outline: none;
     }
-    .me { background: #3498db; align-self: flex-end; }
-    .other { background: #95a5a6; align-self: flex-start; }
-    .file-link { color: #f1c40f; text-decoration: underline; cursor: pointer; }
-    #input-area {
-      display: flex; padding: 10px; background: #34495e;
-      align-items: center; gap: 8px;
-    }
-    #input-area input[type="text"] {
-      flex: 1; padding: 10px; border: none; border-radius: 5px;
-    }
-    #input-area input[type="file"] { display: none; }
-    #input-area label, #micBtn {
-      background: #e67e22; padding: 10px; border-radius: 5px;
-      cursor: pointer; color: white; border: none;
-    }
-    #input-area button {
-      padding: 10px 20px; background: #2ecc71; border: none;
-      border-radius: 5px; cursor: pointer; color: white;
-    }
-
-    /* ✅ Mobile Responsive */
-    @media(max-width: 768px) {
-      body { flex-direction: column; }
-      #sidebar { width: 100%; height: 150px; display: flex; flex-direction: column; }
-      #chat-box { flex: 1; }
-      #messages { flex: 1; }
+    .chat-input button {
+      padding: 10px 15px;
+      margin-left: 8px;
+      border: none;
+      border-radius: 6px;
+      background: #2a5298;
+      color: white;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-
-  <div id="sidebar">
-    <h3>Group</h3>
-    <ul id="group">
-      <li onclick="selectGroup()">🌍 Global Chat</li>
-    </ul>
-    <h3>Private Users</h3>
-    <ul id="users"></ul>
+  <div class="sidebar">
+    <h3>Online Users</h3>
+    <ul id="userList" class="users"></ul>
   </div>
 
-  <div id="chat-box">
-    <div id="header">Chat Room</div>
-    <div id="messages"></div>
-    <div id="input-area">
+  <div class="chat-container">
+    <div class="chat-header">Chat Room</div>
+    <div id="chatBox" class="chat-box"></div>
+    <div class="chat-input">
       <input type="text" id="messageInput" placeholder="Type a message..." />
-      <input type="file" id="fileInput" />
-      <label for="fileInput">📎</label>
-      <button id="micBtn">🎤</button>
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    // ✅ Agar login nahi hai to redirect
+    const username = localStorage.getItem("username");
+    if (!username) {
+      window.location.href = "/login";
+    }
+
     const socket = io();
-    let username = localStorage.getItem("username");
-    if (!username) window.location.href = "/login";
-    else socket.emit("newUser", username);
+    const chatBox = document.getElementById("chatBox");
+    const userList = document.getElementById("userList");
+    let currentReceiver = null;
 
-    let currentChatUser = "GROUP"; // Default group chat
+    // ✅ New user join
+    socket.emit("newUser", username);
 
-    // ✅ Online users list
+    // ✅ Update online users
     socket.on("updateUsers", (users) => {
-      const list = document.getElementById("users");
-      list.innerHTML = "";
-      users.forEach(u => {
-        if (u !== username) {
+      userList.innerHTML = "";
+      users.forEach(user => {
+        if (user !== username) {
           const li = document.createElement("li");
-          li.innerText = u;
-          li.onclick = () => selectUser(u);
-          list.appendChild(li);
+          li.innerText = user;
+          li.onclick = () => selectUser(user);
+          userList.appendChild(li);
         }
       });
     });
 
-    // ✅ Group & Private Messages
-    socket.on("groupMessage", (data) => {
-      if (currentChatUser === "GROUP") showMessage(data, data.sender === username ? "me" : "other");
-    });
-
-    socket.on("privateMessage", (data) => {
-      if (data.sender === currentChatUser || data.sender === username) {
-        showMessage(data, data.sender === username ? "me" : "other");
-      }
-    });
-
-    // ✅ Load chat history
-    socket.on("chatHistory", (chats) => {
-      const msgBox = document.getElementById("messages");
-      msgBox.innerHTML = "";
-      chats.forEach(c => showMessage(c, c.sender === username ? "me" : "other"));
-    });
-
-    function selectGroup() {
-      currentChatUser = "GROUP";
-      document.getElementById("header").innerText = "🌍 Global Chat";
-      document.getElementById("messages").innerHTML = "<b>Welcome to Global Chat</b><br>";
-    }
-
+    // ✅ Select user to chat with
     function selectUser(user) {
-      currentChatUser = user;
-      document.getElementById("header").innerText = "Chat with " + user;
-      document.getElementById("messages").innerHTML = `<b>Chat with ${user}</b><br>`;
+      currentReceiver = user;
+      chatBox.innerHTML = `<p style="text-align:center;color:#888;">Chatting with ${user}</p>`;
       socket.emit("loadChat", { user1: username, user2: user });
     }
 
-    // ✅ Send Text & File
-    function sendMessage() {
-      const msg = document.getElementById("messageInput").value;
-      const file = document.getElementById("fileInput").files[0];
-
-      if (!msg && !file) return;
-
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const fileData = {
-            sender: username,
-            text: `📎 <a href="${reader.result}" target="_blank" class="file-link">${file.name}</a>`
-          };
-          if (currentChatUser === "GROUP") {
-            socket.emit("groupMessage", fileData);
-          } else {
-            socket.emit("privateMessage", { ...fileData, receiver: currentChatUser });
-          }
-          document.getElementById("fileInput").value = "";
-        };
-        reader.readAsDataURL(file);
-      }
-
-      if (msg) {
-        if (currentChatUser === "GROUP") {
-          socket.emit("groupMessage", { sender: username, text: msg });
-        } else {
-          socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text: msg });
-        }
-        document.getElementById("messageInput").value = "";
-      }
-    }
-
-    // ✅ Show message
-    function showMessage(data, cls) {
-      const div = document.createElement("div");
-      div.classList.add("msg", cls);
-
-      if (data.text.includes("<audio")) {
-        div.innerHTML = `${data.sender}: ${data.text}`;
-      } else {
-        div.innerHTML = `${data.sender}: ${data.text}`;
-      }
-
-      document.getElementById("messages").appendChild(div);
-      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    }
-
-    // 🎤 Voice Message Feature
-    let mediaRecorder;
-    let audioChunks = [];
-    const micBtn = document.getElementById("micBtn");
-
-    micBtn.addEventListener("click", async () => {
-      if (!mediaRecorder || mediaRecorder.state === "inactive") {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.start();
-          audioChunks = [];
-          micBtn.innerText = "⏹ Stop";
-
-          mediaRecorder.ondataavailable = (event) => {
-            audioChunks.push(event.data);
-          };
-
-          mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-            const audioURL = URL.createObjectURL(audioBlob);
-            const audioHTML = `<audio controls src="${audioURL}"></audio>`;
-
-            if (currentChatUser === "GROUP") {
-              socket.emit("groupMessage", { sender: username, text: audioHTML });
-            } else {
-              socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text: audioHTML });
-            }
-
-            micBtn.innerText = "🎤";
-          };
-        } catch (err) {
-          alert("Mic permission denied!");
-        }
-      } else {
-        mediaRecorder.stop();
-      }
+    // ✅ Load old chat
+    socket.on("chatHistory", (messages) => {
+      chatBox.innerHTML = "";
+      messages.forEach(msg => {
+        const p = document.createElement("p");
+        p.className = msg.sender === username ? "me" : "other";
+        p.innerText = msg.sender + ": " + msg.text;
+        chatBox.appendChild(p);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
     });
-  </script>
 
+    // ✅ Receive message
+    socket.on("privateMessage", ({ sender, text }) => {
+      const p = document.createElement("p");
+      p.className = sender === username ? "me" : "other";
+      p.innerText = sender + ": " + text;
+      chatBox.appendChild(p);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // ✅ Send message
+    function sendMessage() {
+      const input = document.getElementById("messageInput");
+      const text = input.value.trim();
+      if (!text || !currentReceiver) return;
+
+      socket.emit("privateMessage", { sender: username, receiver: currentReceiver, text });
+      input.value = "";
+    }
+  </script>
 </body>
 </html>
