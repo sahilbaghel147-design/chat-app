@@ -37,7 +37,7 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// ✅ Signup Route
+// ✅ Signup API
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -54,7 +54,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// ✅ Login Route
+// ✅ Login API
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -75,10 +75,15 @@ app.get("/", (req, res) => {
   res.redirect("/login");
 });
 
-// ✅ Page Routes
+// ✅ Pages Routes
 app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
+
+app.get("/signup", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "signup.html")); // 👈 Fix Added
+});
+
 app.get("/chat", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "chat.html"));
 });
@@ -92,7 +97,7 @@ app.get("/about", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "about.html"));
 });
 
-// ✅ Static middleware sabse last me
+// ✅ Static middleware
 app.use(express.static("public"));
 
 // ✅ Online Users
