@@ -7,96 +7,109 @@
   <link rel="stylesheet" href="style.css">
   <style>
     body {
-      font-family: Arial, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       background: #1e1e2f;
+      color: white;
+      font-family: Arial, sans-serif;
       margin: 0;
     }
-    .login-box {
-      background: #2c2f48;
-      padding: 30px;
+    .login-container {
+      background: #2c2c3e;
+      padding: 25px;
       border-radius: 10px;
-      box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      width: 320px;
       text-align: center;
-      width: 300px;
-      color: white;
     }
-    .login-box h2 {
+    h2 {
       margin-bottom: 20px;
+      color: #4cafef;
     }
-    .login-box input {
+    input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin: 10px 0;
       border: none;
       border-radius: 5px;
+      outline: none;
     }
-    .login-box button {
+    button {
       width: 100%;
-      padding: 10px;
-      background: #4CAF50;
+      padding: 12px;
+      background: #4cafef;
       border: none;
-      border-radius: 5px;
       color: white;
       font-size: 16px;
       cursor: pointer;
+      border-radius: 5px;
+      transition: 0.3s;
     }
-    .login-box button:hover {
-      background: #45a049;
+    button:hover {
+      background: #3a9bdc;
     }
-    .error {
-      color: #ff4d4d;
-      margin-top: 10px;
-    }
-    .link {
+    .signup-link {
       margin-top: 15px;
       display: block;
       color: #ccc;
     }
-    .link:hover {
+    .signup-link:hover {
       color: #fff;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <div class="login-box">
+  <div class="login-container">
     <h2>Login</h2>
-    <input type="text" id="username" placeholder="Enter Username">
-    <input type="password" id="password" placeholder="Enter Password">
+    <input type="text" id="username" placeholder="Enter Username" required>
+    <input type="password" id="password" placeholder="Enter Password" required>
     <button onclick="login()">Login</button>
-    <p id="error" class="error"></p>
-    <a href="/signup.html" class="link">Don't have an account? Signup</a>
+    <div id="message"></div>
+    <a class="signup-link" href="/signup">Don't have an account? Signup</a>
   </div>
 
   <script>
     async function login() {
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const messageDiv = document.getElementById("message");
 
       if (!username || !password) {
-        document.getElementById("error").innerText = "All fields are required!";
+        messageDiv.style.color = "red";
+        messageDiv.textContent = "Please enter username and password";
         return;
       }
 
-      const res = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
+      try {
+        const res = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
 
-      const data = await res.json();
-
-      if (data.success) {
-        localStorage.setItem("username", username);
-        window.location.href = "/chat.html"; // ✅ Redirect to chat page
-      } else {
-        document.getElementById("error").innerText = data.message;
+        const data = await res.json();
+        if (data.success) {
+          messageDiv.style.color = "lightgreen";
+          messageDiv.textContent = "Login successful! Redirecting...";
+          localStorage.setItem("username", data.username); // ✅ Save username for chat
+          setTimeout(() => {
+            window.location.href = "/chat";
+          }, 1000);
+        } else {
+          messageDiv.style.color = "red";
+          messageDiv.textContent = data.message;
+        }
+      } catch (err) {
+        messageDiv.style.color = "red";
+        messageDiv.textContent = "Error connecting to server";
       }
     }
   </script>
 </body>
 </html>
-``
