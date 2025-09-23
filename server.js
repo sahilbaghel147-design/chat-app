@@ -71,9 +71,24 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Routes for Pages
+// ✅ Middleware: protect routes (frontend will use localStorage)
+function requireLogin(req, res, next) {
+  // सिर्फ login.html और signup.html को free access दो
+  if (req.path === "/login" || req.path === "/signup") {
+    return next();
+  }
+  // बाकी सब pages के लिए check frontend करेगा (localStorage)
+  next();
+}
+
+app.use(requireLogin);
+
+// ✅ Page Routes
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
+  res.redirect("/login"); // 👈 Default page = login
+});
+app.get("/client", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "client.html"));
 });
 app.get("/chat", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "chat.html"));
@@ -110,12 +125,14 @@ io.on("connection", (socket) => {
         { sender: user2, receiver: user1 }
       ]
     }).sort({ timestamp: 1 });
+
     socket.emit("chatHistory", chats);
   });
 
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
+
     socket.emit("privateMessage", { sender, text });
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
