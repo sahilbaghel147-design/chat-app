@@ -3,165 +3,183 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
+  <title>Chat Room</title>
   <link rel="stylesheet" href="style.css">
-  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #1e1e2f;
+      color: white;
+      height: 100vh;
+      display: flex;
+    }
+    .sidebar {
+      width: 250px;
+      background: #111827;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .sidebar h3 {
+      margin-top: 0;
+    }
+    .sidebar button {
+      margin-top: 20px;
+      padding: 10px;
+      background: red;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .sidebar button:hover {
+      background: darkred;
+    }
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #2c2c3e;
+    }
+    .chat-header {
+      padding: 15px;
+      background: #111827;
+      text-align: center;
+      font-size: 18px;
+      border-bottom: 1px solid #333;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .chat-input {
+      display: flex;
+      padding: 10px;
+      background: #111827;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+    }
+    .chat-input button {
+      margin-left: 10px;
+      padding: 12px 20px;
+      background: #4cafef;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+    .chat-input button:hover {
+      background: #3a9bdc;
+    }
+    .user-list {
+      margin-top: 20px;
+    }
+    .user-list div {
+      padding: 8px;
+      background: #2c2c3e;
+      margin-bottom: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .user-list div:hover {
+      background: #3a3a4f;
+    }
+  </style>
 </head>
 <body>
-  <!-- 🔹 Navbar -->
-  <nav class="navbar">
-    <a href="/chat">💬 Chat</a>
-    <a href="/games">🎮 Games</a>
-    <a href="/videos">📹 Videos</a>
-    <a href="/about">ℹ️ About</a>
+  <div class="sidebar">
+    <h3>Online Users</h3>
+    <div id="users" class="user-list"></div>
     <button onclick="logout()">Logout</button>
-  </nav>
+  </div>
 
   <div class="chat-container">
-    <div class="users-list">
-      <h3>Online Users</h3>
-      <ul id="onlineUsers"></ul>
-    </div>
-
-    <div class="chat-box">
-      <h3 id="chatHeader">Select a user to chat</h3>
-      <div id="messages"></div>
-      <div class="chat-input">
-        <input type="text" id="messageInput" placeholder="Type a message...">
-        <button onclick="sendMessage()">Send</button>
-      </div>
+    <div class="chat-header">Select a user to chat</div>
+    <div id="messages" class="chat-messages"></div>
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Type your message...">
+      <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
+    // ✅ Check login
     const username = localStorage.getItem("username");
-
     if (!username) {
       window.location.href = "/login";
     }
 
+    const socket = io();
+    let selectedUser = null;
+
+    // Notify server about new user
     socket.emit("newUser", username);
 
+    // Update online users
     socket.on("updateUsers", (users) => {
-      const list = document.getElementById("onlineUsers");
-      list.innerHTML = "";
-      users.forEach(user => {
+      const usersDiv = document.getElementById("users");
+      usersDiv.innerHTML = "";
+      users.forEach((user) => {
         if (user !== username) {
-          const li = document.createElement("li");
-          li.textContent = user;
-          li.onclick = () => startChat(user);
-          list.appendChild(li);
+          const div = document.createElement("div");
+          div.textContent = user;
+          div.onclick = () => selectUser(user);
+          usersDiv.appendChild(div);
         }
       });
     });
 
-    let currentChatUser = null;
+    function selectUser(user) {
+      selectedUser = user;
+      document.querySelector(".chat-header").textContent = "Chat with " + user;
+      document.getElementById("messages").innerHTML = "";
 
-    function startChat(user) {
-      currentChatUser = user;
-      document.getElementById("chatHeader").textContent = `Chat with ${user}`;
       socket.emit("loadChat", { user1: username, user2: user });
     }
 
+    // Load old chat
     socket.on("chatHistory", (chats) => {
       const messagesDiv = document.getElementById("messages");
       messagesDiv.innerHTML = "";
-      chats.forEach(chat => {
-        const p = document.createElement("p");
-        p.textContent = `${chat.sender}: ${chat.text}`;
-        messagesDiv.appendChild(p);
+      chats.forEach((chat) => {
+        const div = document.createElement("div");
+        div.textContent = `${chat.sender}: ${chat.text}`;
+        messagesDiv.appendChild(div);
       });
+    });
+
+    // Receive new message
+    socket.on("privateMessage", ({ sender, text }) => {
+      const messagesDiv = document.getElementById("messages");
+      const div = document.createElement("div");
+      div.textContent = `${sender}: ${text}`;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
     function sendMessage() {
       const input = document.getElementById("messageInput");
-      if (input.value && currentChatUser) {
-        socket.emit("privateMessage", {
-          sender: username,
-          receiver: currentChatUser,
-          text: input.value
-        });
+      const text = input.value.trim();
+      if (text && selectedUser) {
+        socket.emit("privateMessage", { sender: username, receiver: selectedUser, text });
         input.value = "";
       }
     }
-
-    socket.on("privateMessage", (msg) => {
-      const messagesDiv = document.getElementById("messages");
-      const p = document.createElement("p");
-      p.textContent = `${msg.sender}: ${msg.text}`;
-      messagesDiv.appendChild(p);
-    });
 
     function logout() {
       localStorage.removeItem("username");
       window.location.href = "/login";
     }
   </script>
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-    .navbar {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      background: #0f172a;
-      padding: 10px;
-    }
-    .navbar a {
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    .navbar button {
-      background: red;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .chat-container {
-      display: flex;
-      height: calc(100vh - 50px);
-    }
-    .users-list {
-      width: 200px;
-      background: #1e293b;
-      color: white;
-      padding: 10px;
-    }
-    .chat-box {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: #334155;
-      color: white;
-      padding: 10px;
-    }
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      background: #475569;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-    .chat-input {
-      display: flex;
-    }
-    .chat-input input {
-      flex: 1;
-      padding: 8px;
-    }
-    .chat-input button {
-      padding: 8px 12px;
-      background: #2563eb;
-      color: white;
-      border: none;
-    }
-  </style>
 </body>
 </html>
