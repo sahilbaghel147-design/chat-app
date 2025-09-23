@@ -7,190 +7,173 @@
   <link rel="stylesheet" href="style.css">
   <style>
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      display: flex;
-      height: 100vh;
-      background: #2c3e50;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #1e293b;
       color: #fff;
     }
-    .sidebar {
-      width: 25%;
-      background: #1a252f;
-      padding: 15px;
-      overflow-y: auto;
-    }
-    .sidebar h3 {
-      text-align: center;
-      margin-bottom: 10px;
+    .chat-container {
+      display: flex;
+      height: 100vh;
     }
     .users {
-      list-style: none;
-      padding: 0;
-    }
-    .users li {
-      padding: 10px;
-      background: #34495e;
-      margin: 5px 0;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .chat-section {
-      flex: 1;
+      width: 200px;
+      background: #0f172a;
+      padding: 20px;
       display: flex;
       flex-direction: column;
     }
+    .users h3 {
+      margin-top: 0;
+    }
+    .chat-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #334155;
+    }
     .chat-header {
-      background: #1a252f;
+      background: #0f172a;
       padding: 10px;
       text-align: center;
-      font-size: 18px;
       font-weight: bold;
     }
     .messages {
       flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      background: #2c3e50;
+      padding: 10px;
+      overflow-y: auto; /* सिर्फ messages scroll हों */
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start; /* 👈 top से start होगा */
     }
     .message {
       margin: 5px 0;
       padding: 8px;
       border-radius: 5px;
       max-width: 70%;
-      word-wrap: break-word;
     }
-    .message.sent {
-      background: #27ae60;
+    .me {
       align-self: flex-end;
+      background: #2563eb;
     }
-    .message.received {
-      background: #2980b9;
+    .other {
       align-self: flex-start;
+      background: #475569;
     }
-    .chat-input {
+    .input-box {
       display: flex;
       padding: 10px;
-      background: #1a252f;
+      background: #0f172a;
     }
-    .chat-input input {
+    .input-box input {
       flex: 1;
       padding: 10px;
       border: none;
       border-radius: 5px;
     }
-    .chat-input button {
+    .input-box button {
       margin-left: 10px;
-      padding: 10px 15px;
+      padding: 10px;
       border: none;
-      background: #27ae60;
+      background: #2563eb;
       color: white;
       border-radius: 5px;
       cursor: pointer;
     }
     .logout-btn {
-      margin-top: 15px;
-      width: 100%;
+      margin-top: 20px;
       padding: 10px;
-      background: #e74c3c;
+      background: red;
+      color: white;
       border: none;
       border-radius: 5px;
-      color: white;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <h3>Online Users</h3>
-    <ul class="users" id="usersList"></ul>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
-
-  <div class="chat-section">
-    <div class="chat-header" id="chatWith">Select a user to chat</div>
-    <div class="messages" id="messages"></div>
-    <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="Type your message..." />
-      <button onclick="sendMessage()">Send</button>
+  <div class="chat-container">
+    <div class="users">
+      <h3>Online Users</h3>
+      <ul id="userList"></ul>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+    <div class="chat-box">
+      <div class="chat-header" id="chatHeader">Select a user to chat</div>
+      <div class="messages" id="messages"></div>
+      <div class="input-box">
+        <input type="text" id="messageInput" placeholder="Type your message...">
+        <button onclick="sendMessage()">Send</button>
+      </div>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    const socket = io();
     const username = localStorage.getItem("username");
 
-    // ✅ Agar login nhi hai to login page par bhej do
     if (!username) {
       window.location.href = "/login";
     }
 
-    const socket = io();
-    let currentChatUser = null;
-
-    // ✅ New user connect
     socket.emit("newUser", username);
 
-    // ✅ Show online users
+    const userList = document.getElementById("userList");
+    const messagesDiv = document.getElementById("messages");
+    const chatHeader = document.getElementById("chatHeader");
+    let currentChatUser = null;
+
     socket.on("updateUsers", (users) => {
-      const usersList = document.getElementById("usersList");
-      usersList.innerHTML = "";
-      users.forEach((user) => {
+      userList.innerHTML = "";
+      users.forEach(user => {
         if (user !== username) {
           const li = document.createElement("li");
-          li.textContent = user;
-          li.onclick = () => selectUser(user);
-          usersList.appendChild(li);
+          li.innerText = user;
+          li.style.cursor = "pointer";
+          li.onclick = () => {
+            currentChatUser = user;
+            chatHeader.innerText = "Chat with " + user;
+            messagesDiv.innerHTML = "";
+            socket.emit("loadChat", { user1: username, user2: user });
+          };
+          userList.appendChild(li);
         }
       });
     });
 
-    // ✅ Select user to chat
-    function selectUser(user) {
-      currentChatUser = user;
-      document.getElementById("chatWith").textContent = "Chat with " + user;
-      document.getElementById("messages").innerHTML = "";
-      socket.emit("loadChat", { user1: username, user2: user });
-    }
-
-    // ✅ Load old chat
     socket.on("chatHistory", (chats) => {
-      const messagesDiv = document.getElementById("messages");
       messagesDiv.innerHTML = "";
-      chats.forEach((msg) => {
-        addMessage(msg.sender === username ? "sent" : "received", msg.text);
+      chats.forEach(chat => {
+        const msg = document.createElement("div");
+        msg.classList.add("message");
+        msg.classList.add(chat.sender === username ? "me" : "other");
+        msg.innerText = `${chat.sender}: ${chat.text}`;
+        messagesDiv.appendChild(msg);
       });
     });
 
-    // ✅ Receive message
     socket.on("privateMessage", ({ sender, text }) => {
       if (sender === currentChatUser || sender === username) {
-        addMessage(sender === username ? "sent" : "received", text);
+        const msg = document.createElement("div");
+        msg.classList.add("message");
+        msg.classList.add(sender === username ? "me" : "other");
+        msg.innerText = `${sender}: ${text}`;
+        messagesDiv.appendChild(msg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
       }
     });
 
-    // ✅ Send message
     function sendMessage() {
       const input = document.getElementById("messageInput");
       const text = input.value.trim();
       if (text && currentChatUser) {
         socket.emit("privateMessage", { sender: username, receiver: currentChatUser, text });
-        addMessage("sent", text);
         input.value = "";
       }
     }
 
-    // ✅ Add message to chat
-    function addMessage(type, text) {
-      const messagesDiv = document.getElementById("messages");
-      const div = document.createElement("div");
-      div.className = "message " + type;
-      div.textContent = text;
-      messagesDiv.appendChild(div);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    // ✅ Logout
     function logout() {
       localStorage.removeItem("username");
       window.location.href = "/login";
