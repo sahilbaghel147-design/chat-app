@@ -2,63 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Room</title>
+  <link rel="stylesheet" href="style.css">
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #1e1e2f;
-      color: white;
+      color: #fff;
       height: 100vh;
       display: flex;
     }
 
     /* Sidebar */
     .sidebar {
-      width: 250px;
-      background: #111827;
+      width: 230px;
+      background: linear-gradient(180deg, #111827, #0f172a);
       padding: 20px;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
+      justify-content: space-between;
+      box-shadow: 2px 0 15px rgba(0,0,0,0.4);
     }
     .sidebar h3 {
-      margin-top: 0;
+      margin: 0 0 15px;
+      font-size: 18px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 8px;
     }
     .nav-links {
-      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
     .nav-links a {
-      display: block;
-      padding: 10px;
-      margin-bottom: 8px;
-      background: #2c2c3e;
-      border-radius: 5px;
       text-decoration: none;
-      color: white;
-      text-align: center;
+      color: #ddd;
+      background: #2c2c3e;
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       font-size: 15px;
-      transition: background 0.3s;
+      transition: 0.3s;
     }
     .nav-links a:hover {
-      background: #3a3a4f;
+      background: #3b3b50;
+      color: #0ff;
+      box-shadow: 0 0 10px rgba(0,255,255,0.4);
     }
-    .sidebar button {
-      margin-top: auto;
-      padding: 10px;
-      background: red;
+    .nav-links a.active {
+      background: #0ff;
+      color: black;
+      font-weight: bold;
+    }
+    .user-list {
+      margin-top: 20px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .user-list div {
+      padding: 8px 10px;
+      background: #2c2c3e;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .user-list div:hover {
+      background: #3a3a50;
+      color: #0ff;
+    }
+    .logout-btn {
+      margin-top: 15px;
+      padding: 12px;
+      background: #ff4444;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       color: white;
       cursor: pointer;
       font-size: 15px;
+      transition: 0.3s;
     }
-    .sidebar button:hover {
-      background: darkred;
+    .logout-btn:hover {
+      background: #cc0000;
+      box-shadow: 0 0 10px red;
     }
 
-    /* Chat container */
+    /* Chat Container */
     .chat-container {
       flex: 1;
       display: flex;
@@ -70,72 +102,95 @@
       background: #111827;
       text-align: center;
       font-size: 18px;
+      font-weight: bold;
       border-bottom: 1px solid #333;
     }
     .chat-messages {
       flex: 1;
       padding: 20px;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
+
+    /* Chat Bubbles */
+    .message {
+      max-width: 70%;
+      padding: 10px 15px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+      position: relative;
+      word-wrap: break-word;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      animation: fadeIn 0.3s ease;
+    }
+    .message.you {
+      align-self: flex-end;
+      background: #0ff;
+      color: black;
+      border-bottom-right-radius: 4px;
+    }
+    .message.other {
+      align-self: flex-start;
+      background: #3b3b50;
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .chat-input {
       display: flex;
-      padding: 10px;
+      padding: 12px;
       background: #111827;
+      border-top: 1px solid #333;
     }
     .chat-input input {
       flex: 1;
       padding: 12px;
       border: none;
-      border-radius: 5px;
+      border-radius: 6px;
       outline: none;
+      font-size: 14px;
     }
     .chat-input button {
       margin-left: 10px;
       padding: 12px 20px;
-      background: #4cafef;
+      background: #0ff;
       border: none;
-      border-radius: 5px;
-      color: white;
+      border-radius: 6px;
+      color: black;
+      font-weight: bold;
       cursor: pointer;
+      transition: 0.2s;
     }
     .chat-input button:hover {
-      background: #3a9bdc;
-    }
-
-    /* Online users */
-    .user-list {
-      margin-top: 20px;
-    }
-    .user-list div {
-      padding: 8px;
-      background: #2c2c3e;
-      margin-bottom: 5px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .user-list div:hover {
-      background: #3a3a4f;
+      background: #08d;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <!-- Sidebar with Navigation -->
   <div class="sidebar">
-    <h3>Navigation</h3>
-    <div class="nav-links">
-      <a href="/chat">💬 Chat</a>
-      <a href="/games">🎮 Games</a>
-      <a href="/videos">📹 Videos</a>
-      <a href="/about">ℹ️ About</a>
+    <div>
+      <h3>Navigation</h3>
+      <div class="nav-links">
+        <a href="/chat" class="active">💬 Chat</a>
+        <a href="/games">🎮 Games</a>
+        <a href="/videos">📹 Videos</a>
+        <a href="/about">ℹ️ About</a>
+      </div>
+      <h3>Online Users</h3>
+      <div id="users" class="user-list"></div>
     </div>
-
-    <h3>Online Users</h3>
-    <div id="users" class="user-list"></div>
-
-    <button onclick="logout()">Logout</button>
+    <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
-  <!-- Chat Section -->
   <div class="chat-container">
     <div class="chat-header">Select a user to chat</div>
     <div id="messages" class="chat-messages"></div>
@@ -145,22 +200,16 @@
     </div>
   </div>
 
-  <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // ✅ Check login
     const username = localStorage.getItem("username");
-    if (!username) {
-      window.location.href = "/login";
-    }
+    if (!username) window.location.href = "/login";
 
     const socket = io();
     let selectedUser = null;
 
-    // Notify server
     socket.emit("newUser", username);
 
-    // Update online users
     socket.on("updateUsers", (users) => {
       const usersDiv = document.getElementById("users");
       usersDiv.innerHTML = "";
@@ -181,25 +230,27 @@
       socket.emit("loadChat", { user1: username, user2: user });
     }
 
-    // Load old chat
     socket.on("chatHistory", (chats) => {
       const messagesDiv = document.getElementById("messages");
       messagesDiv.innerHTML = "";
       chats.forEach((chat) => {
-        const div = document.createElement("div");
-        div.textContent = `${chat.sender}: ${chat.text}`;
-        messagesDiv.appendChild(div);
+        addMessage(chat.sender, chat.text);
       });
     });
 
-    // New message
     socket.on("privateMessage", ({ sender, text }) => {
+      addMessage(sender, text);
+    });
+
+    function addMessage(sender, text) {
       const messagesDiv = document.getElementById("messages");
       const div = document.createElement("div");
+      div.classList.add("message");
+      div.classList.add(sender === username ? "you" : "other");
       div.textContent = `${sender}: ${text}`;
       messagesDiv.appendChild(div);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
+    }
 
     function sendMessage() {
       const input = document.getElementById("messageInput");
