@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Room</title>
-  <link rel="stylesheet" href="style.css">
   <style>
     body {
       margin: 0;
@@ -14,6 +13,8 @@
       height: 100vh;
       display: flex;
     }
+
+    /* Sidebar */
     .sidebar {
       width: 250px;
       background: #111827;
@@ -25,8 +26,26 @@
     .sidebar h3 {
       margin-top: 0;
     }
-    .sidebar button {
+    .nav-links {
       margin-top: 20px;
+    }
+    .nav-links a {
+      display: block;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #2c2c3e;
+      border-radius: 5px;
+      text-decoration: none;
+      color: white;
+      text-align: center;
+      font-size: 15px;
+      transition: background 0.3s;
+    }
+    .nav-links a:hover {
+      background: #3a3a4f;
+    }
+    .sidebar button {
+      margin-top: auto;
       padding: 10px;
       background: red;
       border: none;
@@ -38,6 +57,8 @@
     .sidebar button:hover {
       background: darkred;
     }
+
+    /* Chat container */
     .chat-container {
       flex: 1;
       display: flex;
@@ -80,6 +101,8 @@
     .chat-input button:hover {
       background: #3a9bdc;
     }
+
+    /* Online users */
     .user-list {
       margin-top: 20px;
     }
@@ -96,12 +119,23 @@
   </style>
 </head>
 <body>
+  <!-- Sidebar with Navigation -->
   <div class="sidebar">
+    <h3>Navigation</h3>
+    <div class="nav-links">
+      <a href="/chat">💬 Chat</a>
+      <a href="/games">🎮 Games</a>
+      <a href="/videos">📹 Videos</a>
+      <a href="/about">ℹ️ About</a>
+    </div>
+
     <h3>Online Users</h3>
     <div id="users" class="user-list"></div>
+
     <button onclick="logout()">Logout</button>
   </div>
 
+  <!-- Chat Section -->
   <div class="chat-container">
     <div class="chat-header">Select a user to chat</div>
     <div id="messages" class="chat-messages"></div>
@@ -111,6 +145,7 @@
     </div>
   </div>
 
+  <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
     // ✅ Check login
@@ -122,7 +157,7 @@
     const socket = io();
     let selectedUser = null;
 
-    // Notify server about new user
+    // Notify server
     socket.emit("newUser", username);
 
     // Update online users
@@ -143,7 +178,6 @@
       selectedUser = user;
       document.querySelector(".chat-header").textContent = "Chat with " + user;
       document.getElementById("messages").innerHTML = "";
-
       socket.emit("loadChat", { user1: username, user2: user });
     }
 
@@ -158,7 +192,7 @@
       });
     });
 
-    // Receive new message
+    // New message
     socket.on("privateMessage", ({ sender, text }) => {
       const messagesDiv = document.getElementById("messages");
       const div = document.createElement("div");
