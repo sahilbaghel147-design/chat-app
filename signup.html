@@ -3,115 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Signup - Chat App</title>
+  <title>Signup</title>
   <link rel="stylesheet" href="style.css">
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #1e293b;
+      color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
-      background: #34495e;
     }
-    .signup-container {
-      background: #fff;
-      padding: 30px;
+    .container {
+      background: #0f172a;
+      padding: 20px;
       border-radius: 10px;
-      box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
-      width: 300px;
+      width: 90%;
+      max-width: 400px;
       text-align: center;
     }
-    .signup-container h2 {
-      margin-bottom: 20px;
-      color: #333;
-    }
-    .signup-container input {
+    input {
       width: 100%;
       padding: 10px;
       margin: 10px 0;
+      border: none;
       border-radius: 5px;
-      border: 1px solid #ccc;
     }
-    .signup-container button {
+    button {
       width: 100%;
       padding: 10px;
-      background: #27ae60;
+      background: #2563eb;
       color: white;
       border: none;
       border-radius: 5px;
-      font-size: 16px;
       cursor: pointer;
     }
-    .signup-container button:hover {
-      background: #219150;
+    button:hover {
+      background: #1d4ed8;
     }
-    .login-link {
-      margin-top: 15px;
-      font-size: 14px;
-    }
-    .error {
-      color: red;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-    .success {
-      color: green;
-      font-size: 14px;
-      margin-top: 10px;
+    a {
+      color: #38bdf8;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <div class="signup-container">
-    <h2>Signup</h2>
-    <input type="text" id="username" placeholder="Choose Username" required>
-    <input type="password" id="password" placeholder="Choose Password" required>
+  <div class="container">
+    <h2>Create Account</h2>
+    <input type="text" id="username" placeholder="Enter Username">
+    <input type="password" id="password" placeholder="Enter Password">
     <button onclick="signup()">Signup</button>
-    <p class="login-link">Already have an account? <a href="/login">Login here</a></p>
-    <p id="message" class="error"></p>
+    <p>Already have an account? <a href="/login">Login</a></p>
+    <p id="message"></p>
   </div>
 
   <script>
     async function signup() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const message = document.getElementById("message");
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
 
-      if (!username || !password) {
-        message.textContent = "Please fill all fields!";
-        message.className = "error";
-        return;
+      const res = await fetch("/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      document.getElementById("message").innerText = data.message;
+
+      if (data.success) {
+        localStorage.setItem("username", username);
+        window.location.href = "/chat";
       }
-
-      try {
-        const res = await fetch("/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          message.textContent = "Signup successful! Redirecting...";
-          message.className = "success";
-          setTimeout(() => {
-            window.location.href = "/login"; // ✅ redirect to login
-          }, 1500);
-        } else {
-          message.textContent = data.message;
-          message.className = "error";
-        }
-      } catch (err) {
-        message.textContent = "Server error. Try again.";
-        message.className = "error";
-      }
-    }
-
-    // ✅ Agar already login hai toh direct chat page pe bhejo
-    if (localStorage.getItem("username")) {
-      window.location.href = "/chat";
     }
   </script>
 </body>
