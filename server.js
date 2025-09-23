@@ -13,7 +13,6 @@ const io = socketIO(server);
 
 app.use(bodyParser.json());
 app.use(cors());
-app.use(express.static("public"));
 
 // ✅ MongoDB Atlas connection
 mongoose.connect(
@@ -71,24 +70,14 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Middleware: protect routes (frontend will use localStorage)
-function requireLogin(req, res, next) {
-  // सिर्फ login.html और signup.html को free access दो
-  if (req.path === "/login" || req.path === "/signup") {
-    return next();
-  }
-  // बाकी सब pages के लिए check frontend करेगा (localStorage)
-  next();
-}
-
-app.use(requireLogin);
+// ✅ Default page → Login
+app.get("/", (req, res) => {
+  res.redirect("/login");
+});
 
 // ✅ Page Routes
-app.get("/", (req, res) => {
-  res.redirect("/login"); // 👈 Default page = login
-});
-app.get("/client", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "client.html"));
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 app.get("/chat", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "chat.html"));
@@ -102,9 +91,9 @@ app.get("/videos", (req, res) => {
 app.get("/about", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "about.html"));
 });
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
+
+// ✅ Static middleware sabse last me
+app.use(express.static("public"));
 
 // ✅ Online Users
 let onlineUsers = {};
@@ -125,14 +114,12 @@ io.on("connection", (socket) => {
         { sender: user2, receiver: user1 }
       ]
     }).sort({ timestamp: 1 });
-
     socket.emit("chatHistory", chats);
   });
 
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     const newMessage = new Message({ sender, receiver, text });
     await newMessage.save();
-
     socket.emit("privateMessage", { sender, text });
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
