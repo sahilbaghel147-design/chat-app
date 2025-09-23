@@ -2,210 +2,253 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Car Game</title>
+  <title>Highway Car Game</title>
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #1e1e2f;
-      color: white;
-      min-height: 100vh;
+      background: linear-gradient(#111, #000);
       display: flex;
       flex-direction: column;
       align-items: center;
+      font-family: "Orbitron", sans-serif;
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
     }
-
-    /* Navbar */
-    .navbar {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      background: #111827;
-      padding: 12px;
-      border-bottom: 1px solid #333;
-    }
-    .navbar a {
-      color: white;
-      text-decoration: none;
-      margin: 0 15px;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      transition: color 0.3s;
-    }
-    .navbar a:hover {
-      color: #4cafef;
-    }
-    .navbar button {
-      margin-left: auto;
-      padding: 8px 16px;
-      background: red;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .navbar button:hover {
-      background: darkred;
-    }
-
-    /* Game Container */
-    .game-wrapper {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      padding: 20px;
+    h2 {
+      margin: 10px;
+      text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
     }
     canvas {
-      background: #333;
+      background: #222;
       border-radius: 15px;
-      box-shadow: 0 0 25px rgba(0,0,0,0.6);
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
     }
-
-    /* Controls */
     #controls {
-      margin: 20px 0;
+      margin-top: 15px;
       display: flex;
       justify-content: center;
-      gap: 50px;
+      gap: 40px;
     }
     #controls button {
       width: 70px;
       height: 70px;
       border-radius: 50%;
-      font-size: 24px;
-      background: #4cafef;
+      font-size: 26px;
+      background: #0ff;
+      color: black;
       border: none;
-      color: white;
       cursor: pointer;
       transition: transform 0.2s, background 0.2s;
+      box-shadow: 0 0 10px #0ff;
     }
-    #controls button:hover {
-      background: #3a9bdc;
+    #controls button:active {
+      background: #08d;
       transform: scale(1.1);
+    }
+    #restart {
+      display: none;
+      margin-top: 15px;
+      padding: 12px 25px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #ff4444;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 0 15px red;
     }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <div class="navbar">
-    <a href="/chat">💬 Chat</a>
-    <a href="/games">🎮 Games</a>
-    <a href="/videos">📹 Videos</a>
-    <a href="/about">ℹ️ About</a>
-    <button onclick="logout()">Logout</button>
-  </div>
-
-  <!-- Game Area -->
-  <div class="game-wrapper">
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
-  </div>
-
-  <!-- Controls -->
+  <h2>🚦 Highway Car Challenge</h2>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
   <div id="controls">
     <button id="left">⟵</button>
+    <button id="horn">📢</button>
     <button id="right">⟶</button>
   </div>
+  <button id="restart">Restart</button>
 
 <script>
-function logout() {
-  localStorage.removeItem("username");
-  window.location.href = "/login";
-}
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Images
 const carImg = new Image();
 carImg.src = "https://i.ibb.co/4ZpPbDZw/10380615.png";
 const enemyImg = new Image();
 enemyImg.src = "https://i.ibb.co/8gMFNKCv/10386122.png";
 
-let car = { x: 160, y: 500, width: 60, height: 100, speed: 5 };
+// Sounds (tested working links)
+const hornSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_dcf6f14518.mp3?filename=car-horn-6408.mp3");
+hornSound.volume = 1;
+
+const crashSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c2b4ac95f7.mp3?filename=car-crash-7069.mp3");
+crashSound.volume = 0.7;
+
+// Player Car
+let car = { x: 170, y: 480, width: 60, height: 100, speed: 6, dx: 0 };
+
+// Enemies
 let enemies = [];
 let score = 0;
 let gameOver = false;
+let enemySpeed = 3;
 
+// Road animation
+let roadOffset = 0;
+
+// Draw road
 function drawRoad() {
-  ctx.fillStyle = "#555";
+  ctx.fillStyle = "#444";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  ctx.fillStyle = "#111"; // grass
+  ctx.fillRect(0, 0, 40, canvas.height);
+  ctx.fillRect(canvas.width - 40, 0, 40, canvas.height);
+
   ctx.strokeStyle = "white";
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 4;
   ctx.setLineDash([20, 20]);
+  ctx.lineDashOffset = roadOffset;
+
+  ctx.beginPath();
+  ctx.moveTo(60, 0);
+  ctx.lineTo(60, canvas.height);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(canvas.width - 60, 0);
+  ctx.lineTo(canvas.width - 60, canvas.height);
+  ctx.stroke();
+
   ctx.beginPath();
   ctx.moveTo(canvas.width / 2, 0);
   ctx.lineTo(canvas.width / 2, canvas.height);
   ctx.stroke();
 }
 
+// Draw car
 function drawCar() {
   ctx.drawImage(carImg, car.x, car.y, car.width, car.height);
 }
 
+// Draw enemies
 function drawEnemies() {
-  enemies.forEach(e => {
+  enemies.forEach((e, i) => {
     ctx.drawImage(enemyImg, e.x, e.y, e.width, e.height);
-    e.y += 3;
+    e.y += enemySpeed;
 
-    // Collision check
     if (
-      car.x < e.x + e.width - 10 &&
-      car.x + car.width > e.x + 10 &&
-      car.y < e.y + e.height - 10 &&
-      car.y + car.height > e.y + 10
+      car.x < e.x + e.width - 15 &&
+      car.x + car.width > e.x + 15 &&
+      car.y < e.y + e.height - 15 &&
+      car.y + car.height > e.y + 15
     ) {
       gameOver = true;
+      crashSound.play();
     }
 
     if (e.y > canvas.height) {
-      enemies.splice(enemies.indexOf(e), 1);
+      enemies.splice(i, 1);
       score++;
+      if (score % 5 === 0) enemySpeed += 0.5;
     }
   });
 }
 
+// Update car
+function updateCar() {
+  car.x += car.dx;
+  if (car.x < 40) car.x = 40;
+  if (car.x + car.width > canvas.width - 40) car.x = canvas.width - 40 - car.width;
+}
+
+// Horn Reaction
+function hornEffect() {
+  hornSound.currentTime = 0;
+  hornSound.play();
+  enemies.forEach(e => {
+    if (Math.abs(e.y - car.y) < 200) {
+      e.x += Math.random() > 0.5 ? 30 : -30; // side shift
+    }
+  });
+}
+
+// Game loop
 function gameLoop() {
   if (gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.fillStyle = "red";
-    ctx.font = "40px Arial";
-    ctx.fillText("Game Over", 100, 300);
+    ctx.font = "40px Orbitron";
+    ctx.fillText("Game Over", 80, 280);
+    ctx.fillStyle = "white";
+    ctx.font = "20px Orbitron";
+    ctx.fillText("Score: " + score, 150, 320);
+    document.getElementById("restart").style.display = "block";
     return;
   }
 
+  roadOffset += 5;
+  if (roadOffset > 40) roadOffset = 0;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawRoad();
   drawCar();
   drawEnemies();
+  updateCar();
 
-  ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
-  ctx.fillText("Score: " + score, 10, 30);
+  ctx.fillStyle = "#0ff";
+  ctx.font = "20px Orbitron";
+  ctx.fillText("Score: " + score, 20, 30);
 
   requestAnimationFrame(gameLoop);
 }
 
+// Enemy spawn
 setInterval(() => {
   if (!gameOver) {
-    let enemyX = Math.floor(Math.random() * (canvas.width - 60));
-    enemies.push({ x: enemyX, y: -100, width: 60, height: 100 });
+    let laneWidth = (canvas.width - 80) / 3;
+    let lane = Math.floor(Math.random() * 3);
+    let enemyX = 40 + lane * laneWidth + (laneWidth - 60) / 2;
+    enemies.push({ x: enemyX, y: -120, width: 60, height: 100 });
   }
-}, 2000);
+}, 1800);
 
-// Controls
-document.getElementById("left").addEventListener("click", () => {
-  if (car.x > 0) car.x -= car.speed * 10;
-});
-document.getElementById("right").addEventListener("click", () => {
-  if (car.x < canvas.width - car.width) car.x += car.speed * 10;
-});
-
+// Keyboard controls
 document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft" && car.x > 0) car.x -= car.speed;
-  if (e.key === "ArrowRight" && car.x < canvas.width - car.width) car.x += car.speed;
+  if (e.key === "ArrowLeft") car.dx = -car.speed;
+  if (e.key === "ArrowRight") car.dx = car.speed;
+  if (e.key === " ") hornEffect(); 
 });
+document.addEventListener("keyup", () => car.dx = 0);
+
+// Mobile controls
+document.getElementById("left").addEventListener("touchstart", () => car.dx = -car.speed);
+document.getElementById("right").addEventListener("touchstart", () => car.dx = car.speed);
+document.getElementById("left").addEventListener("touchend", () => car.dx = 0);
+document.getElementById("right").addEventListener("touchend", () => car.dx = 0);
+
+document.getElementById("left").addEventListener("mousedown", () => car.dx = -car.speed);
+document.getElementById("right").addEventListener("mousedown", () => car.dx = car.speed);
+document.getElementById("left").addEventListener("mouseup", () => car.dx = 0);
+document.getElementById("right").addEventListener("mouseup", () => car.dx = 0);
+
+document.getElementById("horn").addEventListener("click", hornEffect);
+
+// Restart
+document.getElementById("restart").addEventListener("click", () => resetGame());
+
+function resetGame() {
+  enemies = [];
+  score = 0;
+  enemySpeed = 3;
+  gameOver = false;
+  document.getElementById("restart").style.display = "none";
+  gameLoop();
+}
 
 gameLoop();
 </script>
