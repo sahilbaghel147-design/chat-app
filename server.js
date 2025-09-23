@@ -11,15 +11,17 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
+// Middleware
 app.use(bodyParser.json());
 app.use(cors());
 
-// ✅ MongoDB Atlas connection
+// ✅ MongoDB Atlas Connection
 mongoose.connect(
   "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
   { useNewUrlParser: true, useUnifiedTopology: true }
-).then(() => console.log("MongoDB Connected"))
-  .catch(err => console.error("MongoDB Error:", err));
+)
+.then(() => console.log("✅ MongoDB Connected"))
+.catch(err => console.error("❌ MongoDB Error:", err));
 
 // ✅ User Schema
 const UserSchema = new mongoose.Schema({
@@ -28,7 +30,7 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", UserSchema);
 
-// ✅ Private Message Schema
+// ✅ Message Schema
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
@@ -37,7 +39,7 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// ✅ Signup API
+// ✅ Signup Route
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -54,7 +56,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// ✅ Login API
+// ✅ Login Route
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -70,39 +72,20 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Default page → Login
-app.get("/", (req, res) => {
-  res.redirect("/login");
-});
+// ✅ Routes
+app.get("/", (req, res) => res.redirect("/login"));
+app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
+app.get("/signup", (req, res) => res.sendFile(path.join(__dirname, "public", "signup.html")));
+app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public", "chat.html")));
+app.get("/games", (req, res) => res.sendFile(path.join(__dirname, "public", "games.html")));
+app.get("/videos", (req, res) => res.sendFile(path.join(__dirname, "public", "videos.html")));
+app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
 
-// ✅ Pages Routes
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
-
-app.get("/signup", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "signup.html")); // 👈 Fix Added
-});
-
-app.get("/chat", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "chat.html"));
-});
-app.get("/games", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "games.html"));
-});
-app.get("/videos", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "videos.html"));
-});
-app.get("/about", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "about.html"));
-});
-
-// ✅ Static middleware
+// ✅ Static files
 app.use(express.static("public"));
 
-// ✅ Online Users
+// ✅ Socket.io (chat system)
 let onlineUsers = {};
-
 io.on("connection", (socket) => {
   console.log("New user connected");
 
@@ -138,6 +121,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Start Server
+// ✅ Port setup (Render compatible)
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
