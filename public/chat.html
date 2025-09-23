@@ -5,30 +5,53 @@
   <title>Chat Room</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    :root {
+      --bg: #1a1b26;
+      --bg-light: #f4f4f9;
+      --sidebar: #0f172a;
+      --sidebar-light: #e5e7eb;
+      --text: #fff;
+      --text-light: #111;
+      --bubble-you: linear-gradient(90deg,#06b6d4,#3b82f6);
+      --bubble-other: #3f3f46;
+      --bubble-other-light: #e5e7eb;
+      --accent: #0ff;
+    }
+
+    body.light {
+      --bg: #f4f4f9;
+      --sidebar: #e5e7eb;
+      --text: #111;
+      --bubble-other: var(--bubble-other-light);
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #1e1e2f;
-      color: #fff;
+      background: var(--bg);
+      color: var(--text);
       height: 100vh;
       display: flex;
+      transition: background 0.3s, color 0.3s;
     }
 
     /* Sidebar */
     .sidebar {
       width: 230px;
-      background: linear-gradient(180deg, #111827, #0f172a);
+      background: var(--sidebar);
       padding: 20px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      box-shadow: 2px 0 15px rgba(0,0,0,0.4);
+      box-shadow: 3px 0 20px rgba(0,0,0,0.5);
+      transition: background 0.3s;
     }
     .sidebar h3 {
       margin: 0 0 15px;
-      font-size: 18px;
-      border-bottom: 1px solid #333;
-      padding-bottom: 8px;
+      font-size: 16px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
     .nav-links {
       display: flex;
@@ -37,8 +60,8 @@
     }
     .nav-links a {
       text-decoration: none;
-      color: #ddd;
-      background: #2c2c3e;
+      color: #cbd5e1;
+      background: #2d2f40;
       padding: 10px;
       border-radius: 8px;
       display: flex;
@@ -47,47 +70,56 @@
       font-size: 15px;
       transition: 0.3s;
     }
+    body.light .nav-links a {
+      background: #d1d5db;
+      color: #111;
+    }
     .nav-links a:hover {
-      background: #3b3b50;
-      color: #0ff;
-      box-shadow: 0 0 10px rgba(0,255,255,0.4);
+      background: #4338ca;
+      color: var(--accent);
+      box-shadow: 0 0 15px rgba(0,255,255,0.4);
     }
     .nav-links a.active {
-      background: #0ff;
-      color: black;
+      background: linear-gradient(90deg,#06b6d4,#3b82f6);
+      color: white;
       font-weight: bold;
     }
     .user-list {
       margin-top: 20px;
       flex: 1;
       overflow-y: auto;
+      padding-right: 5px;
     }
     .user-list div {
       padding: 8px 10px;
-      background: #2c2c3e;
+      background: #2d2f40;
       margin-bottom: 8px;
       border-radius: 6px;
       cursor: pointer;
       transition: 0.2s;
     }
     .user-list div:hover {
-      background: #3a3a50;
-      color: #0ff;
+      background: #4338ca;
+      color: var(--accent);
     }
+    body.light .user-list div {
+      background: #d1d5db;
+    }
+
     .logout-btn {
-      margin-top: 15px;
       padding: 12px;
-      background: #ff4444;
+      background: linear-gradient(90deg, #ef4444, #b91c1c);
       border: none;
       border-radius: 8px;
       color: white;
       cursor: pointer;
       font-size: 15px;
+      font-weight: bold;
       transition: 0.3s;
     }
     .logout-btn:hover {
-      background: #cc0000;
-      box-shadow: 0 0 10px red;
+      background: #dc2626;
+      box-shadow: 0 0 12px rgba(239,68,68,0.8);
     }
 
     /* Chat Container */
@@ -95,7 +127,12 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: #2c2c3e;
+      background: #232537;
+      position: relative;
+      transition: background 0.3s;
+    }
+    body.light .chat-container {
+      background: #fff;
     }
     .chat-header {
       padding: 15px;
@@ -104,6 +141,15 @@
       font-size: 18px;
       font-weight: bold;
       border-bottom: 1px solid #333;
+      color: #38bdf8;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    body.light .chat-header {
+      background: #d1d5db;
+      color: #111;
     }
     .chat-messages {
       flex: 1;
@@ -111,31 +157,30 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
     /* Chat Bubbles */
     .message {
       max-width: 70%;
-      padding: 10px 15px;
-      border-radius: 12px;
+      padding: 12px 16px;
+      border-radius: 14px;
       font-size: 14px;
       line-height: 1.4;
-      position: relative;
       word-wrap: break-word;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      animation: fadeIn 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      animation: fadeIn 0.25s ease;
     }
     .message.you {
       align-self: flex-end;
-      background: #0ff;
-      color: black;
+      background: var(--bubble-you);
+      color: white;
       border-bottom-right-radius: 4px;
     }
     .message.other {
       align-self: flex-start;
-      background: #3b3b50;
-      color: #fff;
+      background: var(--bubble-other);
+      color: var(--text);
       border-bottom-left-radius: 4px;
     }
 
@@ -144,11 +189,17 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* Fixed Input */
     .chat-input {
       display: flex;
       padding: 12px;
       background: #111827;
       border-top: 1px solid #333;
+      position: sticky;
+      bottom: 0;
+    }
+    body.light .chat-input {
+      background: #e5e7eb;
     }
     .chat-input input {
       flex: 1;
@@ -157,21 +208,46 @@
       border-radius: 6px;
       outline: none;
       font-size: 14px;
+      background: #2d2f40;
+      color: #fff;
+    }
+    body.light .chat-input input {
+      background: #fff;
+      color: #111;
+      border: 1px solid #ccc;
+    }
+    .chat-input input::placeholder {
+      color: #9ca3af;
     }
     .chat-input button {
       margin-left: 10px;
       padding: 12px 20px;
-      background: #0ff;
+      background: linear-gradient(90deg,#06b6d4,#3b82f6);
       border: none;
       border-radius: 6px;
-      color: black;
+      color: white;
       font-weight: bold;
       cursor: pointer;
       transition: 0.2s;
     }
     .chat-input button:hover {
-      background: #08d;
-      color: white;
+      background: #2563eb;
+    }
+
+    /* Toggle Button */
+    .toggle-btn {
+      background: #38bdf8;
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #111;
+      transition: 0.3s;
+    }
+    .toggle-btn:hover {
+      background: #0ea5e9;
     }
   </style>
 </head>
@@ -192,7 +268,10 @@
   </div>
 
   <div class="chat-container">
-    <div class="chat-header">Select a user to chat</div>
+    <div class="chat-header">
+      <span>Select a user to chat</span>
+      <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
+    </div>
     <div id="messages" class="chat-messages"></div>
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="Type your message...">
@@ -225,7 +304,7 @@
 
     function selectUser(user) {
       selectedUser = user;
-      document.querySelector(".chat-header").textContent = "Chat with " + user;
+      document.querySelector(".chat-header span").textContent = "Chat with " + user;
       document.getElementById("messages").innerHTML = "";
       socket.emit("loadChat", { user1: username, user2: user });
     }
@@ -264,6 +343,13 @@
     function logout() {
       localStorage.removeItem("username");
       window.location.href = "/login";
+    }
+
+    // Toggle dark/light mode
+    function toggleTheme() {
+      document.body.classList.toggle("light");
+      const btn = document.querySelector(".toggle-btn");
+      btn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
     }
   </script>
 </body>
