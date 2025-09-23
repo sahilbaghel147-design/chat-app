@@ -3,127 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login / Signup - Chat App</title>
+  <title>Login - Chat App</title>
+  <link rel="stylesheet" href="style.css">
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
-      color: #fff;
+      background: #2c3e50;
     }
-    .container {
-      background: rgba(0, 0, 0, 0.6);
-      padding: 20px;
-      border-radius: 12px;
-      width: 320px;
-      box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+    .login-container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
+      width: 300px;
       text-align: center;
     }
-    h2 {
-      margin-bottom: 15px;
+    .login-container h2 {
+      margin-bottom: 20px;
+      color: #333;
     }
-    input {
-      width: 90%;
+    .login-container input {
+      width: 100%;
       padding: 10px;
-      margin: 8px 0;
-      border: none;
-      border-radius: 6px;
-      outline: none;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
-    button {
-      width: 95%;
+    .login-container button {
+      width: 100%;
       padding: 10px;
-      margin-top: 10px;
-      border: none;
-      border-radius: 6px;
-      background: #4CAF50;
+      background: #3498db;
       color: white;
+      border: none;
+      border-radius: 5px;
       font-size: 16px;
       cursor: pointer;
     }
-    button:hover {
-      background: #45a049;
+    .login-container button:hover {
+      background: #2980b9;
     }
-    .toggle {
+    .signup-link {
       margin-top: 15px;
-      cursor: pointer;
-      color: #00e5ff;
+      font-size: 14px;
     }
     .error {
-      color: #ff5252;
-      margin-top: 10px;
-    }
-    .success {
-      color: #4CAF50;
+      color: red;
+      font-size: 14px;
       margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2 id="formTitle">Login</h2>
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="submitForm()">Login</button>
-    <p id="toggleText" class="toggle" onclick="toggleForm()">Don't have an account? Signup</p>
-    <p id="message"></p>
+  <div class="login-container">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Enter Username" required>
+    <input type="password" id="password" placeholder="Enter Password" required>
+    <button onclick="login()">Login</button>
+    <p class="signup-link">Don’t have an account? <a href="/signup">Signup here</a></p>
+    <p id="error" class="error"></p>
   </div>
 
   <script>
-    let isLogin = true;
-
-    function toggleForm() {
-      isLogin = !isLogin;
-      document.getElementById("formTitle").innerText = isLogin ? "Login" : "Signup";
-      document.querySelector("button").innerText = isLogin ? "Login" : "Signup";
-      document.getElementById("toggleText").innerText = isLogin
-        ? "Don't have an account? Signup"
-        : "Already have an account? Login";
-      document.getElementById("message").innerText = "";
-    }
-
-    async function submitForm() {
+    async function login() {
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value.trim();
+      const error = document.getElementById("error");
+
       if (!username || !password) {
-        document.getElementById("message").innerText = "Please enter all fields!";
-        document.getElementById("message").className = "error";
+        error.textContent = "Please fill all fields!";
         return;
       }
 
-      const url = isLogin ? "/login" : "/signup";
-
       try {
-        const res = await fetch(url, {
+        const res = await fetch("/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, password })
         });
-
         const data = await res.json();
-        if (data.success) {
-          document.getElementById("message").innerText = data.message;
-          document.getElementById("message").className = "success";
 
-          // ✅ redirect to chat page after login
-          if (isLogin) {
-            localStorage.setItem("username", username);
-            setTimeout(() => {
-              window.location.href = "/chat";
-            }, 1000);
-          }
+        if (data.success) {
+          localStorage.setItem("username", data.username);
+          window.location.href = "/chat"; // 👈 login ke baad chat page pe redirect
         } else {
-          document.getElementById("message").innerText = data.message;
-          document.getElementById("message").className = "error";
+          error.textContent = data.message;
         }
       } catch (err) {
-        document.getElementById("message").innerText = "Server error!";
-        document.getElementById("message").className = "error";
+        error.textContent = "Server error. Try again.";
       }
+    }
+
+    // ✅ Agar user already login hai toh direct chat page pe bhejo
+    if (localStorage.getItem("username")) {
+      window.location.href = "/chat";
     }
   </script>
 </body>
