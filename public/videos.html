@@ -2,120 +2,84 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Videos - My Website</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Reels - My Website</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: #fff;
       margin: 0;
       padding: 0;
+      background: #000;
+      overflow-x: hidden;
+      scroll-snap-type: y mandatory;
+      font-family: Arial, sans-serif;
     }
 
-    nav {
-      background: #1f1f1f;
-      padding: 10px;
+    .reel {
+      height: 100vh;
+      width: 100%;
       display: flex;
       justify-content: center;
-      gap: 20px;
+      align-items: center;
+      scroll-snap-align: start;
+      position: relative;
+      overflow: hidden;
     }
 
-    nav a {
-      color: #fff;
-      text-decoration: none;
-      font-weight: bold;
-      transition: 0.3s;
-    }
-
-    nav a:hover {
-      color: #ff4757;
-    }
-
-    h1, h2 {
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    .video-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 20px;
-      padding: 20px;
-    }
-
-    .video-card {
-      background: #1e1e1e;
-      border-radius: 12px;
-      padding: 15px;
-      text-align: center;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-      transition: transform 0.3s;
-    }
-
-    .video-card:hover {
-      transform: scale(1.05);
-    }
-
-    video, iframe {
+    video {
+      height: 100%;
       width: 100%;
-      border-radius: 8px;
+      object-fit: cover;
     }
 
-    .video-title {
-      margin-top: 10px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #ffdd59;
+    .title {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: #fff;
+      font-size: 20px;
+      background: rgba(0,0,0,0.4);
+      padding: 6px 12px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <nav>
-    <a href="index.html">🏠 Home</a>
-    <a href="chat.html">💬 Chat</a>
-    <a href="games.html">🎮 Games</a>
-    <a href="videos.html">📺 Videos</a>
-    <a href="about.html">ℹ️ About</a>
-  </nav>
 
-  <h1>📺 Videos Section</h1>
-
-  <h2>🔥 Featured Videos</h2>
-  <div class="video-grid">
-    <div class="video-card">
-      <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>
-      <div class="video-title">Featured 1</div>
-    </div>
-    <div class="video-card">
-      <iframe src="https://www.youtube.com/embed/aqz-KE-bpKQ" frameborder="0" allowfullscreen></iframe>
-      <div class="video-title">Featured 2</div>
-    </div>
+  <div class="reel">
+    <video src="friends.mp4" muted loop playsinline></video>
+    <div class="title">Friends Video</div>
   </div>
 
-  <h2>📂 My Local Videos</h2>
-  <div class="video-grid">
-    <div class="video-card">
-      <video controls>
-        <source src="friends.mp4" type="video/mp4">
-      </video>
-      <div class="video-title">Friends Video</div>
-    </div>
-
-    <div class="video-card">
-      <video controls>
-        <source src="Oggy.mp4" type="video/mp4">
-      </video>
-      <div class="video-title">Oggy Video</div>
-    </div>
-
-    <div class="video-card">
-      <video controls>
-        <source src="opvideo.mp4" type="video/mp4">
-      </video>
-      <div class="video-title">OP Video</div>
-    </div>
+  <div class="reel">
+    <video src="Oggy.mp4" muted loop playsinline></video>
+    <div class="title">Oggy Video</div>
   </div>
+
+  <div class="reel">
+    <video src="opvideo.mp4" muted loop playsinline></video>
+    <div class="title">OP Video</div>
+  </div>
+
+  <script>
+    const videos = document.querySelectorAll("video");
+
+    function pauseAll() {
+      videos.forEach(v => v.pause());
+    }
+
+    function playVisibleVideo() {
+      let windowHeight = window.innerHeight;
+      videos.forEach(v => {
+        let rect = v.getBoundingClientRect();
+        if (rect.top >= 0 && rect.bottom <= windowHeight) {
+          pauseAll();
+          v.play();
+        }
+      });
+    }
+
+    window.addEventListener("scroll", playVisibleVideo);
+    window.addEventListener("load", playVisibleVideo);
+  </script>
 
 </body>
 </html>
