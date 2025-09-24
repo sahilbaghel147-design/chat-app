@@ -4,6 +4,71 @@
   <meta charset="UTF-8">
   <title>Videos - My Website</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav {
+      background: #1f1f1f;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    nav a:hover {
+      color: #ff4757;
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .video-card {
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+      transition: transform 0.3s;
+    }
+
+    .video-card:hover {
+      transform: scale(1.05);
+    }
+
+    video, iframe {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .video-title {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffdd59;
+    }
+  </style>
 </head>
 <body>
   <nav>
@@ -15,16 +80,42 @@
   </nav>
 
   <h1>📺 Videos Section</h1>
-  
-  <h2>Featured Videos</h2>
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/aqz-KE-bpKQ" frameborder="0" allowfullscreen></iframe>
 
-  <h2>📂 My Local Video</h2>
-  <video width="560" height="315" controls>
-    <source src="friends.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <h2>🔥 Featured Videos</h2>
+  <div class="video-grid">
+    <div class="video-card">
+      <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>
+      <div class="video-title">Featured 1</div>
+    </div>
+    <div class="video-card">
+      <iframe src="https://www.youtube.com/embed/aqz-KE-bpKQ" frameborder="0" allowfullscreen></iframe>
+      <div class="video-title">Featured 2</div>
+    </div>
+  </div>
+
+  <h2>📂 My Local Videos</h2>
+  <div class="video-grid">
+    <div class="video-card">
+      <video controls>
+        <source src="friends.mp4" type="video/mp4">
+      </video>
+      <div class="video-title">Friends Video</div>
+    </div>
+
+    <div class="video-card">
+      <video controls>
+        <source src="Oggy.mp4" type="video/mp4">
+      </video>
+      <div class="video-title">Oggy Video</div>
+    </div>
+
+    <div class="video-card">
+      <video controls>
+        <source src="opvideo.mp4" type="video/mp4">
+      </video>
+      <div class="video-title">OP Video</div>
+    </div>
+  </div>
 
 </body>
 </html>
