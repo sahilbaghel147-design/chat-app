@@ -15,6 +15,9 @@ const io = socketIO(server);
 app.use(bodyParser.json());
 app.use(cors());
 
+// ✅ Serve static files (sabse pehle)
+app.use(express.static(path.join(__dirname, "public")));
+
 // ✅ MongoDB Atlas Connection
 mongoose.connect(
   "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
@@ -72,7 +75,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Routes
+// ✅ Page Routes
 app.get("/", (req, res) => res.redirect("/login"));
 app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
 app.get("/signup", (req, res) => res.sendFile(path.join(__dirname, "public", "signup.html")));
@@ -80,9 +83,6 @@ app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public", "chat
 app.get("/games", (req, res) => res.sendFile(path.join(__dirname, "public", "games.html")));
 app.get("/videos", (req, res) => res.sendFile(path.join(__dirname, "public", "videos.html")));
 app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
-
-// ✅ Static files
-app.use(express.static("public"));
 
 // ✅ Socket.io (chat system)
 let onlineUsers = {};
