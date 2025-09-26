@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Reels - My Website</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
@@ -30,15 +31,37 @@
       object-fit: cover;
     }
 
-    .title {
+    .overlay {
       position: absolute;
       bottom: 20px;
       left: 20px;
       color: #fff;
-      font-size: 20px;
-      background: rgba(0,0,0,0.4);
-      padding: 6px 12px;
-      border-radius: 6px;
+      font-size: 16px;
+      max-width: 70%;
+      text-shadow: 1px 1px 5px rgba(0,0,0,0.7);
+    }
+
+    .actions {
+      position: absolute;
+      right: 20px;
+      bottom: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      color: #fff;
+      font-size: 22px;
+    }
+
+    .action-btn {
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .action-btn span {
+      display: block;
+      font-size: 14px;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -46,17 +69,32 @@
 
   <div class="reel">
     <video src="friends.mp4" muted loop playsinline></video>
-    <div class="title">Friends Video</div>
+    <div class="overlay">Friends Video ✨</div>
+    <div class="actions">
+      <div class="action-btn">❤️ <span>120</span></div>
+      <div class="action-btn">💬 <span>25</span></div>
+      <div class="action-btn">🔗 <span>Share</span></div>
+    </div>
   </div>
 
   <div class="reel">
     <video src="Oggy.mp4" muted loop playsinline></video>
-    <div class="title">Oggy Video</div>
+    <div class="overlay">Oggy Fun 🐭</div>
+    <div class="actions">
+      <div class="action-btn">❤️ <span>300</span></div>
+      <div class="action-btn">💬 <span>40</span></div>
+      <div class="action-btn">🔗 <span>Share</span></div>
+    </div>
   </div>
 
   <div class="reel">
     <video src="opvideo.mp4" muted loop playsinline></video>
-    <div class="title">OP Video</div>
+    <div class="overlay">Epic OP Video 🔥</div>
+    <div class="actions">
+      <div class="action-btn">❤️ <span>999+</span></div>
+      <div class="action-btn">💬 <span>120</span></div>
+      <div class="action-btn">🔗 <span>Share</span></div>
+    </div>
   </div>
 
   <script>
