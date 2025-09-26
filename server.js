@@ -15,15 +15,6 @@ const io = socketIO(server);
 app.use(bodyParser.json());
 app.use(cors());
 
-// ✅ Serve static files (CSS, JS, Images, Videos)
-app.use(express.static(path.join(__dirname, "public"), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith(".mp4")) {
-      res.setHeader("Content-Type", "video/mp4");
-    }
-  }
-}));
-
 // ✅ MongoDB Atlas Connection
 mongoose.connect(
   "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp",
@@ -81,7 +72,16 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Page Routes
+// ✅ Static files (serve HTML, CSS, JS, Videos with correct MIME type)
+app.use(express.static(path.join(__dirname, "public"), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(".mp4")) {
+      res.setHeader("Content-Type", "video/mp4");
+    }
+  }
+}));
+
+// ✅ Routes
 app.get("/", (req, res) => res.redirect("/login"));
 app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
 app.get("/signup", (req, res) => res.sendFile(path.join(__dirname, "public", "signup.html")));
