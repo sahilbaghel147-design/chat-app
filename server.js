@@ -15,8 +15,14 @@ const io = socketIO(server);
 app.use(bodyParser.json());
 app.use(cors());
 
-// ✅ Serve static files (sabse pehle)
-app.use(express.static(path.join(__dirname, "public")));
+// ✅ Serve static files (CSS, JS, Images, Videos)
+app.use(express.static(path.join(__dirname, "public"), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(".mp4")) {
+      res.setHeader("Content-Type", "video/mp4");
+    }
+  }
+}));
 
 // ✅ MongoDB Atlas Connection
 mongoose.connect(
