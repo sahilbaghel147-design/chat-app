@@ -1,307 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Chat Room</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    :root {
-      --bg: #1a1b26;
-      --bg-light: #f4f4f9;
-      --sidebar: #0f172a;
-      --sidebar-light: #e5e7eb;
-      --text: #fff;
-      --text-light: #111;
-      --bubble-you: linear-gradient(90deg,#06b6d4,#3b82f6);
-      --bubble-other: #3f3f46;
-      --bubble-other-light: #e5e7eb;
-      --accent: #0ff;
-    }
-
-    body.light {
-      --bg: #f4f4f9;
-      --sidebar: #e5e7eb;
-      --text: #111;
-      --bubble-other: var(--bubble-other-light);
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      display: flex;
-      transition: background 0.3s, color 0.3s;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: 230px;
-      background: var(--sidebar);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 3px 0 20px rgba(0,0,0,0.5);
-      transition: background 0.3s;
-    }
-    .sidebar h3 {
-      margin: 0 0 15px;
-      font-size: 16px;
-      color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .nav-links {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .nav-links a {
-      text-decoration: none;
-      color: #cbd5e1;
-      background: #2d2f40;
-      padding: 10px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 15px;
-      transition: 0.3s;
-    }
-    body.light .nav-links a {
-      background: #d1d5db;
-      color: #111;
-    }
-    .nav-links a:hover {
-      background: #4338ca;
-      color: var(--accent);
-      box-shadow: 0 0 15px rgba(0,255,255,0.4);
-    }
-    .nav-links a.active {
-      background: linear-gradient(90deg,#06b6d4,#3b82f6);
-      color: white;
-      font-weight: bold;
-    }
-    .user-list {
-      margin-top: 20px;
-      flex: 1;
-      overflow-y: auto;
-      padding-right: 5px;
-    }
-    .user-list div {
-      padding: 8px 10px;
-      background: #2d2f40;
-      margin-bottom: 8px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .user-list div:hover {
-      background: #4338ca;
-      color: var(--accent);
-    }
-    body.light .user-list div {
-      background: #d1d5db;
-    }
-
-    .logout-btn {
-      padding: 12px;
-      background: linear-gradient(90deg, #ef4444, #b91c1c);
-      border: none;
-      border-radius: 8px;
-      color: white;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: bold;
-      transition: 0.3s;
-    }
-    .logout-btn:hover {
-      background: #dc2626;
-      box-shadow: 0 0 12px rgba(239,68,68,0.8);
-    }
-
-    /* Chat Container */
-    .chat-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: #232537;
-      transition: background 0.3s;
-    }
-    body.light .chat-container {
-      background: #fff;
-    }
-    .chat-header {
-      padding: 15px;
-      background: #111827;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-      border-bottom: 1px solid #333;
-      color: #38bdf8;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    body.light .chat-header {
-      background: #d1d5db;
-      color: #111;
-    }
-    .chat-messages {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    /* Chat Bubbles */
-    .message {
-      max-width: 70%;
-      padding: 12px 16px;
-      border-radius: 14px;
-      font-size: 14px;
-      line-height: 1.4;
-      word-wrap: break-word;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      animation: fadeIn 0.25s ease;
-    }
-    .message.you {
-      align-self: flex-end;
-      background: var(--bubble-you);
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-    .message.other {
-      align-self: flex-start;
-      background: var(--bubble-other);
-      color: var(--text);
-      border-bottom-left-radius: 4px;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Chat Input */
-    .chat-input {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      background: #111827;
-      border-top: 1px solid #333;
-    }
-    body.light .chat-input {
-      background: #e5e7eb;
-    }
-
-    .emoji-btn {
-      background: transparent;
-      border: none;
-      font-size: 20px;
-      margin-right: 8px;
-      cursor: pointer;
-      color: #cbd5e1;
-    }
-
-    .chat-input input {
-      flex: 1;
-      padding: 12px 16px;
-      border: none;
-      border-radius: 25px;
-      outline: none;
-      font-size: 14px;
-      background: #2d2f40;
-      color: #fff;
-    }
-    body.light .chat-input input {
-      background: #fff;
-      color: #111;
-      border: 1px solid #ccc;
-    }
-    .chat-input input::placeholder {
-      color: #9ca3af;
-    }
-
-    .chat-input button {
-      margin-left: 10px;
-      padding: 12px 20px;
-      background: linear-gradient(90deg,#06b6d4,#3b82f6);
-      border: none;
-      border-radius: 25px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .chat-input button:hover {
-      background: #2563eb;
-    }
-
-    /* Toggle Button */
-    .toggle-btn {
-      background: #38bdf8;
-      border: none;
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      cursor: pointer;
-      font-size: 18px;
-      color: #111;
-      transition: 0.3s;
-    }
-    .toggle-btn:hover {
-      background: #0ea5e9;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <link rel="stylesheet" href="style.css"> 
+    <script src="/socket.io/socket.io.js"></script> 
 </head>
 <body>
-  <div class="sidebar">
-    <div>
-      <h3>Navigation</h3>
-      <div class="nav-links">
-        <a href="/chat" class="active">💬 Chat</a>
-        <a href="/games">🎮 Games</a>
-        <a href="/videos">📹 Videos</a>
-        <a href="/about">ℹ️ About</a>
-      </div>
-      <h3>Online Users</h3>
-      <div id="users" class="user-list"></div>
-    </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
 
-  <div class="chat-container">
-    <div class="chat-header">
-      <span>Select a user to chat</span>
-      <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
-    </div>
-    <div id="messages" class="chat-messages"></div>
-    <div class="chat-input">
-      <button class="emoji-btn">🙂</button>
-      <input type="text" id="messageInput" placeholder="Type your message...">
-      <button onclick="sendMessage()">Send</button>
-    </div>
-  </div>
+    <div class="main-container">
+        <div class="users-list">
+            <h2>Users</h2>
+            <div id="usersDiv">
+                </div>
+        </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const username = localStorage.getItem("username");
-    if (!username) window.location.href = "/login";
+        <div class="chat-area">
+            <div class="chat-header">
+                <span>Welcome, <span id="currentUsername"></span></span>
+                <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
+                <button onclick="logout()">Logout</button>
+            </div>
+            <div id="messages" class="messages-container">
+                </div>
+            <div class="message-input-area">
+                <input type="text" id="messageInput" placeholder="Type a message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    // ************************************************************
+    // ** AAPKA PURANA JAVASCRIPT CODE YAHAN SE SHURU HOTA HAI **
+    // ************************************************************
 
     const socket = io();
+    let username = localStorage.getItem("username");
     let selectedUser = null;
 
+    if (!username) {
+      window.location.href = "/login.html"; // Assuming you have a login page
+    }
+
+    document.getElementById("currentUsername").textContent = username;
     socket.emit("newUser", username);
 
-    socket.on("updateUsers", (users) => {
-      const usersDiv = document.getElementById("users");
+    socket.on("userList", (Users) => {
+      const usersDiv = document.getElementById("usersDiv");
       usersDiv.innerHTML = "";
-      users.forEach((user) => {
+      Users.forEach((user) => {
         if (user !== username) {
           const div = document.createElement("div");
           div.textContent = user;
@@ -351,7 +99,7 @@
 
     function logout() {
       localStorage.removeItem("username");
-      window.location.href = "/login";
+      window.location.href = "/login.html"; // Updated path
     }
 
     // Toggle dark/light mode
@@ -361,5 +109,7 @@
       btn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
     }
   </script>
-</body>
+
+  <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
+  </body>
 </html>
