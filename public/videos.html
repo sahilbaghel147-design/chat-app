@@ -24,7 +24,6 @@
             margin: 0;
             padding: 0;
             font-family: 'Arial', sans-serif;
-            /* Scroll snap smooth scrolling ke liye */
             scroll-behavior: smooth; 
         }
 
@@ -33,10 +32,10 @@
             color: var(--color-text);
             height: 100vh;
             display: flex;
-            overflow: hidden; /* Hide main body scrollbar */
+            overflow: hidden; 
         }
 
-        /* 1. Sidebar Styling (Consistent) */
+        /* 1. Sidebar Styling */
         .sidebar {
             width: 280px;
             background: var(--color-background-secondary); 
@@ -46,25 +45,21 @@
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--color-border);
-            flex-shrink: 0; /* Sidebar should not shrink */
+            flex-shrink: 0;
+            z-index: 100; /* Sidebar always on top */
         }
-
+        
+        /* Sidebar Menu Items */
         .sidebar .nav-brand {
-            font-size: 1.8em;
-            font-weight: 800;
-            color: var(--color-accent);
-            text-align: center;
-            margin-bottom: 25px;
-            padding-bottom: 10px;
+            font-size: 1.8em; font-weight: 800; color: var(--color-accent);
+            text-align: center; margin-bottom: 25px; padding-bottom: 10px;
             border-bottom: 2px solid var(--color-accent);
         }
-
         .sidebar .nav-link-item {
             display: flex; align-items: center; padding: 12px 10px; margin-bottom: 8px;
             border-radius: 8px; font-weight: 500; color: var(--color-text); text-decoration: none;
             transition: background-color 0.3s;
         }
-
         .sidebar .nav-link-item i { margin-right: 10px; width: 20px; }
         .sidebar .nav-link-item:hover { background-color: var(--color-border); }
         .sidebar .nav-link-item.active { background-color: var(--color-accent); color: #fff !important; font-weight: bold; }
@@ -76,27 +71,23 @@
         }
         .sidebar .logout-btn:hover { opacity: 0.8; }
 
-
-        /* ======================================= */
-        /* ====== REELS/SHORTS UI STYLING ======= */
-        /* ======================================= */
-
+        /* 2. Main Content Area (Video Reels) */
         #main-content {
             flex-grow: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh; /* Main area height */
+            height: 100vh; 
             background: #000;
         }
 
         /* Video Container (The Scrollable Reels Area) */
         #reels-container {
             width: 100%;
-            max-width: 450px; /* Reels typically use phone aspect ratio */
+            max-width: 450px; 
             height: 100vh;
-            overflow-y: scroll; /* Vertical scrolling */
-            scroll-snap-type: y mandatory; /* Snap to full video on scroll */
+            overflow-y: scroll; 
+            scroll-snap-type: y mandatory; 
             background: #000;
         }
 
@@ -105,76 +96,91 @@
             width: 100%;
             height: 100vh;
             position: relative;
-            scroll-snap-align: start; /* Snap point */
+            scroll-snap-align: start; 
             display: flex;
             flex-direction: column;
-            justify-content: flex-end; /* Info at the bottom */
+            justify-content: flex-end; 
             background-color: #000;
         }
 
         .reel-card video {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Video covers the whole container */
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover; 
             z-index: 1;
         }
 
         /* Overlay for Info and Buttons */
         .video-overlay {
-            position: relative;
-            z-index: 2;
-            padding: 20px;
-            color: white;
-            /* Gradient for readability over video */
+            position: relative; z-index: 2; padding: 20px; color: white;
             background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
         }
 
-        .video-overlay h3 {
-            font-size: 1.5em;
-            margin-bottom: 5px;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        }
-
-        .video-overlay p {
-            font-size: 1em;
-            margin-bottom: 20px;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        }
+        .video-overlay h3 { font-size: 1.5em; margin-bottom: 5px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .video-overlay p { font-size: 1em; margin-bottom: 20px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 
         /* Action Buttons (Like, Comment) */
         .actions-bar {
+            position: absolute; right: 10px; bottom: 100px; z-index: 3;
+            display: flex; flex-direction: column; gap: 20px; color: white;
+        }
+
+        .action-item { text-align: center; font-size: 1.1em; cursor: pointer; transition: color 0.2s; }
+        .action-item i { font-size: 2em; margin-bottom: 5px; }
+        .action-item:hover i { color: var(--color-accent); }
+        
+        /* 3. MOBILE MENU BUTTON (New Addition) */
+        .menu-toggle {
+            display: none; /* Desktop par hide karein */
             position: absolute;
-            right: 10px;
-            bottom: 100px;
-            z-index: 3;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            top: 15px;
+            left: 15px;
+            z-index: 50;
+            background: rgba(30, 30, 30, 0.7);
             color: white;
-        }
-
-        .action-item {
-            text-align: center;
-            font-size: 1.1em;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 1.2em;
             cursor: pointer;
-            transition: color 0.2s;
         }
+        
+        /* ======================================= */
+        /* ====== MEDIA QUERIES (RESPONSIVENESS) ===== */
+        /* ======================================= */
+        @media (max-width: 768px) {
+            
+            /* Sidebar ko chhota karein aur screen ke bahar dhakel dein */
+            .sidebar {
+                position: fixed;
+                left: -280px; /* Screen se bahar */
+                transition: left 0.3s ease-in-out;
+                box-shadow: 8px 0 15px rgba(0, 0, 0, 0.5);
+            }
+            
+            /* Jab menu open ho */
+            .sidebar.open {
+                left: 0;
+            }
+            
+            /* Mobile Menu button ko dikhayein */
+            .menu-toggle {
+                display: block;
+            }
 
-        .action-item i {
-            font-size: 2em;
-            margin-bottom: 5px;
-        }
-
-        .action-item:hover i {
-            color: var(--color-accent);
+            /* Reels Container ko mobile par full width dein */
+            #reels-container {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="sidebar">
+    
+    <button class="menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></button>
+
+    <div class="sidebar" id="sidebar">
         <div class="nav-brand">Chat App</div>
 
         <a href="/index.html" class="nav-link-item"><i class="fas fa-home"></i> Home</a>
@@ -192,7 +198,9 @@
     </div>
 
     <script>
-        // Ensure user is logged in
+        // ===========================================
+        // === App Logic (Unchanged) ===
+        // ===========================================
         let myUsername = localStorage.getItem("username");
         if (!myUsername) {
             window.location.replace("/login.html");
@@ -203,17 +211,14 @@
             window.location.replace("/login.html");
         }
 
-        // Define your video data
         const videos = [
-            // Your Newly Added Videos
-            { title: "Whole.mp4 Clip", source: "/Whole.mp4", description: "A new engaging clip that's perfect for your feed." },
+            // Your Videos (Ensure these are in your public/ folder)
             { title: "Babu's Funniest Moment", source: "/babu.mp4", description: "Laugh out loud with this funny clip!" },
-            { title: "Intense Exercise Clip", source: "/exer.mp4", description: "Time to hit the gym! Get motivated with this short workout." },
+            { title: "Whole.mp4 Clip", source: "/Whole.mp4", description: "A new engaging clip that's perfect for your feed." },
             { title: "MC Stand Live Performance", source: "/mcstand.mp4", description: "Watch the trending performance. Lit!" },
+            { title: "Intense Exercise Clip", source: "/exer.mp4", description: "Time to hit the gym! Get motivated with this short workout." },
             { title: "Pain Reliever Clip", source: "/pain.mp4", description: "Take a moment to relax and enjoy this soothing video." },
             { title: "Sahil's Special", source: "/sahil2.mp4", description: "Exclusive content just for our users." },
-            
-            // Previous Videos
             { title: "Oggy and the Cockroaches", source: "/Oggy.mp4", description: "The classic cartoon clip we all love." },
             { title: "Cool Op Video", source: "/opvideo.mp4", description: "An amazing, viral-worthy clip you must watch." }
         ];
@@ -243,36 +248,29 @@
         });
 
         // ===========================================
-        // === Video Playback Logic (CRITICAL) ===
+        // === Video Playback Logic (Autoplay & Pause) ===
         // ===========================================
-
-        // Intersection Observer to automatically play the video in the center view
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const video = entry.target;
                 if (entry.isIntersecting) {
-                    // Start playing if the video is in the viewport center
                     video.play().catch(error => {
                         console.log('Video autoplay blocked. User interaction required.', error);
-                        // Show a temporary play button if autoplay fails
                     });
                 } else {
-                    // Pause if scrolled away
                     video.pause();
-                    video.currentTime = 0; // Rewind to start
+                    video.currentTime = 0; 
                 }
             });
         }, {
-            // Options: Target only the video closest to the center of the container
-            threshold: 0.8 // Video must be 80% visible
+            threshold: 0.8 
         });
 
-        // Observe all video elements
         document.querySelectorAll('.reel-card video').forEach(video => {
             observer.observe(video);
         });
 
-        // Add a click handler to toggle mute/unmute or play/pause (for mobile compliance)
+        // Add a click handler to toggle play/pause
         reelsContainer.addEventListener('click', (e) => {
             if (e.target.tagName === 'VIDEO') {
                 const video = e.target;
@@ -283,6 +281,37 @@
                 }
             }
         });
+
+        // ===========================================
+        // === 🔑 NEW: MOBILE MENU TOGGLE LOGIC ===
+        // ===========================================
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menu-toggle');
+
+        menuToggle.addEventListener('click', () => {
+            // Sidebar ko open/close karta hai
+            sidebar.classList.toggle('open'); 
+            
+            // Hamburger icon ko X mein badalna
+            const icon = menuToggle.querySelector('i');
+            if (sidebar.classList.contains('open')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        });
+        
+        // Agar user sidebar ke bahar click karta hai toh usse band kar de
+        document.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                sidebar.classList.remove('open');
+                menuToggle.querySelector('i').classList.remove('fa-times');
+                menuToggle.querySelector('i').classList.add('fa-bars');
+            }
+        });
+
     </script>
 </body>
 </html>
