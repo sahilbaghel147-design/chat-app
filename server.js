@@ -1,5 +1,6 @@
-// server.js (Final and Optimized Code)
+// server.js (Final API/Socket Code)
 
+// Environment variables load karne ke liye zaroori (Agar aap .env file use kar rahe hain)
 // const dotenv = require('dotenv');
 // dotenv.config();
 
@@ -10,7 +11,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const path = require("path");
+// const path = require("path"); // Static serving hatane ki wajah se path ki zaroorat nahi
 
 const app = express();
 const server = http.createServer(app);
@@ -18,7 +19,7 @@ const server = http.createServer(app);
 // Socket.io configuration for CORS
 const io = socketIO(server, {
     cors: {
-        origin: "*", 
+        origin: "*", // Front-end URL yahan specify karein production me
         methods: ["GET", "POST"]
     }
 });
@@ -38,12 +39,15 @@ mongoose.connect(MONGO_URI)
 });
 
 // --- MONGOOSE SCHEMAS ---
+
+// User Schema
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true }
 });
 const User = mongoose.model("User", UserSchema);
 
+// Message Schema
 const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   receiver: { type: String, required: true },
@@ -52,20 +56,26 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// --- HTTP ROUTES ---
+// --- HTTP API ROUTES (No Static File Serving/app.get() routes here) ---
+
+// ✅ Signup Route
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
+    
     if (!username || !password || username.length < 3 || password.length < 6) {
         return res.status(400).json({ success: false, message: "Username (min 3) and Password (min 6) are required." });
     }
+    
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(409).json({ success: false, message: "User already exists" });
     }
+    
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword });
     await newUser.save();
+    
     res.json({ success: true, message: "User registered successfully" });
   } catch (err) {
     console.error("Signup Error:", err);
@@ -73,12 +83,15 @@ app.post("/signup", async (req, res) => {
   }
 });
 
+// ✅ Login Route
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
+    
     if (!username || !password) {
         return res.status(400).json({ success: false, message: "Username and password are required." });
     }
+    
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
@@ -92,30 +105,15 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Static files (serve HTML, CSS, etc.)
-app.use(express.static(path.join(__dirname, "public"), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith(".mp4")) {
-      res.setHeader("Content-Type", "video/mp4");
-    }
-  }
-}));
-
-// MAIN ROUTE: Users ko seedhe login page par bhejta hai.
-app.get("/", (req, res) => res.redirect("/login.html")); 
-
-// File serving routes:
-app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public", "chat.html")));
-app.get("/games", (req, res) => res.sendFile(path.join(__dirname, "public", "games.html")));
-app.get("/videos", (req, res) => res.sendFile(path.join(__dirname, "public", "videos.html")));
-app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
-
 
 // --- SOCKET.IO CHAT LOGIC ---
 
-let onlineUsers = {}; 
+let onlineUsers = {}; // Map: username -> socket.id
 
 io.on("connection", (socket) => {
+  console.log("New user connected");
+
+  // 1. New User Connects
   socket.on("newUser", (username) => {
     if (!username) return; 
     socket.username = username;
@@ -123,6 +121,7 @@ io.on("connection", (socket) => {
     io.emit("userList", Object.keys(onlineUsers)); 
   });
 
+  // 2. Load Chat History
   socket.on("loadChat", async ({ user1, user2 }) => {
     try {
         const chats = await Message.find({
@@ -138,6 +137,7 @@ io.on("connection", (socket) => {
     }
   });
 
+  // 3. Handle Private Message
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     if (!sender || !receiver || !text) return; 
     try {
@@ -154,14 +154,18 @@ io.on("connection", (socket) => {
     }
   });
 
+  // 4. User Disconnects
   socket.on("disconnect", () => {
     if (socket.username && onlineUsers[socket.username]) {
         delete onlineUsers[socket.username];
         io.emit("userList", Object.keys(onlineUsers)); 
+        console.log(`User ${socket.username} disconnected`);
     } 
   });
 });
 
 // --- SERVER LISTEN ---
+
+// API/Socket Server is typically run on a different port than the static server (e.g., 4000)
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 API/Socket Server running on port ${PORT}`));
