@@ -1,4 +1,4 @@
-// .env file se variables load karne ke liye zaroori (Agar aap .env use kar rahe hain)
+// TOP OF FILE: Environment variables ko load karne ke liye zaroori (Agar aap .env file use kar rahe hain)
 // const dotenv = require('dotenv');
 // dotenv.config();
 
@@ -13,10 +13,11 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-// CORS ko handle karne ke liye socket.io options me lagaya gaya
+
+// Socket.io configuration for CORS
 const io = socketIO(server, {
     cors: {
-        origin: "*", // Sabhi origins se allow karein (Production me specific URL dein)
+        origin: "*", // Production me isko specific URL par set karein
         methods: ["GET", "POST"]
     }
 });
@@ -25,16 +26,21 @@ const io = socketIO(server, {
 app.use(bodyParser.json());
 app.use(cors());
 
+// --- DATABASE CONNECTION ---
+
 // ✅ MongoDB Connection (सुरक्षा के लिए Environment Variable का उपयोग करें)
+// Agar process.env.MONGO_URI set nahi hai, toh local string ka use karein
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp";
 
 mongoose.connect(MONGO_URI)
 .then(() => console.log("✅ MongoDB Connected Successfully"))
 .catch(err => {
     console.error("❌ MongoDB Connection Error:", err.message);
-    // Connection fail hone par server band karna accha practice hai
+    // Connection fail hone par server ko band karna
     process.exit(1); 
 });
+
+// --- MONGOOSE SCHEMAS ---
 
 // ✅ User Schema
 const UserSchema = new mongoose.Schema({
@@ -52,9 +58,9 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// --- ROUTES ---
+// --- HTTP ROUTES ---
 
-// ✅ Signup Route (Validation aur Error Handling behtar kiya gaya)
+// ✅ Signup Route (Improved Validation)
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -80,12 +86,11 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// ✅ Login Route (Error Handling behtar kiya gaya)
+// ✅ Login Route (Improved Error Handling)
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    // Simple Validation
     if (!username || !password) {
         return res.status(400).json({ success: false, message: "Username and password are required." });
     }
@@ -105,7 +110,6 @@ app.post("/login", async (req, res) => {
 
 // ✅ Static files (public folder serve karna)
 app.use(express.static(path.join(__dirname, "public"), {
-  // Video MIME type handling ko jaisa tha, waisa hi rakha gaya
   setHeaders: (res, filePath) => {
     if (filePath.endsWith(".mp4")) {
       res.setHeader("Content-Type", "video/mp4");
@@ -113,12 +117,17 @@ app.use(express.static(path.join(__dirname, "public"), {
   }
 }));
 
-// ✅ Custom Routes (Index se redirect aur specific file serving)
-app.get("/", (req, res) => res.redirect("/login.html")); // Direct to login.html
+// ✅ Custom Routes
+
+// MAIN ROUTE: Users ko seedhe login page par bhejta hai.
+app.get("/", (req, res) => res.redirect("/login.html")); 
+
+// File serving routes:
 app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public", "chat.html")));
 app.get("/games", (req, res) => res.sendFile(path.join(__dirname, "public", "games.html")));
 app.get("/videos", (req, res) => res.sendFile(path.join(__dirname, "public", "videos.html")));
 app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
+
 
 // --- SOCKET.IO CHAT LOGIC ---
 
@@ -129,14 +138,13 @@ io.on("connection", (socket) => {
 
   // 1. New User Connects
   socket.on("newUser", (username) => {
-    if (!username) return; // Basic check
+    if (!username) return; 
     socket.username = username;
     onlineUsers[username] = socket.id;
-    // Client-side me "updateUsers" ki jagah "userList" tha, jaisa ki client code me tha:
     io.emit("userList", Object.keys(onlineUsers)); 
   });
 
-  // 2. Load Chat History (Error Handling added)
+  // 2. Load Chat History (Error Handling Added)
   socket.on("loadChat", async ({ user1, user2 }) => {
     try {
         const chats = await Message.find({
@@ -147,22 +155,20 @@ io.on("connection", (socket) => {
         }).sort({ timestamp: 1 });
         socket.emit("chatHistory", chats);
     } catch (err) {
-        console.error("Error loading chat history for:", user1, "and", user2, err);
+        console.error("Error loading chat history:", err);
         socket.emit("error", "Failed to load chat history.");
     }
   });
 
-  // 3. Handle Private Message (Error Handling added)
+  // 3. Handle Private Message (Error Handling Added)
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
-    if (!sender || !receiver || !text) return; // Basic data check
+    if (!sender || !receiver || !text) return; 
     try {
         const newMessage = new Message({ sender, receiver, text });
         await newMessage.save();
         
-        // Sender ko message wapas bhejna
         socket.emit("privateMessage", { sender, text });
 
-        // Receiver ko message bhejna agar online ho
         if (onlineUsers[receiver]) {
           io.to(onlineUsers[receiver]).emit("privateMessage", { sender, text });
         }
@@ -171,18 +177,19 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 4. User Disconnects (Stability improved)
+  // 4. User Disconnects (Stability Improved)
   socket.on("disconnect", () => {
-    // Check karein ki username set hai aur online list me hai
     if (socket.username && onlineUsers[socket.username]) {
         delete onlineUsers[socket.username];
-        io.emit("userList", Object.keys(onlineUsers)); // Client-side name use kiya gaya
+        io.emit("userList", Object.keys(onlineUsers)); 
         console.log(`User ${socket.username} disconnected`);
     } else {
         console.log("A socket disconnected (username not tracked)");
     }
   });
 });
+
+// --- SERVER LISTEN ---
 
 // ✅ Port setup (Render/Hosting Service compatible)
 const PORT = process.env.PORT || 4000;
