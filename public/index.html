@@ -1,20 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Home - My Website</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Home - My Website</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <nav>
-    <a href="index.html">🏠 Home</a>
-    <a href="chat.html">💬 Chat</a>
-    <a href="games.html">🎮 Games</a>
-    <a href="videos.html">📺 Videos</a>
-    <a href="about.html">ℹ️ About</a>
-  </nav>
+    
+    <div class="navbar">
+        <a href="index.html" class="nav-brand">My App</a> 
 
-  <h1>Welcome to My Website 🚀</h1>
-  <p>Enjoy chatting, playing games, and watching videos!</p>
+        <div class="nav-links">
+            <a href="index.html" class="active">🏠 Home</a>
+            <a href="chat.html">💬 Chat</a>
+            <a href="games.html">🎮 Games</a>
+            <a href="videos.html">📺 Videos</a>
+            <a href="about.html">ℹ️ About</a>
+        </div>
+        
+        <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
+        <button onclick="logout()">Logout</button>
+        
+        </div>
+
+    <div class="content">
+        <h1>Welcome to My Website 🚀</h1>
+        <p>Enjoy chatting, playing games, and watching videos!</p>
+        
+        <div class="feature-card">
+            <h3>Start Your Journey</h3>
+            <p>Ready to connect? Click below to jump into the main chat area.</p>
+            <a href="chat.html" class="cta-button">Go to Chat</a>
+        </div>
+        
+        </div>
+
+
+    <script>
+        // Log out function (Ensure user is sent back to login page)
+        function logout() {
+            localStorage.removeItem("username");
+            window.location.href = "/login.html"; // Jaisa aapke server.js me set tha
+        }
+
+        // Toggle dark/light mode function (Har page par zaroori hai)
+        function toggleTheme() {
+            document.body.classList.toggle("light");
+            const isLight = document.body.classList.contains('light');
+            document.querySelector('.toggle-btn').textContent = isLight ? '🌙' : '☀️';
+            // Theme ko local storage me save karein, taki ye next page par bhi yaad rahe
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        // Initial Theme Setting on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('theme') === 'light') {
+                document.body.classList.add('light');
+                document.querySelector('.toggle-btn').textContent = '🌙';
+            }
+        });
+    </script>
+
+
+    <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
+    
 </body>
 </html>
