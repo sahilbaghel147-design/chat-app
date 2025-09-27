@@ -54,7 +54,6 @@
         // ************************************************************
         const isLoginPage = window.location.pathname.includes('/login') || window.location.pathname.includes('/signup');
         
-        // Agar username local storage me nahi hai AUR hum login/signup page par nahi hain, toh redirect karo.
         if (!localStorage.getItem("username") && !isLoginPage) {
             window.location.replace("/login.html"); 
         }
@@ -64,8 +63,7 @@
         // --- Common Functions ---
         
         function logout() {
-            localStorage.removeItem("username");
-            localStorage.removeItem("theme"); 
+            localStorage.clear(); // Puri local storage saaf kar dega
             window.location.replace("/login.html"); 
         }
         
@@ -77,7 +75,6 @@
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
         }
         
-        // Theme ko page load hone par apply karein
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('theme') === 'light') {
                 document.body.classList.add('light');
