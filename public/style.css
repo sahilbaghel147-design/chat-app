@@ -330,3 +330,115 @@ body {
       font-size: 0.8rem;
   }
 }
+
+
+
+/* ======================================= */
+/* ====== INDEX.HTML UI IMPROVEMENTS ======= */
+/* ======================================= */
+
+/* 1. Hero Section Styling */
+.hero-section {
+    padding: 80px 20px;
+    text-align: center;
+    border-radius: 12px;
+    margin-bottom: 40px;
+    /* Theme ke anusaar background aur shadow */
+    background: var(--color-background-secondary); 
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); 
+    transition: all 0.3s ease;
+}
+
+.hero-section h1 {
+    font-size: 3em;
+    margin-bottom: 15px;
+    color: var(--color-text-highlight); /* Accent color use karein */
+    font-weight: 700;
+}
+
+.hero-section .tagline {
+    font-size: 1.25em;
+    color: var(--color-text);
+    margin-bottom: 30px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* CTA Button Styling */
+.cta-button {
+    display: inline-block;
+    background-color: var(--color-accent); /* Aapka main blue/highlight color */
+    color: var(--color-background); /* Button par text hamesha dark/background color ka ho */
+    padding: 12px 30px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: 50px;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.cta-button:hover {
+    background-color: var(--color-text-highlight); /* Hover par thoda dark ho jaye */
+    transform: translateY(-2px); /* Halki si uthti hui animation */
+}
+
+/* 2. Feature Grid Styling */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.feature-card {
+    background: var(--color-background-secondary);
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 5px solid var(--color-accent); /* Professional touch */
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.feature-card h3 {
+    font-size: 1.5em;
+    color: var(--color-text-highlight);
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.feature-card i {
+    color: var(--color-accent);
+}
+
+.feature-card p {
+    color: var(--color-text-secondary);
+}
+
+/* 3. Responsive Adjustments */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 50px 15px;
+    }
+    .hero-section h1 {
+        font-size: 2.2em;
+    }
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 4. Light Theme Overrides (Agar light theme me colors change karne ho) */
+body.light .hero-section {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+body.light .feature-card {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
