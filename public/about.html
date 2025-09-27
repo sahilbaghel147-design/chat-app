@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About</title>
   <link rel="stylesheet" href="style.css">
-  </head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
 <body>
   <div class="navbar">
     <a href="index.html" class="nav-brand">My App</a>
@@ -22,39 +23,46 @@
   </div>
 
   <div class="content">
-    <h1><span>ℹ️</span> About</h1>
+    <h1><i class="fas fa-info-circle"></i> About</h1>
     <p>
       Yeh tumhari <b>Chat + Games + Videos</b> app ka info page hai.<br><br>
       Isme tumhare project ke baare me details rehengi.  
       Yaha se tum users ko bata sakte ho ki tumhari app me kya-kya features hain:
     </p>
     <ul>
-      <li>💬 Real-time Chat</li>
-      <li>🎮 Fun Games</li>
-      <li>📹 Video Section</li>
-      <li>ℹ️ About & Info Page</li>
+      <li><i class="fas fa-comments"></i> Real-time Chat</li>
+      <li><i class="fas fa-gamepad"></i> Fun Games</li>
+      <li><i class="fas fa-video"></i> Video Section</li>
+      <li><i class="fas fa-users"></i> User Authentication</li>
     </ul>
   </div>
 
   <script>
-    // --- Common Functions ---
-    function logout() {
-      localStorage.removeItem("username");
-      window.location.href = "/login.html"; 
+    // ************************************************************
+    // ** GUARANTEED LOGIN CHECK (MUST BE THE FIRST THING TO RUN) **
+    // ************************************************************
+    const isLoginPage = window.location.pathname.includes('/login') || window.location.pathname.includes('/signup');
+    if (!localStorage.getItem("username") && !isLoginPage) {
+        window.location.replace("/login.html"); 
     }
+    // ************************************************************
+    
+    // --- Common Functions ---
+    function logout() { localStorage.clear(); window.location.replace("/login.html"); }
     function toggleTheme() {
-      document.body.classList.toggle("light");
-      const isLight = document.body.classList.contains('light');
-      document.querySelector('.toggle-btn').textContent = isLight ? '🌙' : '☀️';
-      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        document.body.classList.toggle("light");
+        const isLight = document.body.classList.contains('light');
+        const btn = document.querySelector('.toggle-btn');
+        if (btn) btn.textContent = isLight ? '🌙' : '☀️';
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
     }
     document.addEventListener('DOMContentLoaded', () => {
         if (localStorage.getItem('theme') === 'light') {
             document.body.classList.add('light');
-            document.querySelector('.toggle-btn').textContent = '🌙';
+            const btn = document.querySelector('.toggle-btn');
+            if (btn) btn.textContent = '🌙';
         }
     });
-    // --- End Common Functions ---
   </script>
 
   <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
