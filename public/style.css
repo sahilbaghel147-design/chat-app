@@ -40,110 +40,293 @@ body {
   cursor: pointer;
   font-weight: bold;
 }
-.navbar button:hover {
-  background: #dc2626;
+/* ==================================== */
+/* 🚀 Global Reset & Typography */
+/* ==================================== */
+:root {
+  /* Define Color Variables (Modern Dark Palette) */
+  --bg-primary: #121212;         /* Deep Black-Gray */
+  --bg-secondary: #1e1e1e;       /* Medium Gray for components */
+  --bg-tertiary: #2a2a2a;        /* Light Gray for hover/active */
+  --color-text-main: #f0f0f0;    /* Light Text */
+  --color-text-secondary: #aaaaaa; /* Lighter Text for details */
+  --color-accent: #007bff;       /* Blue Accent (Primary Action Color) */
+  --color-hover: #0056b3;        /* Darker Blue on Hover */
+  --color-error: #ef4444;        /* Red for error/logout */
 }
 
-/* 🔹 Page Content */
-.content {
-  padding: 20px;
-  text-align: center;
-}
-.content h2 {
-  margin-bottom: 10px;
-  font-size: 24px;
-  color: #38bdf8;
-}
-.content p {
-  font-size: 18px;
-  color: #e2e8f0;
+/* Light Mode Variables (for toggleTheme) */
+body.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f0f0f0;
+  --bg-tertiary: #e0e0e0;
+  --color-text-main: #121212;
+  --color-text-secondary: #444444;
+  --color-accent: #007bff;
+  --color-hover: #0056b3;
+  --color-error: #dc2626;
 }
 
-/* 🔹 Chat Layout */
-.chat-container {
-  display: flex;
-  height: calc(100vh - 60px);
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
+
+body {
+  font-family: 'Inter', sans-serif; /* Modern Font */
+  background: var(--bg-primary);
+  color: var(--color-text-main);
+  min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* 🧱 Main Layout Container */
+.main-container {
+    display: flex;
+    height: 100vh; /* Full viewport height */
+    overflow: hidden; /* Prevent body scroll due to fixed height */
+}
+
+/* ==================================== */
+/* 👨‍💻 Users List / Sidebar */
+/* ==================================== */
 .users-list {
-  width: 200px;
-  background: #1e293b;
-  padding: 15px;
-  border-right: 2px solid #334155;
+  width: 280px; /* Slightly wider for better visibility */
+  background: var(--bg-secondary);
+  padding: 20px 15px;
+  border-right: 1px solid var(--bg-tertiary);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
-.users-list h3 {
-  margin-bottom: 10px;
-  font-size: 18px;
+
+.users-list h2 {
+  margin-bottom: 20px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-accent);
 }
-.users-list ul {
-  list-style: none;
-}
-.users-list li {
-  padding: 8px;
-  margin-bottom: 6px;
-  background: #334155;
-  border-radius: 5px;
+
+#usersDiv div { /* Targetting dynamically created user divs */
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  border-left: 3px solid transparent; /* For active indicator */
 }
-.users-list li:hover {
-  background: #475569;
+
+#usersDiv div:hover {
+  background: var(--bg-tertiary);
+  border-left-color: var(--color-accent);
 }
-.chat-box {
+
+/* Add a class for selected user (You need to add this class in JS) */
+#usersDiv div.selected { 
+    background: var(--color-accent);
+    color: white;
+    font-weight: 600;
+    border-left-color: var(--color-accent);
+}
+
+
+/* ==================================== */
+/* 💬 Chat Area */
+/* ==================================== */
+.chat-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 15px;
-  background: #0f172a;
+  background: var(--bg-primary);
 }
-#chatHeader {
-  font-size: 20px;
-  margin-bottom: 10px;
-  text-align: center;
+
+/* 🏷️ Chat Header */
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--bg-tertiary);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
 }
+
+.chat-header span {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.chat-header button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.chat-header .toggle-btn {
+    background: var(--bg-tertiary);
+    color: var(--color-text-main);
+    margin-right: 10px;
+}
+
+.chat-header .toggle-btn:hover {
+    background: #555;
+}
+
+.chat-header button[onclick="logout()"] {
+    background: var(--color-error);
+    color: white;
+}
+
+.chat-header button[onclick="logout()"]:hover {
+    background: var(--color-hover);
+}
+
+
+/* 📝 Messages Container */
 #messages {
   flex: 1;
   overflow-y: auto;
-  background: #1e293b;
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 10px;
-}
-.chat-input {
-  display: flex;
-}
-.chat-input input {
-  flex: 1;
-  padding: 8px;
-  border: none;
-  border-radius: 5px 0 0 5px;
-  outline: none;
-}
-.chat-input button {
-  padding: 8px 12px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 0 5px 5px 0;
-  cursor: pointer;
-}
-.chat-input button:hover {
-  background: #1d4ed8;
+  padding: 20px;
+  /* Styling Scrollbar for aesthetics */
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-tertiary) transparent;
 }
 
-/* 🔹 Responsive (Mobile Friendly) */
+#messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+#messages::-webkit-scrollbar-thumb {
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+/* 💬 Message Bubbles */
+.message {
+  max-width: 70%;
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  border-radius: 18px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.message.you {
+  /* Outgoing message (You) */
+  background: var(--color-accent);
+  color: white;
+  margin-left: auto; /* Aligns to the right */
+  border-bottom-right-radius: 5px; /* Slight bubble effect */
+}
+
+.message.other {
+  /* Incoming message (Other users) */
+  background: var(--bg-secondary);
+  color: var(--color-text-main);
+  margin-right: auto; /* Aligns to the left */
+  border-bottom-left-radius: 5px;
+}
+
+
+/* ⌨️ Input Area */
+.message-input-area {
+  display: flex;
+  padding: 15px 20px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--bg-tertiary);
+  flex-shrink: 0;
+}
+
+.message-input-area input {
+  flex: 1;
+  padding: 12px 15px;
+  border: 1px solid var(--bg-tertiary);
+  border-radius: 25px; /* Rounded input */
+  outline: none;
+  background: var(--bg-primary);
+  color: var(--color-text-main);
+  margin-right: 10px;
+  font-size: 1rem;
+}
+
+.message-input-area button {
+  padding: 10px 20px;
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.message-input-area button:hover {
+  background: var(--color-hover);
+}
+
+
+/* ==================================== */
+/* 📱 Mobile Responsiveness (MAX-WIDTH: 768px) */
+/* ==================================== */
 @media (max-width: 768px) {
-  .chat-container {
+  .main-container {
     flex-direction: column;
+    height: 100vh;
   }
+  
+  /* Users List: Mobile Drawer/Hidden */
   .users-list {
     width: 100%;
-    display: flex;
-    overflow-x: auto;
+    height: 60px; /* Fixed height for mobile header */
+    padding: 10px 20px;
+    border-right: none;
+    border-bottom: 1px solid var(--bg-tertiary);
+    
+    /* Initially hide the actual list on small screens */
+    position: absolute; /* Change later if using a full drawer */
+    transform: translateY(-100%); /* Hiding temporarily for simplicity */
+    visibility: hidden;
+    /* NOTE: For true responsiveness, you should turn this into a drawer menu controlled by JS */
   }
-  .users-list ul {
-    display: flex;
+  
+  .users-list h2 {
+      display: none; /* Hide header on small screen */
   }
-  .users-list li {
-    margin-right: 8px;
+
+  /* Chat Area takes up all available space */
+  .chat-area {
+    width: 100%;
+    height: 100%; /* Use remaining height */
+  }
+
+  /* Ensure message input is easy to use */
+  .message-input-area {
+      padding: 10px;
+  }
+  
+  .message-input-area input {
+      padding: 10px 15px;
+      font-size: 0.9rem;
+  }
+
+  /* Make message bubbles narrower on mobile */
+  .message {
+      max-width: 85%;
+  }
+
+  /* Header buttons smaller on mobile */
+  .chat-header button {
+      padding: 6px 10px;
+      font-size: 0.8rem;
   }
 }
