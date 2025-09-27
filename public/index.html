@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>Home - My Website</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - My Website</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
     
@@ -21,8 +21,7 @@
         
         <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
         <button onclick="logout()">Logout</button>
-        
-        </div>
+    </div>
 
     <div class="content">
         <h1>Welcome to My Website 🚀</h1>
@@ -38,28 +37,46 @@
 
 
     <script>
-        // Log out function (Ensure user is sent back to login page)
-        function logout() {
-            localStorage.removeItem("username");
-            window.location.href = "/login.html"; // Jaisa aapke server.js me set tha
+        // ************************************************************
+        // ** GUARANTEED LOGIN CHECK (MUST BE THE FIRST THING TO RUN) **
+        // ************************************************************
+        const isLoginPage = window.location.pathname.includes('/login') || window.location.pathname.includes('/signup');
+        
+        // Agar username local storage me nahi hai AUR hum login/signup page par nahi hain, toh redirect karo.
+        if (!localStorage.getItem("username") && !isLoginPage) {
+            window.location.replace("/login.html"); 
         }
-
-        // Toggle dark/light mode function (Har page par zaroori hai)
+        // ************************************************************
+        
+        
+        // --- Common Functions ---
+        
+        function logout() {
+            // Local storage se sabhi session data hatayein
+            localStorage.removeItem("username");
+            localStorage.removeItem("theme"); 
+            window.location.replace("/login.html"); 
+        }
+        
         function toggleTheme() {
             document.body.classList.toggle("light");
             const isLight = document.body.classList.contains('light');
-            document.querySelector('.toggle-btn').textContent = isLight ? '🌙' : '☀️';
-            // Theme ko local storage me save karein, taki ye next page par bhi yaad rahe
+            const btn = document.querySelector('.toggle-btn');
+            if (btn) btn.textContent = isLight ? '🌙' : '☀️';
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
         }
-
-        // Initial Theme Setting on Load
+        
+        // Theme ko page load hone par apply karein
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('theme') === 'light') {
                 document.body.classList.add('light');
-                document.querySelector('.toggle-btn').textContent = '🌙';
+                const btn = document.querySelector('.toggle-btn');
+                if (btn) btn.textContent = '🌙';
             }
         });
+
+        // --- Page Specific Code (Agar koi ho) ---
+        
     </script>
 
 
