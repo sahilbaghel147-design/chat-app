@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <title>Reels - My Website</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
+  <link rel="stylesheet" href="style.css"> <style>
+    /* NOTE: Video reels ke liye in styles ko aap style.css ke end me bhi jod sakte hain */
     body {
       margin: 0;
       padding: 0;
@@ -13,6 +14,8 @@
       scroll-snap-type: y mandatory;
       font-family: Arial, sans-serif;
     }
+    /* Navbar ko hide karein taki reels full-screen lagein */
+    .navbar { display: none !important; }
 
     .reel {
       height: 100vh;
@@ -40,6 +43,19 @@
       max-width: 70%;
       text-shadow: 1px 1px 5px rgba(0,0,0,0.7);
     }
+    /* Add a back button for navigation */
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        background: rgba(0,0,0,0.5);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+    }
 
     .actions {
       position: absolute;
@@ -66,6 +82,8 @@
   </style>
 </head>
 <body>
+
+  <a href="index.html" class="back-button">← Home</a>
 
   <div class="reel">
     <video src="friends.mp4" muted loop playsinline></video>
@@ -98,6 +116,7 @@
   </div>
 
   <script>
+    // --- Video Logic ---
     const videos = document.querySelectorAll("video");
 
     function pauseAll() {
@@ -110,14 +129,33 @@
         let rect = v.getBoundingClientRect();
         if (rect.top >= 0 && rect.bottom <= windowHeight) {
           pauseAll();
-          v.play();
+          // Added video.play() in a promise to handle mobile restrictions
+          const playPromise = v.play();
+          if (playPromise !== undefined) {
+              playPromise.catch(error => {
+                  console.log("Auto-play blocked, user interaction needed.");
+              });
+          }
         }
       });
     }
 
     window.addEventListener("scroll", playVisibleVideo);
     window.addEventListener("load", playVisibleVideo);
+
+    // --- Common Functions ---
+    function logout() {
+      localStorage.removeItem("username");
+      window.location.href = "/login.html"; 
+    }
+    function toggleTheme() {
+      // Videos page ka background hamesha black hai, to theme toggle ki zaroorat nahi
+      console.log("Theme toggle disabled on video page.");
+    }
+    // --- End Common Functions ---
   </script>
+
+  <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
 
 </body>
 </html>
