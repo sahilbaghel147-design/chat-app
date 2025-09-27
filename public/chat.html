@@ -3,166 +3,404 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat - Realtime Messenger</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Chat App - Sahil</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script> 
+    
     <style>
-        /* Chat-specific CSS (Agar aap side-navigation use kar rahe hain) */
-        .sidebar {
-            width: 250px;
-            background: var(--color-background-secondary);
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        /* ======================================= */
+        /* ====== GLOBAL & THEME (Dark Mode) ======= */
+        /* ======================================= */
+        :root {
+            --color-background: #121212;
+            --color-background-secondary: #1e1e1e;
+            --color-accent: #5e6bfe; /* Modern Blue/Violet accent */
+            --color-text: #e0e0e0;
+            --color-text-light: #aaa;
+            --color-border: #333333;
+            --color-success: #2ecc71; /* Green for Active */
+            --color-warning: #f39c12; /* Orange for Idle */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: var(--color-background);
+            color: var(--color-text);
             height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ======================================= */
+        /* ====== LAYOUT AND CONTAINER ======= */
+        /* ======================================= */
+        #app-container {
+            display: flex;
+            height: 100%;
+        }
+
+        /* 1. Sidebar Styling */
+        .sidebar {
+            width: 280px;
+            background: var(--color-background-secondary); 
+            padding: 20px 15px;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3); 
+            height: 100%;
             display: flex;
             flex-direction: column;
+            border-right: 1px solid var(--color-border);
         }
 
-        /* Sidebar ke andar ke links ka style */
+        .sidebar .nav-brand {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: var(--color-accent);
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-accent);
+        }
+
+        /* Sidebar Navigation Links */
         .sidebar .nav-link-item {
-            display: block;
-            padding: 10px;
-            margin-bottom: 5px;
-            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            padding: 12px 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-weight: 500;
+            color: var(--color-text);
             text-decoration: none;
-            color: var(--color-text-secondary);
-            transition: background-color 0.3s, color 0.3s;
+            transition: background-color 0.3s;
         }
 
-        .sidebar .nav-link-item:hover,
+        .sidebar .nav-link-item i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        .sidebar .nav-link-item:hover {
+            background-color: var(--color-border);
+        }
+
         .sidebar .nav-link-item.active {
             background-color: var(--color-accent);
-            color: var(--color-background); /* White text on accent */
+            color: #fff !important;
+            font-weight: bold;
+        }
+
+        /* Online Users Section */
+        .sidebar h3 {
+            font-size: 1.1em;
+            color: var(--color-text-light);
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 8px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        /* User List Items (Modified for Status Dot) */
+        #user-list li {
+            padding: 8px 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            color: var(--color-text);
+            list-style: none;
+            display: flex; /* For aligning dot and text */
+            align-items: center;
+        }
+
+        #user-list li:hover {
+            background-color: rgba(var(--color-accent-rgb), 0.2); /* Since we can't use var(--color-accent-rgb) easily, use a slight tint */
+            background-color: #282828;
+        }
+        
+        /* New: Status Dot Styling */
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            flex-shrink: 0; /* Dot should not shrink */
+        }
+        .status-dot.active { background-color: var(--color-success); }
+        .status-dot.idle { background-color: var(--color-warning); }
+
+
+        /* 2. Main Chat Window Styling */
+        #chat-window {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--color-background);
+        }
+
+        /* Chat Header */
+        #chat-header {
+            padding: 15px 20px;
+            background: var(--color-background-secondary);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #chat-header-name {
+            font-weight: bold;
+            color: var(--color-accent);
+            font-size: 1.2em;
+        }
+
+        /* Message Area */
+        #messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 65%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message.sender {
+            align-self: flex-end;
+            background-color: var(--color-accent);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.receiver {
+            align-self: flex-start;
+            background-color: var(--color-background-secondary);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Input Area */
+        #input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid var(--color-border);
+            background: var(--color-background-secondary);
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--color-border);
+            border-radius: 25px;
+            margin-right: 10px;
+            background: var(--color-background);
+            color: var(--color-text);
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #message-input:focus {
+            border-color: var(--color-accent);
+        }
+
+        #send-button {
+            background-color: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #send-button:hover {
+            background-color: #4a59e6; /* Slightly darker accent */
+            transform: translateY(-1px);
         }
     </style>
 </head>
 <body>
-    
     <div id="app-container">
         
         <div class="sidebar">
-            <h2 class="nav-brand" style="margin-bottom: 20px;">My App</h2>
-            
-            <div class="main-navigation">
-                <a href="index.html" class="nav-link-item"><i class="fas fa-home"></i> Home</a>
-                <a href="chat.html" class="nav-link-item active"><i class="fas fa-comments"></i> Chat</a>
-                <a href="games.html" class="nav-link-item"><i class="fas fa-gamepad"></i> Games</a>
-                <a href="videos.html" class="nav-link-item"><i class="fas fa-video"></i> Videos</a>
-                <a href="about.html" class="nav-link-item"><i class="fas fa-info-circle"></i> About</a>
-            </div>
+            <div class="nav-brand">Chat App</div>
 
-            <h3 style="margin-top: 30px; color: var(--color-text-highlight);">Online Users</h3>
-            <ul id="online-users" style="list-style: none; padding: 0;">
-                </ul>
-            
-            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--color-border);">
-                <button onclick="toggleTheme()" class="toggle-btn" style="width: 100%; margin-bottom: 10px;">☀️</button>
-                <button onclick="logout()" style="background-color: red; color: white; width: 100%;">Logout</button>
-            </div>
+            <a href="/index.html" class="nav-link-item"><i class="fas fa-home"></i> Home</a>
+            <a href="/chat.html" class="nav-link-item active"><i class="fas fa-comment-dots"></i> Chat</a>
+            <a href="/games.html" class="nav-link-item"><i class="fas fa-gamepad"></i> Games</a>
+            <a href="/videos.html" class="nav-link-item"><i class="fas fa-video"></i> Videos</a>
+            <a href="/about.html" class="nav-link-item"><i class="fas fa-info-circle"></i> About</a>
+
+            <h3>Online Users</h3>
+            <ul id="user-list">
+                <li style="color: var(--color-text-light); font-size: 0.9em;">Loading users...</li>
+            </ul>
         </div>
 
         <div id="chat-window">
+            
             <div id="chat-header">
-                <span id="welcome-message">Welcome, sahil</span>
-                <span id="current-receiver">Select a user to chat</span>
-            </div>
-            
-            <div id="messages">
+                <div style="display: flex; align-items: center;">
+                    <span id="welcome-message" style="font-weight: 600; margin-right: 15px;"></span>
+                    <span id="chat-header-name">Select a user to chat</span>
                 </div>
-            
+                <button onclick="logout()" style="background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer;">Logout</button>
+            </div>
+
+            <div id="messages">
+                <p style="color: var(--color-text-light); text-align: center; margin-top: 20px;">
+                    Select a user from the left panel to start chatting.
+                </p>
+            </div>
+
             <div id="input-area">
-                <input type="text" id="message-input" placeholder="Type a message...">
-                <button id="send-button">Send</button>
+                <input type="text" id="message-input" placeholder="Type a message..." disabled>
+                <button id="send-button" onclick="sendMessage()" disabled><i class="fas fa-paper-plane"></i> Send</button>
             </div>
         </div>
     </div>
-<div id="chat-header">
-    <div style="display: flex; align-items: center; gap: 15px;">
-        <span id="welcome-message" style="font-weight: 600;">Welcome, sahil</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <span id="current-receiver" style="margin-right: 10px;">Select a user to chat</span>
-        <button onclick="logout()" style="background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold;">Logout</button>
-    </div>
-</div>
 
-    
-
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        // ************************************************************
-        // ** GUARANTEED LOGIN CHECK (MUST BE THE FIRST THING TO RUN) **
-        // ************************************************************
-        const isLoginPage = window.location.pathname.includes('/login') || window.location.pathname.includes('/signup');
-        if (!localStorage.getItem("username") && !isLoginPage) {
-            window.location.replace("/login.html"); 
-        }
-        // ************************************************************
-        
-        // --- Common Functions ---
-        function logout() { localStorage.clear(); window.location.replace("/login.html"); }
-        function toggleTheme() {
-            document.body.classList.toggle("light");
-            const isLight = document.body.classList.contains('light');
-            const btn = document.querySelector('.toggle-btn');
-            if (btn) btn.textContent = isLight ? '🌙' : '☀️';
-            localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('theme') === 'light') {
-                document.body.classList.add('light');
-                const btn = document.querySelector('.toggle-btn');
-                if (btn) btn.textContent = '🌙';
-            }
-            // Welcome message update
-            document.getElementById('welcome-message').textContent = `Welcome, ${localStorage.getItem("username") || 'Guest'}`;
-        });
-        
-        // --- Chat Logic ---
         const socket = io();
-        let username = localStorage.getItem("username");
-        let receiver = null;
+        let myUsername = localStorage.getItem("username");
+        let currentReceiver = null;
         
-        // 1. New User Login
-        socket.emit("newUser", username);
-
-        // ... (Baaki ka socket logic: userList, privateMessage, loadChat)
-        // Note: Yahan aapka pura chat client logic paste hoga.
-        // public/chat.html (JavaScript Section - around where you handle userList)
-
-socket.on("userList", (users) => {
-    const userList = document.getElementById("user-list");
-    userList.innerHTML = "";
-    
-    users.forEach((user) => {
-        if (user.username !== myUsername) {
-            const li = document.createElement("li");
-            
-            // --- NEW: Create a status dot based on user.status ---
-            const statusColor = (user.status === 'Active') ? 'green' : 'orange';
-            const statusDot = `<span style="height: 10px; width: 10px; background-color: ${statusColor}; border-radius: 50%; display: inline-block; margin-right: 5px;"></span>`;
-            // --- END NEW ---
-            
-            li.innerHTML = `${statusDot}${user.username}`; // NEW: Added statusDot
-            li.classList.add("user-item");
-
-            // ... (rest of the click listener remains the same)
-            li.addEventListener("click", () => {
-                // ... existing logic to set currentReceiver and load chat ...
-                currentReceiver = user.username;
-                document.getElementById("chat-header-name").textContent = currentReceiver;
-                document.getElementById("chat-area").style.display = "block";
-                document.getElementById("message-area").innerHTML = "";
-                socket.emit("loadChat", { user1: myUsername, user2: currentReceiver });
-            });
-            userList.appendChild(li);
+        // --- 1. INITIALIZATION & CHECK ---
+        if (!myUsername) {
+            window.location.replace("/login.html");
+        } else {
+            document.getElementById("welcome-message").textContent = `Welcome, ${myUsername}`;
+            socket.emit("newUser", myUsername);
         }
-    });
-});
-                                
+
+        function logout() {
+            localStorage.removeItem("username");
+            window.location.replace("/login.html");
+        }
+
+        // Function to create and append message to the messages area
+        function appendMessage(msg) {
+            const messagesDiv = document.getElementById("messages");
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("message");
+            messageElement.classList.add(msg.sender === myUsername ? "sender" : "receiver");
+            messageElement.textContent = msg.text;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to bottom
+        }
+
+        // --- 2. SOCKET RECEIVE LOGIC ---
+
+        // Receive User List and Status (MODIFIED)
+        socket.on("userList", (users) => {
+            const userList = document.getElementById("user-list");
+            userList.innerHTML = "";
+            
+            users.forEach((user) => {
+                if (user.username !== myUsername) {
+                    const li = document.createElement("li");
+                    
+                    // --- NEW: Status Dot Logic ---
+                    const statusClass = user.status.toLowerCase(); // 'active' or 'idle'
+                    const statusDot = `<span class="status-dot ${statusClass}"></span>`;
+                    // --- END NEW ---
+                    
+                    li.innerHTML = `${statusDot}${user.username}`;
+                    li.classList.add("user-item");
+
+                    li.addEventListener("click", () => {
+                        currentReceiver = user.username;
+                        document.getElementById("chat-header-name").textContent = currentReceiver;
+                        document.getElementById("message-input").disabled = false;
+                        document.getElementById("send-button").disabled = false;
+                        document.getElementById("messages").innerHTML = ""; // Clear old messages
+                        socket.emit("loadChat", { user1: myUsername, user2: currentReceiver });
+                    });
+                    userList.appendChild(li);
+                }
+            });
+        });
+
+        // Receive Chat History
+        socket.on("chatHistory", (messages) => {
+            document.getElementById("messages").innerHTML = ""; // Clear before loading
+            messages.forEach(appendMessage);
+        });
+
+        // Receive New Message
+        socket.on("message", appendMessage);
+
+        // --- 3. SEND MESSAGE LOGIC ---
+        function sendMessage() {
+            const input = document.getElementById("message-input");
+            const text = input.value.trim();
+
+            if (text && currentReceiver) {
+                socket.emit("privateMessage", {
+                    sender: myUsername,
+                    receiver: currentReceiver,
+                    text: text
+                });
+                input.value = "";
+            }
+        }
+        
+        // Send message on Enter key press
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+
+        // ===========================================
+        // === 🔑 NEW FEATURE: ACTIVE/IDLE LOGIC ===
+        // ===========================================
+
+        let idleTimer;
+        const IDLE_TIMEOUT_MS = 30000; // 30 seconds
+
+        // Function to reset the timer and set status to 'Active'
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            
+            // Send 'Active' status to server (optimization: you can check if status was 'Idle' before sending 'Active')
+            // For simplicity, we send it every time on activity (server handles duplicates)
+            socket.emit('userStatusChange', 'Active'); 
+            
+            // Start the timer to send 'Idle' later
+            idleTimer = setTimeout(() => {
+                socket.emit('userStatusChange', 'Idle');
+                console.log("Status set to Idle");
+            }, IDLE_TIMEOUT_MS);
+        }
+
+        // Listen for any user activity (mouse movement, key presses, clicks, etc.)
+        document.addEventListener('mousemove', resetIdleTimer);
+        document.addEventListener('keypress', resetIdleTimer);
+        document.addEventListener('click', resetIdleTimer);
+        document.addEventListener('scroll', resetIdleTimer);
+        document.addEventListener('touchstart', resetIdleTimer); // For mobile taps
+
+        // Start the timer immediately after successful connection
+        if(myUsername) {
+            resetIdleTimer();
+        }
         
     </script>
-    
-    <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
 </body>
 </html>
