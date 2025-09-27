@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home - My Website</title>
+  <title>Home - Your Ultimate Social Hub</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     
@@ -12,11 +13,11 @@
         <a href="index.html" class="nav-brand">My App</a> 
 
         <div class="nav-links">
-            <a href="index.html" class="active">🏠 Home</a>
-            <a href="chat.html">💬 Chat</a>
-            <a href="games.html">🎮 Games</a>
-            <a href="videos.html">📺 Videos</a>
-            <a href="about.html">ℹ️ About</a>
+            <a href="index.html" class="active"><i class="fas fa-home"></i> Home</a>
+            <a href="chat.html"><i class="fas fa-comments"></i> Chat</a>
+            <a href="games.html"><i class="fas fa-gamepad"></i> Games</a>
+            <a href="videos.html"><i class="fas fa-video"></i> Videos</a>
+            <a href="about.html"><i class="fas fa-info-circle"></i> About</a>
         </div>
         
         <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
@@ -24,16 +25,27 @@
     </div>
 
     <div class="content">
-        <h1>Welcome to My Website 🚀</h1>
-        <p>Enjoy chatting, playing games, and watching videos!</p>
-        
-        <div class="feature-card">
-            <h3>Start Your Journey</h3>
-            <p>Ready to connect? Click below to jump into the main chat area.</p>
-            <a href="chat.html" class="cta-button">Go to Chat</a>
+        <div class="hero-section">
+            <h1>Connect. Play. Watch. 🚀</h1>
+            <p class="tagline">Your all-in-one hub for real-time chat, fun gaming, and viral videos.</p>
+            <a href="chat.html" class="cta-button">Start Chatting Now <i class="fas fa-arrow-right"></i></a>
         </div>
         
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3><i class="fas fa-users"></i> Instant Chat</h3>
+                <p>Connect with your friends privately and securely in real-time.</p>
+            </div>
+            <div class="feature-card">
+                <h3><i class="fas fa-car-side"></i> Thrilling Games</h3>
+                <p>Challenge yourself with our exciting, in-app games like Highway Car Challenge.</p>
+            </div>
+            <div class="feature-card">
+                <h3><i class="fas fa-film"></i> Trending Videos</h3>
+                <p>Scroll through your favorite reels and video content seamlessly.</p>
+            </div>
         </div>
+    </div>
 
 
     <script>
@@ -52,7 +64,6 @@
         // --- Common Functions ---
         
         function logout() {
-            // Local storage se sabhi session data hatayein
             localStorage.removeItem("username");
             localStorage.removeItem("theme"); 
             window.location.replace("/login.html"); 
@@ -74,8 +85,6 @@
                 if (btn) btn.textContent = '🌙';
             }
         });
-
-        // --- Page Specific Code (Agar koi ho) ---
         
     </script>
 
