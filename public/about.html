@@ -4,90 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #1e1e2f;
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Navbar */
-    .navbar {
-      display: flex;
-      justify-content: center;
-      background: #111827;
-      padding: 12px;
-      border-bottom: 1px solid #333;
-    }
-    .navbar a {
-      color: white;
-      text-decoration: none;
-      margin: 0 15px;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      transition: color 0.3s;
-    }
-    .navbar a:hover {
-      color: #4cafef;
-    }
-    .navbar button {
-      margin-left: auto;
-      padding: 8px 16px;
-      background: red;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .navbar button:hover {
-      background: darkred;
-    }
-
-    /* Content */
-    .content {
-      flex: 1;
-      padding: 40px;
-      max-width: 800px;
-      margin: auto;
-      background: #2c2c3e;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.4);
-    }
-    .content h1 {
-      display: flex;
-      align-items: center;
-      font-size: 28px;
-      margin-bottom: 15px;
-      color: #4cafef;
-    }
-    .content h1 span {
-      margin-right: 10px;
-      font-size: 30px;
-    }
-    .content p {
-      font-size: 18px;
-      line-height: 1.6;
-      color: #ddd;
-    }
-  </style>
-</head>
+  <link rel="stylesheet" href="style.css">
+  </head>
 <body>
-  <!-- Navbar -->
   <div class="navbar">
-    <a href="/chat">💬 Chat</a>
-    <a href="/games">🎮 Games</a>
-    <a href="/videos">📹 Videos</a>
-    <a href="/about">ℹ️ About</a>
+    <a href="index.html" class="nav-brand">My App</a>
+    <div class="nav-links">
+        <a href="index.html">🏠 Home</a>
+        <a href="chat.html">💬 Chat</a>
+        <a href="games.html">🎮 Games</a>
+        <a href="videos.html">📺 Videos</a>
+        <a href="about.html" class="active">ℹ️ About</a>
+    </div>
+
+    <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
     <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- Content -->
   <div class="content">
     <h1><span>ℹ️</span> About</h1>
     <p>
@@ -104,10 +37,26 @@
   </div>
 
   <script>
+    // --- Common Functions ---
     function logout() {
       localStorage.removeItem("username");
-      window.location.href = "/login";
+      window.location.href = "/login.html"; 
     }
+    function toggleTheme() {
+      document.body.classList.toggle("light");
+      const isLight = document.body.classList.contains('light');
+      document.querySelector('.toggle-btn').textContent = isLight ? '🌙' : '☀️';
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light');
+            document.querySelector('.toggle-btn').textContent = '🌙';
+        }
+    });
+    // --- End Common Functions ---
   </script>
+
+  <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
 </body>
 </html>
