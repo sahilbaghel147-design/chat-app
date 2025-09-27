@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trending Videos - Chat App</title>
+    <title>Video Reels - Chat App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -24,27 +24,29 @@
             margin: 0;
             padding: 0;
             font-family: 'Arial', sans-serif;
+            /* Scroll snap smooth scrolling ke liye */
+            scroll-behavior: smooth; 
         }
 
         body {
             background: var(--color-background);
             color: var(--color-text);
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
+            overflow: hidden; /* Hide main body scrollbar */
         }
 
-        /* 1. Sidebar Styling (Consistent with Chat UI) */
+        /* 1. Sidebar Styling (Consistent) */
         .sidebar {
             width: 280px;
             background: var(--color-background-secondary); 
             padding: 20px 15px;
             box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3); 
-            height: 100vh; /* Full viewport height */
-            position: sticky;
-            top: 0;
+            height: 100vh; 
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--color-border);
+            flex-shrink: 0; /* Sidebar should not shrink */
         }
 
         .sidebar .nav-brand {
@@ -58,102 +60,116 @@
         }
 
         .sidebar .nav-link-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 10px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            font-weight: 500;
-            color: var(--color-text);
-            text-decoration: none;
+            display: flex; align-items: center; padding: 12px 10px; margin-bottom: 8px;
+            border-radius: 8px; font-weight: 500; color: var(--color-text); text-decoration: none;
             transition: background-color 0.3s;
         }
 
-        .sidebar .nav-link-item i {
-            margin-right: 10px;
-            width: 20px;
-        }
-
-        .sidebar .nav-link-item:hover {
-            background-color: var(--color-border);
-        }
-
-        .sidebar .nav-link-item.active {
-            background-color: var(--color-accent);
-            color: #fff !important;
-            font-weight: bold;
-        }
+        .sidebar .nav-link-item i { margin-right: 10px; width: 20px; }
+        .sidebar .nav-link-item:hover { background-color: var(--color-border); }
+        .sidebar .nav-link-item.active { background-color: var(--color-accent); color: #fff !important; font-weight: bold; }
         
         .sidebar .logout-btn {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: auto; /* Pushes button to the bottom */
+            background-color: #e74c3c; color: white; border: none; padding: 12px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: auto; 
             transition: opacity 0.3s;
         }
-        .sidebar .logout-btn:hover {
-            opacity: 0.8;
-        }
+        .sidebar .logout-btn:hover { opacity: 0.8; }
 
 
-        /* 2. Main Content Area */
+        /* ======================================= */
+        /* ====== REELS/SHORTS UI STYLING ======= */
+        /* ======================================= */
+
         #main-content {
             flex-grow: 1;
-            padding: 30px;
-        }
-
-        #main-content h1 {
-            font-size: 2.5em;
-            color: var(--color-accent);
-            margin-bottom: 30px;
-            border-bottom: 3px solid var(--color-border);
-            padding-bottom: 10px;
-        }
-
-        /* Video Grid Styling */
-        #video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-
-        .video-card {
-            background: var(--color-background-secondary);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s;
-            border: 1px solid var(--color-border);
-        }
-
-        .video-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .video-card video {
-            width: 100%;
-            height: 200px; /* Fixed height for consistency */
-            object-fit: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Main area height */
             background: #000;
         }
 
-        .video-info {
-            padding: 15px;
+        /* Video Container (The Scrollable Reels Area) */
+        #reels-container {
+            width: 100%;
+            max-width: 450px; /* Reels typically use phone aspect ratio */
+            height: 100vh;
+            overflow-y: scroll; /* Vertical scrolling */
+            scroll-snap-type: y mandatory; /* Snap to full video on scroll */
+            background: #000;
         }
 
-        .video-info h3 {
-            font-size: 1.1em;
+        /* Individual Video Card (Reel) */
+        .reel-card {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            scroll-snap-align: start; /* Snap point */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Info at the bottom */
+            background-color: #000;
+        }
+
+        .reel-card video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Video covers the whole container */
+            z-index: 1;
+        }
+
+        /* Overlay for Info and Buttons */
+        .video-overlay {
+            position: relative;
+            z-index: 2;
+            padding: 20px;
+            color: white;
+            /* Gradient for readability over video */
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+        }
+
+        .video-overlay h3 {
+            font-size: 1.5em;
             margin-bottom: 5px;
-            color: var(--color-text);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
         }
 
-        .video-info p {
-            font-size: 0.9em;
-            color: var(--color-text-light);
+        .video-overlay p {
+            font-size: 1em;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        }
+
+        /* Action Buttons (Like, Comment) */
+        .actions-bar {
+            position: absolute;
+            right: 10px;
+            bottom: 100px;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            color: white;
+        }
+
+        .action-item {
+            text-align: center;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .action-item i {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .action-item:hover i {
+            color: var(--color-accent);
         }
     </style>
 </head>
@@ -164,16 +180,14 @@
         <a href="/index.html" class="nav-link-item"><i class="fas fa-home"></i> Home</a>
         <a href="/chat.html" class="nav-link-item"><i class="fas fa-comment-dots"></i> Chat</a>
         <a href="/games.html" class="nav-link-item"><i class="fas fa-gamepad"></i> Games</a>
-        <a href="/videos.html" class="nav-link-item active"><i class="fas fa-video"></i> Videos</a>
+        <a href="/videos.html" class="nav-link-item active"><i class="fas fa-video"></i> Reels</a>
         <a href="/about.html" class="nav-link-item"><i class="fas fa-info-circle"></i> About</a>
 
         <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
     <div id="main-content">
-        <h1>Trending Videos <i class="fas fa-fire"></i></h1>
-
-        <div id="video-grid">
+        <div id="reels-container">
             </div>
     </div>
 
@@ -189,40 +203,86 @@
             window.location.replace("/login.html");
         }
 
+        // Define your video data
         const videos = [
-            // --- New Videos ---
-            { title: "Whole.mp4 Clip", source: "/Whole.mp4", description: "A new engaging clip." },
-            { title: "Babu's Funniest Moment", source: "/babu.mp4", description: "Enjoy the funny Babu video." },
-            { title: "Intense Exercise Clip", source: "/exer.mp4", description: "Get motivated with this workout video." },
-            { title: "MC Stand Performance", source: "/mcstand.mp4", description: "Latest performance by MC Stand." },
-            { title: "Pain Reliever", source: "/pain.mp4", description: "A video that takes the pain away." },
-            { title: "Sahil's Special Clip", source: "/sahil2.mp4", description: "Sahil's personal recommended video." },
+            // Your Newly Added Videos
+            { title: "Whole.mp4 Clip", source: "/Whole.mp4", description: "A new engaging clip that's perfect for your feed." },
+            { title: "Babu's Funniest Moment", source: "/babu.mp4", description: "Laugh out loud with this funny clip!" },
+            { title: "Intense Exercise Clip", source: "/exer.mp4", description: "Time to hit the gym! Get motivated with this short workout." },
+            { title: "MC Stand Live Performance", source: "/mcstand.mp4", description: "Watch the trending performance. Lit!" },
+            { title: "Pain Reliever Clip", source: "/pain.mp4", description: "Take a moment to relax and enjoy this soothing video." },
+            { title: "Sahil's Special", source: "/sahil2.mp4", description: "Exclusive content just for our users." },
             
-            // --- Previous Videos (If they still exist in public/) ---
-            { title: "Oggy and the Cockroaches", source: "/Oggy.mp4", description: "A classic cartoon clip." },
-            { title: "Cool Op Video", source: "/opvideo.mp4", description: "An amazing, viral-worthy clip." }
+            // Previous Videos
+            { title: "Oggy and the Cockroaches", source: "/Oggy.mp4", description: "The classic cartoon clip we all love." },
+            { title: "Cool Op Video", source: "/opvideo.mp4", description: "An amazing, viral-worthy clip you must watch." }
         ];
 
-        const videoGrid = document.getElementById('video-grid');
+        const reelsContainer = document.getElementById('reels-container');
 
-        videos.forEach(video => {
+        // Function to create and insert each reel card
+        videos.forEach((video, index) => {
             const card = document.createElement('div');
-            card.classList.add('video-card');
+            card.classList.add('reel-card');
 
             card.innerHTML = `
-                <video controls preload="metadata">
-                    <source src="${video.source}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-                <div class="video-info">
+                <video id="video-${index}" src="${video.source}" loop preload="auto" muted playsinline></video>
+                
+                <div class="actions-bar">
+                    <div class="action-item"><i class="fas fa-heart"></i><br>120</div>
+                    <div class="action-item"><i class="fas fa-comment"></i><br>25</div>
+                    <div class="action-item"><i class="fas fa-share"></i><br>Share</div>
+                </div>
+
+                <div class="video-overlay">
                     <h3>${video.title}</h3>
                     <p>${video.description}</p>
                 </div>
             `;
-            videoGrid.appendChild(card);
+            reelsContainer.appendChild(card);
         });
 
-        // Optional: Tidio chat widget can be added here if needed
+        // ===========================================
+        // === Video Playback Logic (CRITICAL) ===
+        // ===========================================
+
+        // Intersection Observer to automatically play the video in the center view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    // Start playing if the video is in the viewport center
+                    video.play().catch(error => {
+                        console.log('Video autoplay blocked. User interaction required.', error);
+                        // Show a temporary play button if autoplay fails
+                    });
+                } else {
+                    // Pause if scrolled away
+                    video.pause();
+                    video.currentTime = 0; // Rewind to start
+                }
+            });
+        }, {
+            // Options: Target only the video closest to the center of the container
+            threshold: 0.8 // Video must be 80% visible
+        });
+
+        // Observe all video elements
+        document.querySelectorAll('.reel-card video').forEach(video => {
+            observer.observe(video);
+        });
+
+        // Add a click handler to toggle mute/unmute or play/pause (for mobile compliance)
+        reelsContainer.addEventListener('click', (e) => {
+            if (e.target.tagName === 'VIDEO') {
+                const video = e.target;
+                if (video.paused) {
+                    video.play().catch(err => console.log('Play failed on click:', err));
+                } else {
+                    video.pause();
+                }
+            }
+        });
     </script>
 </body>
 </html>
