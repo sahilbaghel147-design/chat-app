@@ -128,6 +128,38 @@
 
         // ... (Baaki ka socket logic: userList, privateMessage, loadChat)
         // Note: Yahan aapka pura chat client logic paste hoga.
+        // public/chat.html (JavaScript Section - around where you handle userList)
+
+socket.on("userList", (users) => {
+    const userList = document.getElementById("user-list");
+    userList.innerHTML = "";
+    
+    users.forEach((user) => {
+        if (user.username !== myUsername) {
+            const li = document.createElement("li");
+            
+            // --- NEW: Create a status dot based on user.status ---
+            const statusColor = (user.status === 'Active') ? 'green' : 'orange';
+            const statusDot = `<span style="height: 10px; width: 10px; background-color: ${statusColor}; border-radius: 50%; display: inline-block; margin-right: 5px;"></span>`;
+            // --- END NEW ---
+            
+            li.innerHTML = `${statusDot}${user.username}`; // NEW: Added statusDot
+            li.classList.add("user-item");
+
+            // ... (rest of the click listener remains the same)
+            li.addEventListener("click", () => {
+                // ... existing logic to set currentReceiver and load chat ...
+                currentReceiver = user.username;
+                document.getElementById("chat-header-name").textContent = currentReceiver;
+                document.getElementById("chat-area").style.display = "block";
+                document.getElementById("message-area").innerHTML = "";
+                socket.emit("loadChat", { user1: myUsername, user2: currentReceiver });
+            });
+            userList.appendChild(li);
+        }
+    });
+});
+                                
         
     </script>
     
