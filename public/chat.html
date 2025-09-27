@@ -3,148 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Application</title>
-    <link rel="stylesheet" href="style.css"> 
-    <script src="/socket.io/socket.io.js"></script> 
+    <title>Chat - Realtime Messenger</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Chat-specific CSS (Agar aap side-navigation use kar rahe hain) */
+        .sidebar {
+            width: 250px;
+            background: var(--color-background-secondary);
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Sidebar ke andar ke links ka style */
+        .sidebar .nav-link-item {
+            display: block;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: var(--color-text-secondary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .nav-link-item:hover,
+        .sidebar .nav-link-item.active {
+            background-color: var(--color-accent);
+            color: var(--color-background); /* White text on accent */
+        }
+    </style>
 </head>
 <body>
+    
+    <div id="app-container">
+        
+        <div class="sidebar">
+            <h2 class="nav-brand" style="margin-bottom: 20px;">My App</h2>
+            
+            <div class="main-navigation">
+                <a href="index.html" class="nav-link-item"><i class="fas fa-home"></i> Home</a>
+                <a href="chat.html" class="nav-link-item active"><i class="fas fa-comments"></i> Chat</a>
+                <a href="games.html" class="nav-link-item"><i class="fas fa-gamepad"></i> Games</a>
+                <a href="videos.html" class="nav-link-item"><i class="fas fa-video"></i> Videos</a>
+                <a href="about.html" class="nav-link-item"><i class="fas fa-info-circle"></i> About</a>
+            </div>
 
-    <div class="main-container">
-        <div class="users-list">
-            <h2>Users</h2>
-            <div id="usersDiv">
+            <h3 style="margin-top: 30px; color: var(--color-text-highlight);">Online Users</h3>
+            <ul id="online-users" style="list-style: none; padding: 0;">
+                </ul>
+            
+            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--color-border);">
+                <button onclick="toggleTheme()" class="toggle-btn" style="width: 100%; margin-bottom: 10px;">☀️</button>
+                <button onclick="logout()" style="background-color: red; color: white; width: 100%;">Logout</button>
             </div>
         </div>
 
-        <div class="chat-area">
-            <div class="chat-header">
-                <span>Welcome, <span id="currentUsername"></span></span>
-                
-                <button class="menu-toggle-btn" onclick="toggleUserList()">👥</button> 
-                
-                <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
-                <button onclick="logout()">Logout</button>
+        <div id="chat-window">
+            <div id="chat-header">
+                <span id="welcome-message">Welcome, sahil</span>
+                <span id="current-receiver">Select a user to chat</span>
             </div>
-            <div id="messages" class="messages-container">
-            </div>
-            <div class="message-input-area">
-                <input type="text" id="messageInput" placeholder="Type a message...">
-                <button onclick="sendMessage()">Send</button>
+            
+            <div id="messages">
+                </div>
+            
+            <div id="input-area">
+                <input type="text" id="message-input" placeholder="Type a message...">
+                <button id="send-button">Send</button>
             </div>
         </div>
     </div>
+
+
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-    // ************************************************************
-    // ** AAPKA PURANA JAVASCRIPT CODE YAHAN SE SHURU HOTA HAI **
-    // ************************************************************
-
-    const socket = io();
-    let username = localStorage.getItem("username");
-    let selectedUser = null;
-
-    if (!username) {
-      window.location.href = "/login.html"; // Assuming you have a login page
-    }
-
-    document.getElementById("currentUsername").textContent = username;
-    socket.emit("newUser", username);
-
-    socket.on("userList", (Users) => {
-      const usersDiv = document.getElementById("usersDiv");
-      usersDiv.innerHTML = "";
-      Users.forEach((user) => {
-        if (user !== username) {
-          const div = document.createElement("div");
-          div.textContent = user;
-          // selectUser function ko update karna hoga taki selected user par class lag sake
-          div.onclick = (e) => selectUser(user, e.target); 
-          usersDiv.appendChild(div);
+        // ************************************************************
+        // ** GUARANTEED LOGIN CHECK (MUST BE THE FIRST THING TO RUN) **
+        // ************************************************************
+        const isLoginPage = window.location.pathname.includes('/login') || window.location.pathname.includes('/signup');
+        if (!localStorage.getItem("username") && !isLoginPage) {
+            window.location.replace("/login.html"); 
         }
-      });
-    });
-
-    // ** selectUser function ko update kiya gaya hai **
-    function selectUser(user, clickedElement) {
-      // User Highlighting logic
-      document.querySelectorAll('#usersDiv div').forEach(div => {
-          div.classList.remove('selected');
-      });
-      if (clickedElement) {
-          clickedElement.classList.add('selected');
-      }
-      
-      // Agar mobile par user select hua hai toh list chhupa den
-      const userList = document.querySelector('.users-list');
-      if (window.innerWidth <= 768 && userList.classList.contains('mobile-open')) {
-          toggleUserList(); // User select hone ke baad list chhup jaayegi
-      }
-
-
-      selectedUser = user;
-      document.querySelector(".chat-header span").textContent = "Chat with " + user;
-      document.getElementById("messages").innerHTML = "";
-      socket.emit("loadChat", { user1: username, user2: user });
-    }
-
-    socket.on("chatHistory", (chats) => {
-      const messagesDiv = document.getElementById("messages");
-      messagesDiv.innerHTML = "";
-      chats.forEach((chat) => {
-        addMessage(chat.sender, chat.text);
-      });
-    });
-
-    socket.on("privateMessage", ({ sender, text }) => {
-      addMessage(sender, text);
-    });
-
-    function addMessage(sender, text) {
-      const messagesDiv = document.getElementById("messages");
-      const div = document.createElement("div");
-      div.classList.add("message");
-      div.classList.add(sender === username ? "you" : "other");
-      div.textContent = `${sender}: ${text}`;
-      messagesDiv.appendChild(div);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    function sendMessage() {
-      const input = document.getElementById("messageInput");
-      const text = input.value.trim();
-      if (text && selectedUser) {
-        socket.emit("privateMessage", { sender: username, receiver: selectedUser, text });
-        input.value = "";
-      }
-    }
-
-    function logout() {
-      localStorage.removeItem("username");
-      window.location.href = "/login.html"; // Updated path
-    }
-
-    // Toggle dark/light mode
-    function toggleTheme() {
-      document.body.classList.toggle("light");
-      const btn = document.querySelector(".toggle-btn");
-      btn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
-    }
-
-    // 2. MOBILE USER LIST TOGGLE FUNCTION JODA GAYA
-    function toggleUserList() {
-        const userList = document.querySelector('.users-list');
-        userList.classList.toggle('mobile-open'); 
-
-        const btn = document.querySelector('.menu-toggle-btn');
-        if (userList.classList.contains('mobile-open')) {
-             btn.textContent = '❌'; // Close icon
-        } else {
-             btn.textContent = '👥'; // Users icon
+        // ************************************************************
+        
+        // --- Common Functions ---
+        function logout() { localStorage.clear(); window.location.replace("/login.html"); }
+        function toggleTheme() {
+            document.body.classList.toggle("light");
+            const isLight = document.body.classList.contains('light');
+            const btn = document.querySelector('.toggle-btn');
+            if (btn) btn.textContent = isLight ? '🌙' : '☀️';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
         }
-    }
-    // ************************************************************
-  </script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('theme') === 'light') {
+                document.body.classList.add('light');
+                const btn = document.querySelector('.toggle-btn');
+                if (btn) btn.textContent = '🌙';
+            }
+            // Welcome message update
+            document.getElementById('welcome-message').textContent = `Welcome, ${localStorage.getItem("username") || 'Guest'}`;
+        });
+        
+        // --- Chat Logic ---
+        const socket = io();
+        let username = localStorage.getItem("username");
+        let receiver = null;
+        
+        // 1. New User Login
+        socket.emit("newUser", username);
 
-  <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
-  
+        // ... (Baaki ka socket logic: userList, privateMessage, loadChat)
+        // Note: Yahan aapka pura chat client logic paste hoga.
+        
+    </script>
+    
+    <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
 </body>
 </html>
