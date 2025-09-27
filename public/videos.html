@@ -146,6 +146,39 @@
             cursor: pointer;
         }
         
+    /* ... (Yahaan aapka pehle ka sara CSS hai, jaise body, sidebar, reel-card, etc.) ... */
+
+    /* Action Buttons (Like, Comment) */
+    .actions-bar {
+        /* ... existing actions-bar CSS ... */
+    }
+
+    /* 4. Mute Button Styling (New Addition) */
+    .mute-toggle-btn {
+        position: absolute;
+        top: 20px; /* Top corner position */
+        right: 20px;
+        z-index: 4; /* Overlay se upar */
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: 2px solid white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .mute-toggle-btn:hover {
+        background: rgba(0, 0, 0, 0.8);
+    }
+    
+    /* ... (Baki media queries aur CSS) ... */
+
+    
         /* ======================================= */
         /* ====== MEDIA QUERIES (RESPONSIVENESS) ===== */
         /* ======================================= */
