@@ -1,161 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Reels - My Website</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css"> <style>
-    /* NOTE: Video reels ke liye in styles ko aap style.css ke end me bhi jod sakte hain */
-    body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      overflow-x: hidden;
-      scroll-snap-type: y mandatory;
-      font-family: Arial, sans-serif;
-    }
-    /* Navbar ko hide karein taki reels full-screen lagein */
-    .navbar { display: none !important; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trending Videos - Chat App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* ======================================= */
+        /* ====== GLOBAL & THEME (Dark Mode) ======= */
+        /* ======================================= */
+        :root {
+            --color-background: #121212;
+            --color-background-secondary: #1e1e1e;
+            --color-accent: #5e6bfe; 
+            --color-text: #e0e0e0;
+            --color-text-light: #aaa;
+            --color-border: #333333;
+        }
 
-    .reel {
-      height: 100vh;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      scroll-snap-align: start;
-      position: relative;
-      overflow: hidden;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
 
-    video {
-      height: 100%;
-      width: 100%;
-      object-fit: cover;
-    }
+        body {
+            background: var(--color-background);
+            color: var(--color-text);
+            min-height: 100vh;
+            display: flex;
+        }
 
-    .overlay {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      color: #fff;
-      font-size: 16px;
-      max-width: 70%;
-      text-shadow: 1px 1px 5px rgba(0,0,0,0.7);
-    }
-    /* Add a back button for navigation */
-    .back-button {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        z-index: 10;
-        background: rgba(0,0,0,0.5);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 5px;
-        text-decoration: none;
-        font-weight: bold;
-    }
+        /* 1. Sidebar Styling (Consistent with Chat UI) */
+        .sidebar {
+            width: 280px;
+            background: var(--color-background-secondary); 
+            padding: 20px 15px;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3); 
+            height: 100vh; /* Full viewport height */
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--color-border);
+        }
 
-    .actions {
-      position: absolute;
-      right: 20px;
-      bottom: 80px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      color: #fff;
-      font-size: 22px;
-    }
+        .sidebar .nav-brand {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: var(--color-accent);
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-accent);
+        }
 
-    .action-btn {
-      cursor: pointer;
-      text-align: center;
-    }
+        .sidebar .nav-link-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-weight: 500;
+            color: var(--color-text);
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
 
-    .action-btn span {
-      display: block;
-      font-size: 14px;
-      margin-top: 4px;
-    }
-  </style>
+        .sidebar .nav-link-item i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        .sidebar .nav-link-item:hover {
+            background-color: var(--color-border);
+        }
+
+        .sidebar .nav-link-item.active {
+            background-color: var(--color-accent);
+            color: #fff !important;
+            font-weight: bold;
+        }
+        
+        .sidebar .logout-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: auto; /* Pushes button to the bottom */
+            transition: opacity 0.3s;
+        }
+        .sidebar .logout-btn:hover {
+            opacity: 0.8;
+        }
+
+
+        /* 2. Main Content Area */
+        #main-content {
+            flex-grow: 1;
+            padding: 30px;
+        }
+
+        #main-content h1 {
+            font-size: 2.5em;
+            color: var(--color-accent);
+            margin-bottom: 30px;
+            border-bottom: 3px solid var(--color-border);
+            padding-bottom: 10px;
+        }
+
+        /* Video Grid Styling */
+        #video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .video-card {
+            background: var(--color-background-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s;
+            border: 1px solid var(--color-border);
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .video-card video {
+            width: 100%;
+            height: 200px; /* Fixed height for consistency */
+            object-fit: cover;
+            background: #000;
+        }
+
+        .video-info {
+            padding: 15px;
+        }
+
+        .video-info h3 {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+            color: var(--color-text);
+        }
+
+        .video-info p {
+            font-size: 0.9em;
+            color: var(--color-text-light);
+        }
+    </style>
 </head>
 <body>
+    <div class="sidebar">
+        <div class="nav-brand">Chat App</div>
 
-  <a href="index.html" class="back-button">← Home</a>
+        <a href="/index.html" class="nav-link-item"><i class="fas fa-home"></i> Home</a>
+        <a href="/chat.html" class="nav-link-item"><i class="fas fa-comment-dots"></i> Chat</a>
+        <a href="/games.html" class="nav-link-item"><i class="fas fa-gamepad"></i> Games</a>
+        <a href="/videos.html" class="nav-link-item active"><i class="fas fa-video"></i> Videos</a>
+        <a href="/about.html" class="nav-link-item"><i class="fas fa-info-circle"></i> About</a>
 
-  <div class="reel">
-    <video src="friends.mp4" muted loop playsinline></video>
-    <div class="overlay">Friends Video ✨</div>
-    <div class="actions">
-      <div class="action-btn">❤️ <span>120</span></div>
-      <div class="action-btn">💬 <span>25</span></div>
-      <div class="action-btn">🔗 <span>Share</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
-  </div>
 
-  <div class="reel">
-    <video src="Oggy.mp4" muted loop playsinline></video>
-    <div class="overlay">Oggy Fun 🐭</div>
-    <div class="actions">
-      <div class="action-btn">❤️ <span>300</span></div>
-      <div class="action-btn">💬 <span>40</span></div>
-      <div class="action-btn">🔗 <span>Share</span></div>
+    <div id="main-content">
+        <h1>Trending Videos <i class="fas fa-fire"></i></h1>
+
+        <div id="video-grid">
+            </div>
     </div>
-  </div>
 
-  <div class="reel">
-    <video src="opvideo.mp4" muted loop playsinline></video>
-    <div class="overlay">Epic OP Video 🔥</div>
-    <div class="actions">
-      <div class="action-btn">❤️ <span>999+</span></div>
-      <div class="action-btn">💬 <span>120</span></div>
-      <div class="action-btn">🔗 <span>Share</span></div>
-    </div>
-  </div>
-
-  <script>
-    // --- Video Logic ---
-    const videos = document.querySelectorAll("video");
-
-    function pauseAll() {
-      videos.forEach(v => v.pause());
-    }
-
-    function playVisibleVideo() {
-      let windowHeight = window.innerHeight;
-      videos.forEach(v => {
-        let rect = v.getBoundingClientRect();
-        if (rect.top >= 0 && rect.bottom <= windowHeight) {
-          pauseAll();
-          // Added video.play() in a promise to handle mobile restrictions
-          const playPromise = v.play();
-          if (playPromise !== undefined) {
-              playPromise.catch(error => {
-                  console.log("Auto-play blocked, user interaction needed.");
-              });
-          }
+    <script>
+        // Ensure user is logged in
+        let myUsername = localStorage.getItem("username");
+        if (!myUsername) {
+            window.location.replace("/login.html");
         }
-      });
-    }
+        
+        function logout() {
+            localStorage.removeItem("username");
+            window.location.replace("/login.html");
+        }
 
-    window.addEventListener("scroll", playVisibleVideo);
-    window.addEventListener("load", playVisibleVideo);
+        const videos = [
+            // --- New Videos ---
+            { title: "Whole.mp4 Clip", source: "/Whole.mp4", description: "A new engaging clip." },
+            { title: "Babu's Funniest Moment", source: "/babu.mp4", description: "Enjoy the funny Babu video." },
+            { title: "Intense Exercise Clip", source: "/exer.mp4", description: "Get motivated with this workout video." },
+            { title: "MC Stand Performance", source: "/mcstand.mp4", description: "Latest performance by MC Stand." },
+            { title: "Pain Reliever", source: "/pain.mp4", description: "A video that takes the pain away." },
+            { title: "Sahil's Special Clip", source: "/sahil2.mp4", description: "Sahil's personal recommended video." },
+            
+            // --- Previous Videos (If they still exist in public/) ---
+            { title: "Oggy and the Cockroaches", source: "/Oggy.mp4", description: "A classic cartoon clip." },
+            { title: "Cool Op Video", source: "/opvideo.mp4", description: "An amazing, viral-worthy clip." }
+        ];
 
-    // --- Common Functions ---
-    function logout() {
-      localStorage.removeItem("username");
-      window.location.href = "/login.html"; 
-    }
-    function toggleTheme() {
-      // Videos page ka background hamesha black hai, to theme toggle ki zaroorat nahi
-      console.log("Theme toggle disabled on video page.");
-    }
-    // --- End Common Functions ---
-  </script>
+        const videoGrid = document.getElementById('video-grid');
 
-  <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
+        videos.forEach(video => {
+            const card = document.createElement('div');
+            card.classList.add('video-card');
 
+            card.innerHTML = `
+                <video controls preload="metadata">
+                    <source src="${video.source}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-info">
+                    <h3>${video.title}</h3>
+                    <p>${video.description}</p>
+                </div>
+            `;
+            videoGrid.appendChild(card);
+        });
+
+        // Optional: Tidio chat widget can be added here if needed
+    </script>
 </body>
 </html>
