@@ -4,74 +4,157 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Chat App</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css"> 
+  
   <style>
+    /* Global Styles (Agar style.css me nahi hain toh) */
+    :root {
+      /* Assume these are defined in style.css or dark theme */
+      --color-background: #121212;
+      --color-background-secondary: #1e1e1e;
+      --color-accent: #5e6bfe; /* Modern Blue/Violet accent */
+      --color-text: #e0e0e0;
+      --color-border: #333333;
+    }
+    
     body {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background: #1e1e2f;
-      color: white;
-      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      background: var(--color-background); /* Dark background */
+      color: var(--color-text);
+      font-family: 'Arial', sans-serif;
       margin: 0;
+      /* Background animation/pattern ke liye */
+      background-image: radial-gradient(circle, var(--color-background-secondary) 1px, transparent 1px);
+      background-size: 30px 30px;
     }
+    
+    /* Login Box Container */
     .login-container {
-      background: #2c2c3e;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
-      width: 320px;
+      background: var(--color-background-secondary);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      width: 350px;
       text-align: center;
+      border: 1px solid var(--color-border);
+      animation: fadeIn 0.8s ease-out;
     }
+    
+    /* Heading */
     h2 {
-      margin-bottom: 20px;
-      color: #4cafef;
+      margin-bottom: 30px;
+      color: var(--color-accent);
+      font-size: 2em;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    /* Input Fields */
+    .input-group {
+        position: relative;
+        margin-bottom: 25px;
     }
     input {
       width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 5px;
-      outline: none;
+      padding: 12px 12px 12px 40px; /* Padding for icon */
+      border: 1px solid var(--color-border);
+      background: #282828;
+      border-radius: 8px;
+      color: var(--color-text);
+      font-size: 16px;
+      transition: border-color 0.3s;
     }
+    input::placeholder {
+        color: #888;
+    }
+    input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 5px rgba(var(--color-accent-rgb), 0.5);
+    }
+    
+    /* Input Icons */
+    .input-group i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+        transition: color 0.3s;
+    }
+    input:focus + i {
+        color: var(--color-accent);
+    }
+
+    /* Button */
     button {
       width: 100%;
-      padding: 12px;
-      background: #4cafef;
+      padding: 14px;
+      background: var(--color-accent);
       border: none;
       color: white;
-      font-size: 16px;
+      font-size: 1.1em;
+      font-weight: bold;
       cursor: pointer;
-      border-radius: 5px;
+      border-radius: 8px;
       transition: 0.3s;
+      box-shadow: 0 4px 15px rgba(var(--color-accent-rgb), 0.4);
     }
     button:hover {
-      background: #3a9bdc;
+      background: #4a59e6; /* Thoda dark ho jaye */
+      transform: translateY(-1px);
     }
+    
+    /* Signup Link */
     .signup-link {
-      margin-top: 15px;
+      margin-top: 20px;
       display: block;
-      color: #ccc;
+      color: #aaa;
+      text-decoration: none;
+      font-size: 0.9em;
     }
     .signup-link:hover {
-      color: #fff;
+      color: var(--color-accent);
+      text-decoration: underline;
     }
+    
+    /* Message Area */
     #message {
-      margin-top: 10px;
-      font-size: 14px;
+      margin-top: 15px;
+      font-size: 1em;
+      min-height: 20px; /* Space reserve karein */
+      font-weight: 500;
+    }
+
+    /* Animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
   <div class="login-container">
-    <h2>Login</h2>
-    <input type="text" id="username" placeholder="Enter Username" required>
-    <input type="password" id="password" placeholder="Enter Password" required>
-    <button onclick="login()">Login</button>
+    <h2><i class="fas fa-lock"></i> User Login</h2>
+    
+    <div class="input-group">
+        <input type="text" id="username" placeholder="Username" required>
+        <i class="fas fa-user"></i>
+    </div>
+    
+    <div class="input-group">
+        <input type="password" id="password" placeholder="Password" required>
+        <i class="fas fa-key"></i>
+    </div>
+    
+    <button onclick="login()"><i class="fas fa-sign-in-alt"></i> Login</button>
+    
     <div id="message"></div>
-    <a class="signup-link" href="/signup">Don't have an account? Signup</a>
+    
+    <a class="signup-link" href="/signup.html">Don't have an account? Signup</a>
   </div>
 
   <script>
@@ -80,6 +163,10 @@
       const password = document.getElementById("password").value.trim();
       const messageDiv = document.getElementById("message");
 
+      // Reset message and show loading
+      messageDiv.style.color = "yellow";
+      messageDiv.textContent = "Logging in...";
+
       if (!username || !password) {
         messageDiv.style.color = "red";
         messageDiv.textContent = "Please enter username and password";
@@ -87,6 +174,7 @@
       }
 
       try {
+        // Assume API server is running on the same domain or properly configured
         const res = await fetch("/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -94,20 +182,22 @@
         });
 
         const data = await res.json();
+        
         if (data.success) {
           messageDiv.style.color = "lightgreen";
           messageDiv.textContent = "Login successful! Redirecting...";
           localStorage.setItem("username", data.username); // ✅ Save username for chat
           setTimeout(() => {
-            window.location.href = "/chat";
+            window.location.replace("/index.html"); // Redirect to the Home Page
           }, 1000);
         } else {
           messageDiv.style.color = "red";
           messageDiv.textContent = data.message;
         }
       } catch (err) {
+        console.error("Login Server Error:", err);
         messageDiv.style.color = "red";
-        messageDiv.textContent = "Error connecting to server";
+        messageDiv.textContent = "Error connecting to server. Please check API server status.";
       }
     }
   </script>
