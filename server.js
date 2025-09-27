@@ -1,7 +1,8 @@
-// server.js (WITH USER STATUS LOGIC)
+// server.js (FINAL CODE: All Features)
 
 const dotenv = require('dotenv');
-dotenv.config();
+// Environment variables ko .env file se load karein
+dotenv.config(); 
 
 const express = require("express");
 const http = require("http");
@@ -28,11 +29,13 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // --- DATABASE CONNECTION ---
+// MONGO_URI Render Environment Variable mein set hona chahiye
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp";
 
 mongoose.connect(MONGO_URI)
 .then(() => console.log("✅ MongoDB Connected Successfully"))
 .catch(err => {
+    // Agar DB connect nahi hota, toh hum sirf console me error denge, lekin server ko chalte rehne denge
     console.error("❌ MongoDB Connection Error. API routes might fail:", err.message);
 });
 
@@ -52,12 +55,12 @@ const MessageSchema = new mongoose.Schema({
 const Message = mongoose.model("Message", MessageSchema);
 
 
-// --- HTTP API ROUTES (Unchanged) ---
-// ... (Your /signup and /login routes are here) ...
+// --- HTTP API ROUTES ---
 
+// Signup Route (DB check included)
 app.post("/signup", async (req, res) => {
     if (mongoose.connection.readyState !== 1) {
-        return res.status(503).json({ success: false, message: "Server database connection unavailable. Try again later." });
+        return res.status(503).json({ success: false, message: "Server database connection unavailable." });
     }
     try {
         const { username, password } = req.body;
@@ -78,9 +81,10 @@ app.post("/signup", async (req, res) => {
     }
 });
 
+// Login Route (DB check included)
 app.post("/login", async (req, res) => {
     if (mongoose.connection.readyState !== 1) {
-        return res.status(503).json({ success: false, message: "Server database connection unavailable. Try again later." });
+        return res.status(503).json({ success: false, message: "Server database connection unavailable." });
     }
     try {
         const { username, password } = req.body;
@@ -101,23 +105,35 @@ app.post("/login", async (req, res) => {
 });
 
 
-// --- STATIC FILE SERVING AND ROUTES ---
-app.use(express.static(path.join(__dirname, "public")));
+// --- STATIC FILE SERVING AND ROUTES (IMPORTANT: Video Fix Included) ---
+
+// Static files (HTML, CSS, JS, Images, and Videos) serve karein
+app.use(express.static(path.join(__dirname, "public"), {
+  // Video MIME type fix: yeh browser ko video chalaney mein madad karta hai
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(".mp4") || filePath.endsWith(".webm") || filePath.endsWith(".ogg")) {
+      res.setHeader("Content-Type", "video/mp4"); 
+      res.setHeader("Accept-Ranges", "bytes");
+    }
+  }
+}));
+
+// Root URL (/) ko seedha login.html par redirect karta hai
 app.get("/", (req, res) => {
   res.redirect("/login.html"); 
 });
 
 
-// --- SOCKET.IO CHAT LOGIC (STATUS ADDED) ---
+// --- SOCKET.IO CHAT LOGIC (USER STATUS INCLUDED) ---
 
-// onlineUsers will now store status: { 'sahil': { id: 'socketid123', status: 'Active' } }
+// onlineUsers will store status: { 'sahil': { id: 'socketid123', status: 'Active' } }
 let onlineUsers = {}; 
 
 // Helper function to broadcast the current list and status of users
 const broadcastUserList = () => {
     const userList = Object.keys(onlineUsers).map(username => ({
         username: username,
-        status: onlineUsers[username].status // <-- NEW: Send status
+        status: onlineUsers[username].status 
     }));
     io.emit("userList", userList);
 };
@@ -126,17 +142,16 @@ const broadcastUserList = () => {
 io.on("connection", (socket) => {
     console.log("New user connected");
 
-    // 1. New User Connects (MODIFIED)
+    // 1. New User Connects 
     socket.on("newUser", (username) => {
-        // If user logs in from multiple tabs, keep one entry and update socket id
         onlineUsers[username] = { id: socket.id, status: 'Active' };
         socket.username = username; 
         broadcastUserList(); // Broadcast the updated list with status
     });
 
-    // 2. Load Chat History (UNCHANGED)
+    // 2. Load Chat History 
     socket.on("loadChat", async ({ user1, user2 }) => { 
-        if (mongoose.connection.readyState !== 1) return; // Skip if DB is down
+        if (mongoose.connection.readyState !== 1) return; 
         try {
             const messages = await Message.find({
                 $or: [
@@ -150,14 +165,13 @@ io.on("connection", (socket) => {
         }
     });
 
-    // 3. Handle Private Message (UNCHANGED)
+    // 3. Handle Private Message 
     socket.on("privateMessage", async ({ sender, receiver, text }) => {
-        if (mongoose.connection.readyState !== 1) return; // Skip if DB is down
+        if (mongoose.connection.readyState !== 1) return; 
 
         const newMessage = new Message({ sender, receiver, text });
         await newMessage.save();
 
-        // Send to self and receiver
         socket.emit("message", newMessage); // To sender
         
         const receiverSocketId = onlineUsers[receiver] ? onlineUsers[receiver].id : null;
@@ -166,21 +180,18 @@ io.on("connection", (socket) => {
         }
     });
 
-    // --- 🔑 NEW FEATURE: User Status Change Handler ---
+    // 4. User Status Change Handler 
     socket.on("userStatusChange", (newStatus) => {
         const username = socket.username;
         if (username && onlineUsers[username]) {
             onlineUsers[username].status = newStatus;
             broadcastUserList(); // Send the updated list to all users
-            console.log(`${username} status changed to ${newStatus}`);
         }
     });
     
-    // 4. User Disconnects (MODIFIED)
+    // 5. User Disconnects 
     socket.on("disconnect", () => {
-        console.log("User disconnected");
         const username = socket.username;
-        // Remove the user from the online list when their only active socket disconnects
         if (username && onlineUsers[username] && onlineUsers[username].id === socket.id) {
             delete onlineUsers[username];
             broadcastUserList(); 
