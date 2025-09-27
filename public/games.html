@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
   <div class="navbar">
     <a href="index.html" class="nav-brand">My App</a>
     <div class="nav-links">
@@ -18,7 +17,6 @@
         <a href="videos.html">📺 Videos</a>
         <a href="about.html">ℹ️ About</a>
     </div>
-    
     <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
     <button onclick="logout()">Logout</button>
   </div>
@@ -35,21 +33,29 @@
   </div>
 
 <script>
-// --- Common Functions ---
-function logout() {
-    localStorage.removeItem("username");
-    window.location.href = "/login.html"; 
+// ************************************************************
+// ** GUARANTEED LOGIN CHECK (MUST BE THE FIRST THING TO RUN) **
+// ************************************************************
+const isLoginPage = window.location.pathname.includes('/login') || window.location.pathname.includes('/signup');
+if (!localStorage.getItem("username") && !isLoginPage) {
+    window.location.replace("/login.html"); 
 }
+// ************************************************************
+
+// --- Common Functions ---
+function logout() { localStorage.clear(); window.location.replace("/login.html"); }
 function toggleTheme() {
     document.body.classList.toggle("light");
     const isLight = document.body.classList.contains('light');
-    document.querySelector('.toggle-btn').textContent = isLight ? '🌙' : '☀️';
+    const btn = document.querySelector('.toggle-btn');
+    if (btn) btn.textContent = isLight ? '🌙' : '☀️';
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
 }
 document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('theme') === 'light') {
         document.body.classList.add('light');
-        document.querySelector('.toggle-btn').textContent = '🌙';
+        const btn = document.querySelector('.toggle-btn');
+        if (btn) btn.textContent = '🌙';
     }
 });
 // --- End Common Functions ---
@@ -57,15 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // Your existing game logic follows
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-
-// ... (Rest of the game logic, starting from 'const carImg = new Image();' tak) ...
-// (NOTE: Agar aapka game logic zyada bada hai, to use alag se client.js me rakhna behtar hoga)
-
-// Images
+// ... (Your entire game JavaScript logic here) ...
 const carImg = new Image();
-carImg.src = "https://i.ibb.co/C3r1R7Kr/file-0000000050c0620a81be7c93478d645e.png"; // White Car
+carImg.src = "https://i.ibb.co/C3r1R7Kr/file-0000000050c0620a81be7c93478d645e.png"; 
 const enemyImg = new Image();
-enemyImg.src = "https://i.ibb.co/SDrns1GC/10385594.png"; // Blue Car
+enemyImg.src = "https://i.ibb.co/SDrns1GC/10385594.png"; 
 
 // Sounds
 const hornSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_dcf6f14518.mp3?filename=car-horn-6408.mp3");
@@ -253,7 +255,6 @@ function resetGame() {
 
 gameLoop();
 </script>
-
   <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
 </body>
 </html>
