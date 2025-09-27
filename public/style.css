@@ -442,3 +442,200 @@ body.light .hero-section {
 body.light .feature-card {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
+/* ======================================= */
+/* ====== CHAT.HTML UI IMPROVEMENTS ======== */
+/* ======================================= */
+
+/* Main Container: Flexbox to hold sidebar and chat window */
+#app-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden; /* Scrollbar ko bahar aane se rokenge */
+}
+
+/* 1. Modern Sidebar Styling */
+.sidebar {
+    width: 280px; /* Thoda zyada space denge */
+    background: var(--color-background-secondary); 
+    padding: 20px 15px;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); 
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease;
+    border-right: 1px solid var(--color-border);
+}
+
+.sidebar .nav-brand {
+    font-size: 1.8em;
+    font-weight: 800;
+    color: var(--color-accent); /* Logo ko highlight karein */
+    text-align: center;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--color-accent);
+}
+
+/* Sidebar Navigation Links */
+.sidebar .nav-link-item {
+    padding: 12px 10px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.sidebar .nav-link-item i {
+    margin-right: 10px;
+    width: 20px;
+}
+
+.sidebar .nav-link-item:hover {
+    background-color: var(--color-border); /* Light hover effect */
+}
+
+.sidebar .nav-link-item.active {
+    background-color: var(--color-accent);
+    color: #fff !important; /* White text on accent */
+    font-weight: bold;
+}
+
+/* Online Users Section */
+.sidebar h3 {
+    font-size: 1.1em;
+    color: var(--color-text-highlight);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 8px;
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+
+#online-users li {
+    padding: 8px 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    color: var(--color-text);
+}
+
+#online-users li:hover {
+    background-color: rgba(var(--color-accent-rgb), 0.2);
+}
+
+/* 2. Main Chat Window Styling */
+#chat-window {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-background); /* Main chat area background */
+}
+
+/* Chat Header */
+#chat-header {
+    padding: 15px 20px;
+    background: var(--color-background-secondary);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#current-receiver {
+    font-weight: bold;
+    color: var(--color-accent);
+    font-size: 1.2em;
+}
+
+/* Message Area */
+#messages {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto; /* Scrollable message history */
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Messages ke beech ki space */
+}
+
+.message {
+    max-width: 65%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.message.sender {
+    align-self: flex-end; /* Right side */
+    background-color: var(--color-accent); /* User ke messages highlight hon */
+    color: white;
+    border-bottom-right-radius: 4px; /* Corner ko sharp karein */
+}
+
+.message.receiver {
+    align-self: flex-start; /* Left side */
+    background-color: var(--color-background-secondary);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-bottom-left-radius: 4px; /* Corner ko sharp karein */
+}
+
+/* Input Area */
+#input-area {
+    display: flex;
+    padding: 15px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-background-secondary);
+}
+
+#message-input {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border: 1px solid var(--color-border);
+    border-radius: 25px;
+    margin-right: 10px;
+    background: var(--color-background);
+    color: var(--color-text);
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+#message-input:focus {
+    border-color: var(--color-accent);
+}
+
+#send-button {
+    background-color: var(--color-accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+#send-button:hover {
+    background-color: var(--color-text-highlight);
+    transform: translateY(-1px);
+}
+
+/* Mobile Responsive Fix */
+@media (max-width: 768px) {
+    .sidebar {
+        position: absolute; /* Mobile par sidebar ko hide/show karne ke liye */
+        transform: translateX(-100%);
+        z-index: 100;
+        width: 80%;
+    }
+    #app-container.show-sidebar .sidebar {
+        transform: translateX(0);
+    }
+    #messages {
+        padding: 10px;
+    }
+    .message {
+        max-width: 85%;
+    }
+}
+
