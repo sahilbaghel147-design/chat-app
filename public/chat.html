@@ -76,7 +76,17 @@
             </div>
         </div>
     </div>
+<div id="chat-header">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <span id="welcome-message" style="font-weight: 600;">Welcome, sahil</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="current-receiver" style="margin-right: 10px;">Select a user to chat</span>
+        <button onclick="logout()" style="background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold;">Logout</button>
+    </div>
+</div>
 
+    
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
