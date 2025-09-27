@@ -13,17 +13,20 @@
         <div class="users-list">
             <h2>Users</h2>
             <div id="usersDiv">
-                </div>
+            </div>
         </div>
 
         <div class="chat-area">
             <div class="chat-header">
                 <span>Welcome, <span id="currentUsername"></span></span>
+                
+                <button class="menu-toggle-btn" onclick="toggleUserList()">👥</button> 
+                
                 <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
                 <button onclick="logout()">Logout</button>
             </div>
             <div id="messages" class="messages-container">
-                </div>
+            </div>
             <div class="message-input-area">
                 <input type="text" id="messageInput" placeholder="Type a message...">
                 <button onclick="sendMessage()">Send</button>
@@ -53,13 +56,30 @@
         if (user !== username) {
           const div = document.createElement("div");
           div.textContent = user;
-          div.onclick = () => selectUser(user);
+          // selectUser function ko update karna hoga taki selected user par class lag sake
+          div.onclick = (e) => selectUser(user, e.target); 
           usersDiv.appendChild(div);
         }
       });
     });
 
-    function selectUser(user) {
+    // ** selectUser function ko update kiya gaya hai **
+    function selectUser(user, clickedElement) {
+      // User Highlighting logic
+      document.querySelectorAll('#usersDiv div').forEach(div => {
+          div.classList.remove('selected');
+      });
+      if (clickedElement) {
+          clickedElement.classList.add('selected');
+      }
+      
+      // Agar mobile par user select hua hai toh list chhupa den
+      const userList = document.querySelector('.users-list');
+      if (window.innerWidth <= 768 && userList.classList.contains('mobile-open')) {
+          toggleUserList(); // User select hone ke baad list chhup jaayegi
+      }
+
+
       selectedUser = user;
       document.querySelector(".chat-header span").textContent = "Chat with " + user;
       document.getElementById("messages").innerHTML = "";
@@ -108,8 +128,23 @@
       const btn = document.querySelector(".toggle-btn");
       btn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
     }
+
+    // 2. MOBILE USER LIST TOGGLE FUNCTION JODA GAYA
+    function toggleUserList() {
+        const userList = document.querySelector('.users-list');
+        userList.classList.toggle('mobile-open'); 
+
+        const btn = document.querySelector('.menu-toggle-btn');
+        if (userList.classList.contains('mobile-open')) {
+             btn.textContent = '❌'; // Close icon
+        } else {
+             btn.textContent = '👥'; // Users icon
+        }
+    }
+    // ************************************************************
   </script>
 
   <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
-  </body>
+  
+</body>
 </html>
