@@ -229,6 +229,31 @@
         <div id="reels-container">
             </div>
     </div>
+<body>
+    <div id="google_translate_element" style="margin-bottom: 10px;"></div>
+
+    ```
+
+### 2. 📝 JavaScript कोड (जो ट्रांसलेशन सर्विस को लोड करता है)
+
+यह कोड Google की ट्रांसलेशन लाइब्रेरी को लोड करता है और उसे आपके बनाए गए `div` के साथ जोड़ता है।
+
+इस कोड को अपनी **सभी HTML फ़ाइलों** में `</body>` टैग के **ठीक ऊपर** जोड़ें:
+
+```html
+
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en', // आपकी वेबसाइट की मूल भाषा (मान लीजिए English)
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+        }
+    
+    
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+</body>
+</html>
 
     <script>
         // ===========================================
