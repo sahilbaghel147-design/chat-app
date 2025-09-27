@@ -1,6 +1,5 @@
 // server.js (Final and Optimized Code)
 
-// .env file se variables load karne ke liye zaroori (Agar aap .env use kar rahe hain)
 // const dotenv = require('dotenv');
 // dotenv.config();
 
@@ -19,7 +18,7 @@ const server = http.createServer(app);
 // Socket.io configuration for CORS
 const io = socketIO(server, {
     cors: {
-        origin: "*", // Production me isko specific URL par set karein
+        origin: "*", 
         methods: ["GET", "POST"]
     }
 });
@@ -102,7 +101,7 @@ app.use(express.static(path.join(__dirname, "public"), {
   }
 }));
 
-// ✅ MAIN ROUTE: Users ko seedhe login page par bhejta hai.
+// MAIN ROUTE: Users ko seedhe login page par bhejta hai.
 app.get("/", (req, res) => res.redirect("/login.html")); 
 
 // File serving routes:
@@ -117,8 +116,6 @@ app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "abo
 let onlineUsers = {}; 
 
 io.on("connection", (socket) => {
-  // console.log("New user connected"); // Production me isko comment kar sakte hain
-
   socket.on("newUser", (username) => {
     if (!username) return; 
     socket.username = username;
@@ -161,7 +158,6 @@ io.on("connection", (socket) => {
     if (socket.username && onlineUsers[socket.username]) {
         delete onlineUsers[socket.username];
         io.emit("userList", Object.keys(onlineUsers)); 
-        // console.log(`User ${socket.username} disconnected`); // Production me isko comment kar sakte hain
     } 
   });
 });
