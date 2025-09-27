@@ -1,4 +1,6 @@
-// TOP OF FILE: Environment variables ko load karne ke liye zaroori (Agar aap .env file use kar rahe hain)
+// server.js (Final and Optimized Code)
+
+// .env file se variables load karne ke liye zaroori (Agar aap .env use kar rahe hain)
 // const dotenv = require('dotenv');
 // dotenv.config();
 
@@ -27,29 +29,22 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // --- DATABASE CONNECTION ---
-
-// ✅ MongoDB Connection (सुरक्षा के लिए Environment Variable का उपयोग करें)
-// Agar process.env.MONGO_URI set nahi hai, toh local string ka use karein
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp";
 
 mongoose.connect(MONGO_URI)
 .then(() => console.log("✅ MongoDB Connected Successfully"))
 .catch(err => {
     console.error("❌ MongoDB Connection Error:", err.message);
-    // Connection fail hone par server ko band karna
     process.exit(1); 
 });
 
 // --- MONGOOSE SCHEMAS ---
-
-// ✅ User Schema
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true }
 });
 const User = mongoose.model("User", UserSchema);
 
-// ✅ Message Schema
 const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   receiver: { type: String, required: true },
@@ -59,26 +54,19 @@ const MessageSchema = new mongoose.Schema({
 const Message = mongoose.model("Message", MessageSchema);
 
 // --- HTTP ROUTES ---
-
-// ✅ Signup Route (Improved Validation)
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
-    
-    // Validation
     if (!username || !password || username.length < 3 || password.length < 6) {
         return res.status(400).json({ success: false, message: "Username (min 3) and Password (min 6) are required." });
     }
-    
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(409).json({ success: false, message: "User already exists" });
     }
-    
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword });
     await newUser.save();
-    
     res.json({ success: true, message: "User registered successfully" });
   } catch (err) {
     console.error("Signup Error:", err);
@@ -86,15 +74,12 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// ✅ Login Route (Improved Error Handling)
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    
     if (!username || !password) {
         return res.status(400).json({ success: false, message: "Username and password are required." });
     }
-    
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
@@ -108,7 +93,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Static files (public folder serve karna)
+// Static files (serve HTML, CSS, etc.)
 app.use(express.static(path.join(__dirname, "public"), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith(".mp4")) {
@@ -117,9 +102,7 @@ app.use(express.static(path.join(__dirname, "public"), {
   }
 }));
 
-// ✅ Custom Routes
-
-// MAIN ROUTE: Users ko seedhe login page par bhejta hai.
+// ✅ MAIN ROUTE: Users ko seedhe login page par bhejta hai.
 app.get("/", (req, res) => res.redirect("/login.html")); 
 
 // File serving routes:
@@ -131,12 +114,11 @@ app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "abo
 
 // --- SOCKET.IO CHAT LOGIC ---
 
-let onlineUsers = {}; // Map: username -> socket.id
+let onlineUsers = {}; 
 
 io.on("connection", (socket) => {
-  console.log("New user connected");
+  // console.log("New user connected"); // Production me isko comment kar sakte hain
 
-  // 1. New User Connects
   socket.on("newUser", (username) => {
     if (!username) return; 
     socket.username = username;
@@ -144,7 +126,6 @@ io.on("connection", (socket) => {
     io.emit("userList", Object.keys(onlineUsers)); 
   });
 
-  // 2. Load Chat History (Error Handling Added)
   socket.on("loadChat", async ({ user1, user2 }) => {
     try {
         const chats = await Message.find({
@@ -160,7 +141,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 3. Handle Private Message (Error Handling Added)
   socket.on("privateMessage", async ({ sender, receiver, text }) => {
     if (!sender || !receiver || !text) return; 
     try {
@@ -177,20 +157,15 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 4. User Disconnects (Stability Improved)
   socket.on("disconnect", () => {
     if (socket.username && onlineUsers[socket.username]) {
         delete onlineUsers[socket.username];
         io.emit("userList", Object.keys(onlineUsers)); 
-        console.log(`User ${socket.username} disconnected`);
-    } else {
-        console.log("A socket disconnected (username not tracked)");
-    }
+        // console.log(`User ${socket.username} disconnected`); // Production me isko comment kar sakte hain
+    } 
   });
 });
 
 // --- SERVER LISTEN ---
-
-// ✅ Port setup (Render/Hosting Service compatible)
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
