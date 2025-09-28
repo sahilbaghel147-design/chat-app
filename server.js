@@ -1,27 +1,42 @@
-// server.js
+// server.js - Final Full-Featured Code
 
-const express = require('express');
-const http = require('http');
-const socketio = require('socket.io');
-const path = require('path'); 
+const express = require("express");
+const http = require("http");
+const socketIO = require("socket.io");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const bodyParser = require("body-parser");
+const cors = require('cors');
+const path = require("path");
+// === New Dependencies for Features & Optimization ===
 const multer = require('multer'); 
-// const mongoose = require('mongoose'); // Uncomment if using MongoDB
-// require('dotenv').config(); // Uncomment if using .env file
+const compression = require('compression'); 
+// ====================================================
 
 const app = express();
 const server = http.createServer(app);
-const io = socketio(server);
+
+// ===========================================
+// === SERVER SETTINGS & MIDDLEWARE ===
+// ===========================================
+
+// 1. Production Optimization
+app.use(cors()); 
+app.use(compression()); 
+
+// 2. Standard Middleware
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ===========================================
 // === FILE UPLOAD CONFIGURATION (MULTER) ===
 // ===========================================
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // Files saved to the public/uploads directory
+        // IMPORTANT: 'public/uploads' folder must exist in your repo
         cb(null, 'public/uploads'); 
     },
     filename: (req, file, cb) => {
-        // Unique filename: (timestamp)-(original filename)
         cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, '_')); 
     }
 });
@@ -37,10 +52,89 @@ const upload = multer({
         if (mimeType && extName) {
             return cb(null, true);
         }
-        cb(new Error('Only images, videos, pdfs, and zip files are allowed.'));
+        cb(new Error('Only allowed file types are supported.'));
     }
 }).single('chatFile'); 
 
+
+// ===========================================
+// === MONGO DB CONNECTION ===
+// ===========================================
+
+// You are using a hardcoded string. For production, use process.env.MONGODB_URI
+const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp";
+
+mongoose.connect(MONGO_URI, { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true 
+}).then(() => console.log("MongoDB Connected"))
+  .catch(err => console.error("MongoDB Error:", err));
+
+// ===========================================
+// === MONGO DB SCHEMAS ===
+// ===========================================
+
+// ✅ User Schema (No change)
+const UserSchema = new mongoose.Schema({
+  username: String,
+  password: String
+});
+const User = mongoose.model("User", UserSchema);
+
+// ✅ Private Message Schema (Updated to store file details)
+const MessageSchema = new mongoose.Schema({
+  sender: String,
+  receiver: String,
+  text: String,
+  fileUrl: { type: String, default: null },        // NEW
+  mimeType: { type: String, default: null },       // NEW
+  originalName: { type: String, default: null },   // NEW
+  timestamp: { type: Date, default: Date.now }
+});
+const Message = mongoose.model("Message", MessageSchema);
+
+// ===========================================
+// === AUTHENTICATION ROUTES (No Change) ===
+// ===========================================
+
+// ✅ Signup Route
+app.post("/signup", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.json({ success: false, message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ username, password: hashedPassword });
+    await newUser.save();
+
+    res.json({ success: true, message: "User registered successfully" });
+  } catch (err) {
+    res.json({ success: false, message: "Error in signup" });
+  }
+});
+
+// ✅ Login Route
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) return res.json({ success: false, message: "User not found" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.json({ success: false, message: "Invalid password" });
+
+    res.json({ success: true, message: "Login successful", username });
+  } catch (err) {
+    res.json({ success: false, message: "Error in login" });
+  }
+});
+
+// ===========================================
+// === FILE UPLOAD API ROUTE (NEW) ===
+// ===========================================
 app.post('/upload', (req, res) => {
     upload(req, res, (err) => {
         if (err) {
@@ -63,21 +157,24 @@ app.post('/upload', (req, res) => {
     });
 });
 
+
 // ===========================================
-// === ROUTING AND SOCKET LOGIC ===
+// === STATIC FILES AND ROUTING (Original URLs) ===
 // ===========================================
 
-// Middleware to serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
-// Serving uploaded files statically
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, "public")));
+// Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); 
 
-// Route for the root file
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Your original routes
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
 });
-
-// Generic route for other HTML files (e.g., /chat.html, /login.html)
+app.get("/client.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "client.html"));
+});
+// Generic route for other HTML files (like /chat.html, /games.html, /videos.html)
 app.get('/:file.html', (req, res) => {
     const fileName = req.params.file + '.html';
     const filePath = path.join(__dirname, 'public', fileName);
@@ -89,38 +186,69 @@ app.get('/:file.html', (req, res) => {
 });
 
 
-const users = {}; 
+// ===========================================
+// === SOCKET.IO COMMUNICATION LOGIC (UPDATED) ===
+// ===========================================
 
-io.on('connection', (socket) => {
-    socket.on('user-joined', (username) => {
-        users[socket.id] = username;
-        io.emit('online-users', users);
-        socket.broadcast.emit('user-status', `${username} joined the chat.`);
-    });
+let onlineUsers = {};
+
+io.on("connection", (socket) => {
+  console.log("New user connected");
+
+  socket.on("newUser", (username) => {
+    socket.username = username;
+    onlineUsers[username] = socket.id;
+    io.emit("updateUsers", Object.keys(onlineUsers));
+  });
+
+  // ✅ Load old chat between 2 users (Updated to fetch file data too)
+  socket.on("loadChat", async ({ user1, user2 }) => {
+    const chats = await Message.find({
+      $or: [
+        { sender: user1, receiver: user2 },
+        { sender: user2, receiver: user1 }
+      ]
+    }).sort({ timestamp: 1 });
+
+    socket.emit("chatHistory", chats);
+  });
+
+  // ✅ Send private message (UPDATED to handle file data)
+  socket.on("privateMessage", async (data) => {
+    const { sender, receiver, text, fileUrl, mimeType, originalName } = data;
     
-    // Handle message (including file info)
-    socket.on('chat-message', (data) => {
-        const sender = users[socket.id];
-        if (sender) {
-            io.emit('chat-message', {
-                user: sender,
-                text: data.text,
-                fileUrl: data.fileUrl || null, 
-                mimeType: data.mimeType || null,
-                originalName: data.originalName || null
-            });
-        }
+    // Create new message object with all data
+    const newMessage = new Message({ 
+        sender, 
+        receiver, 
+        text, 
+        fileUrl: fileUrl || null,
+        mimeType: mimeType || null,
+        originalName: originalName || null
     });
+    await newMessage.save();
 
-    socket.on('disconnect', () => {
-        const username = users[socket.id];
-        if (username) {
-            delete users[socket.id];
-            io.emit('online-users', users);
-            socket.broadcast.emit('user-status', `${username} left the chat.`);
-        }
-    });
+    // Prepare message object to send via socket
+    const messageToSend = { sender, text, fileUrl, mimeType, originalName };
+
+    // Send to sender
+    socket.emit("privateMessage", messageToSend);
+
+    // Send to receiver if online
+    if (onlineUsers[receiver]) {
+      io.to(onlineUsers[receiver]).emit("privateMessage", messageToSend);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    delete onlineUsers[socket.username];
+    io.emit("updateUsers", Object.keys(onlineUsers));
+    console.log("User disconnected");
+  });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// ===========================================
+// === START SERVER ===
+// ===========================================
+const PORT = process.env.PORT || 4000;
+server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
