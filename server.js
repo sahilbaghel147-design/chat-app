@@ -3,7 +3,7 @@
 const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
-const path = require('path'); // 🔑 FIX: Ensuring path module is loaded
+const path = require('path'); // 🔑 FIX: path module properly required
 const multer = require('multer'); 
 
 const app = express();
@@ -15,7 +15,7 @@ const io = socketio(server);
 // ===========================================
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // IMPORTANT: The 'public/uploads' folder must exist.
+        // Files saved to the public/uploads directory
         cb(null, 'public/uploads'); 
     },
     filename: (req, file, cb) => {
@@ -28,7 +28,6 @@ const upload = multer({
     storage: storage,
     limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB
     fileFilter: (req, file, cb) => {
-        // Allowed file types for chat
         const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|pdf|zip/;
         const mimeType = allowedTypes.test(file.mimetype);
         const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -68,21 +67,20 @@ app.post('/upload', (req, res) => {
 
 // Middleware to serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
-// 🔑 IMPORTANT: Serve files from the new uploads folder
+// Serving uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); 
 
-// Handle client requests for the main files (Routes)
+// Route for the root file
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Fallback for other HTML files (Good practice)
+// Generic route for other HTML files (like /chat.html, /login.html)
 app.get('/:file.html', (req, res) => {
     const fileName = req.params.file + '.html';
     const filePath = path.join(__dirname, 'public', fileName);
     res.sendFile(filePath, (err) => {
         if (err) {
-            // If file not found, you can send a 404 page or index
             res.status(404).send('404 File Not Found');
         }
     });
@@ -98,7 +96,7 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('user-status', `${username} joined the chat.`);
     });
     
-    // UPDATED to handle file messages
+    // UPDATED: Handle file messages along with text
     socket.on('chat-message', (data) => {
         const sender = users[socket.id];
         if (sender) {
