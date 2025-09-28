@@ -112,55 +112,25 @@
             padding: 10px 12px; border-radius: 8px; font-size: 1.2em; cursor: pointer;
         }
         
-        /* 6. TRANSLATION WIDGET FIX: Hidden by default, placed neatly */
-        #translate-wrapper {
-            position: fixed; top: 15px; right: 15px; z-index: 102; /* Mute button se bhi upar */
-            display: flex; align-items: center; gap: 10px;
-        }
-        
-        #translate-toggle-btn {
-            background-color: var(--color-accent); color: white; border: none;
-            border-radius: 50%; width: 40px; height: 40px; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 1.2em; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
-        }
-
-        #google_translate_element {
-            /* Initially hidden or placed off-screen */
-            display: none; 
-            background: var(--color-background-secondary);
-            padding: 5px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        /* Show the widget when the button is active */
-        #translate-wrapper.open #google_translate_element {
-            display: block;
-        }
-
-        /* Hide the mobile menu button when sidebar is open to avoid conflict with translation widget on mobile */
+        /* ======================================= */
+        /* ====== MEDIA QUERIES (RESPONSIVENESS) ===== */
+        /* ======================================= */
         @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -280px; transition: left 0.3s ease-in-out; box-shadow: 8px 0 15px rgba(0, 0, 0, 0.5); }
+            
+            .sidebar {
+                position: fixed; left: -280px; transition: left 0.3s ease-in-out; 
+                box-shadow: 8px 0 15px rgba(0, 0, 0, 0.5);
+            }
+            
             .sidebar.open { left: 0; }
             .menu-toggle { display: block; }
+
             #reels-container { max-width: 100%; }
-            
-            /* Adjust translation widget for mobile */
-            #translate-wrapper { top: 15px; right: 15px; }
-            .sidebar.open ~ #translate-wrapper { right: 290px; transition: right 0.3s ease-in-out; }
         }
     </style>
 </head>
 <body>
     
-    <div id="translate-wrapper">
-        <button id="translate-toggle-btn" title="Translate Page">
-            <i class="fas fa-globe"></i>
-        </button>
-        <div id="google_translate_element"></div>
-    </div>
-
     <button class="menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></button>
 
     <div class="sidebar" id="sidebar">
@@ -214,7 +184,7 @@
             card.classList.add('reel-card');
 
             card.innerHTML = `
-                <video id="video-${index}" src="${video.source}" loop preload="auto" muted playsinline></video>
+                <video id="video-${index}" src="${video.source}" loop preload="auto" **muted** playsinline></video>
                 
                 <div class="mute-toggle-btn" onclick="toggleMute(event, 'video-${index}')">
                     <i class="fas fa-volume-mute" id="mute-icon-video-${index}"></i> 
@@ -243,10 +213,12 @@
             const icon = document.getElementById(`mute-icon-${videoId}`);
 
             if (video.muted) {
+                // Video ko Unmute karo
                 video.muted = false;
                 icon.classList.remove('fa-volume-mute');
                 icon.classList.add('fa-volume-up'); 
             } else {
+                // Video ko Mute karo
                 video.muted = true;
                 icon.classList.remove('fa-volume-up');
                 icon.classList.add('fa-volume-mute'); 
@@ -261,18 +233,20 @@
             entries.forEach(entry => {
                 const video = entry.target;
                 if (entry.isIntersecting) {
+                    // Try to play the video (it should be muted by default)
                     video.play().catch(error => {
-                        console.log('Video autoplay attempt failed, trying again if muted:', error);
+                        console.log('Video autoplay attempt failed:', error);
                         // If play fails (due to audio policy), force mute and try again
                         if (!video.muted) {
                             video.muted = true;
-                            // Update the mute icon for the user
+                            // Update the mute icon
                             document.getElementById(`mute-icon-${video.id}`).classList.remove('fa-volume-up');
                             document.getElementById(`mute-icon-${video.id}`).classList.add('fa-volume-mute'); 
                             video.play().catch(err => console.error('Final play attempt failed:', err));
                         }
                     });
                 } else {
+                    // Pause if scrolled away
                     video.pause();
                     video.currentTime = 0; 
                 }
@@ -285,6 +259,7 @@
             observer.observe(video);
         });
 
+        // Add a click handler to toggle play/pause on video tap
         reelsContainer.addEventListener('click', (e) => {
             if (e.target.tagName === 'VIDEO') {
                 const video = e.target;
@@ -323,36 +298,6 @@
             }
         });
         
-        // ===========================================
-        // === 🔑 NEW: TRANSLATION TOGGLE LOGIC ===
-        // ===========================================
-        const translateToggleBtn = document.getElementById('translate-toggle-btn');
-        const translateWrapper = document.getElementById('translate-wrapper');
-        
-        translateToggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Page ke doosre clicks ko rokne ke liye
-            translateWrapper.classList.toggle('open');
-        });
-        
-        // Close the widget if clicked outside
-        document.addEventListener('click', (e) => {
-            if (translateWrapper.classList.contains('open') && !translateWrapper.contains(e.target)) {
-                translateWrapper.classList.remove('open');
-            }
-        });
-        
     </script>
-    
-    <script>
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en', 
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-            }, 'google_translate_element');
-        }
-    </script>
-    
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
 </body>
 </html>
