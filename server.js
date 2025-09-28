@@ -8,12 +8,6 @@ const bcrypt = require("bcryptjs"); // <--- यह लाइन यहाँ ह
 const bodyParser = require("body-parser");
 //... बाकी requires
 
-const express = require("express");
-const http = require("http");
-const socketIO = require("socket.io");
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const bodyParser = require("body-parser");
 const cors = require('cors');
 const path = require("path");
 
@@ -279,4 +273,5 @@ io.on("connection", (socket) => {
 // ===========================================
 const PORT = process.env.PORT || 4000; // Using 4000 as per your original code
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+
 
