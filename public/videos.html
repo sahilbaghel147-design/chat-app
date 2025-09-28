@@ -20,33 +20,19 @@
         }
 
         * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Arial', sans-serif;
-            scroll-behavior: smooth; 
+            box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; scroll-behavior: smooth; 
         }
 
         body {
-            background: var(--color-background);
-            color: var(--color-text);
-            height: 100vh;
-            display: flex;
-            overflow: hidden; 
+            background: var(--color-background); color: var(--color-text); height: 100vh;
+            display: flex; overflow: hidden; 
         }
 
         /* 1. Sidebar Styling */
         .sidebar {
-            width: 280px;
-            background: var(--color-background-secondary); 
-            padding: 20px 15px;
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3); 
-            height: 100vh; 
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid var(--color-border);
-            flex-shrink: 0;
-            z-index: 100;
+            width: 280px; background: var(--color-background-secondary); padding: 20px 15px;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3); height: 100vh; display: flex;
+            flex-direction: column; border-right: 1px solid var(--color-border); flex-shrink: 0; z-index: 100;
         }
         
         .sidebar .nav-brand {
@@ -72,25 +58,15 @@
 
         /* 2. Main Content Area (Video Reels) */
         #main-content {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh; 
-            background: #000;
+            flex-grow: 1; display: flex; justify-content: center; align-items: center;
+            height: 100vh; background: #000;
         }
 
-        /* Video Container (The Scrollable Reels Area) */
         #reels-container {
-            width: 100%;
-            max-width: 450px; 
-            height: 100vh;
-            overflow-y: scroll; 
-            scroll-snap-type: y mandatory; 
-            background: #000;
+            width: 100%; max-width: 450px; height: 100vh; overflow-y: scroll; 
+            scroll-snap-type: y mandatory; background: #000;
         }
 
-        /* Individual Video Card (Reel) */
         .reel-card {
             width: 100%; height: 100vh; position: relative; scroll-snap-align: start; 
             display: flex; flex-direction: column; justify-content: flex-end; background-color: #000;
@@ -101,7 +77,6 @@
             object-fit: cover; z-index: 1;
         }
 
-        /* Overlay for Info and Buttons */
         .video-overlay {
             position: relative; z-index: 2; padding: 20px; color: white;
             background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
@@ -137,38 +112,54 @@
             padding: 10px 12px; border-radius: 8px; font-size: 1.2em; cursor: pointer;
         }
         
-        /* 6. TRANSLATION WIDGET FIX (To place it neatly) */
-        #google_translate_element {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            z-index: 101; /* Sidebar se bhi upar */
-            padding: 5px;
-            background: var(--color-background-secondary);
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        /* 6. TRANSLATION WIDGET FIX: Hidden by default, placed neatly */
+        #translate-wrapper {
+            position: fixed; top: 15px; right: 15px; z-index: 102; /* Mute button se bhi upar */
+            display: flex; align-items: center; gap: 10px;
+        }
+        
+        #translate-toggle-btn {
+            background-color: var(--color-accent); color: white; border: none;
+            border-radius: 50%; width: 40px; height: 40px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.2em; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
         }
 
-        /* ======================================= */
-        /* ====== MEDIA QUERIES (RESPONSIVENESS) ===== */
-        /* ======================================= */
+        #google_translate_element {
+            /* Initially hidden or placed off-screen */
+            display: none; 
+            background: var(--color-background-secondary);
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Show the widget when the button is active */
+        #translate-wrapper.open #google_translate_element {
+            display: block;
+        }
+
+        /* Hide the mobile menu button when sidebar is open to avoid conflict with translation widget on mobile */
         @media (max-width: 768px) {
-            
-            .sidebar {
-                position: fixed; left: -280px; transition: left 0.3s ease-in-out; 
-                box-shadow: 8px 0 15px rgba(0, 0, 0, 0.5);
-            }
-            
+            .sidebar { position: fixed; left: -280px; transition: left 0.3s ease-in-out; box-shadow: 8px 0 15px rgba(0, 0, 0, 0.5); }
             .sidebar.open { left: 0; }
             .menu-toggle { display: block; }
-
             #reels-container { max-width: 100%; }
+            
+            /* Adjust translation widget for mobile */
+            #translate-wrapper { top: 15px; right: 15px; }
+            .sidebar.open ~ #translate-wrapper { right: 290px; transition: right 0.3s ease-in-out; }
         }
     </style>
 </head>
 <body>
     
-    <div id="google_translate_element"></div>
+    <div id="translate-wrapper">
+        <button id="translate-toggle-btn" title="Translate Page">
+            <i class="fas fa-globe"></i>
+        </button>
+        <div id="google_translate_element"></div>
+    </div>
 
     <button class="menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></button>
 
@@ -331,12 +322,31 @@
                 menuToggle.querySelector('i').classList.add('fa-bars');
             }
         });
+        
+        // ===========================================
+        // === 🔑 NEW: TRANSLATION TOGGLE LOGIC ===
+        // ===========================================
+        const translateToggleBtn = document.getElementById('translate-toggle-btn');
+        const translateWrapper = document.getElementById('translate-wrapper');
+        
+        translateToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Page ke doosre clicks ko rokne ke liye
+            translateWrapper.classList.toggle('open');
+        });
+        
+        // Close the widget if clicked outside
+        document.addEventListener('click', (e) => {
+            if (translateWrapper.classList.contains('open') && !translateWrapper.contains(e.target)) {
+                translateWrapper.classList.remove('open');
+            }
+        });
+        
     </script>
     
     <script>
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
-                pageLanguage: 'en', // आपकी वेबसाइट की मूल भाषा (इसे 'hi' करें अगर आपकी वेबसाइट हिंदी में है)
+                pageLanguage: 'en', 
                 layout: google.translate.TranslateElement.InlineLayout.SIMPLE
             }, 'google_translate_element');
         }
