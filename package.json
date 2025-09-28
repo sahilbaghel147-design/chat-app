@@ -14,7 +14,7 @@
     "dotenv": "^16.4.5",
     "mongoose": "^7.6.5",
     "nodemon": "^3.1.0",
-    "multer": "^1.4.5-lts.1"  <-- 🔑 NEW ADDITION
+    "multer": "^1.4.5-lts.1"  
   },
   "engines": {
     "node": "18.x"
