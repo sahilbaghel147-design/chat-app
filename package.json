@@ -15,6 +15,10 @@
     "mongoose": "^7.6.5",
     "nodemon": "^3.1.0",
     "multer": "^1.4.5-lts.1" 
+    
+    /* अगर आप MongoDB/Mongoose का उपयोग नहीं कर रहे हैं,
+     तो कृपया "dotenv" और "mongoose" को "dependencies" से हटा दें।
+    */
   },
   "engines": {
     "node": "18.x"
