@@ -1,7 +1,7 @@
 {
   "name": "chat-app",
   "version": "1.0.0",
-  "description": "Realtime Chat + Games + Videos + About App",
+  "description": "Realize Chat + Games + Videos + About App",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
