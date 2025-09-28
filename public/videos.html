@@ -46,10 +46,9 @@
             flex-direction: column;
             border-right: 1px solid var(--color-border);
             flex-shrink: 0;
-            z-index: 100; /* Sidebar always on top */
+            z-index: 100;
         }
         
-        /* Sidebar Menu Items */
         .sidebar .nav-brand {
             font-size: 1.8em; font-weight: 800; color: var(--color-accent);
             text-align: center; margin-bottom: 25px; padding-bottom: 10px;
@@ -93,22 +92,13 @@
 
         /* Individual Video Card (Reel) */
         .reel-card {
-            width: 100%;
-            height: 100vh;
-            position: relative;
-            scroll-snap-align: start; 
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end; 
-            background-color: #000;
+            width: 100%; height: 100vh; position: relative; scroll-snap-align: start; 
+            display: flex; flex-direction: column; justify-content: flex-end; background-color: #000;
         }
 
         .reel-card video {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            object-fit: cover; 
-            z-index: 1;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; z-index: 1;
         }
 
         /* Overlay for Info and Buttons */
@@ -130,87 +120,56 @@
         .action-item i { font-size: 2em; margin-bottom: 5px; }
         .action-item:hover i { color: var(--color-accent); }
         
-        /* 3. MOBILE MENU BUTTON (New Addition) */
+        /* 4. Mute Button Styling */
+        .mute-toggle-btn {
+            position: absolute; top: 20px; right: 20px; z-index: 4; 
+            background: rgba(0, 0, 0, 0.5); color: white; border: 2px solid white;
+            border-radius: 50%; width: 40px; height: 40px; display: flex;
+            justify-content: center; align-items: center; cursor: pointer; transition: background 0.2s;
+        }
+
+        .mute-toggle-btn:hover { background: rgba(0, 0, 0, 0.8); }
+        
+        /* 5. MOBILE MENU BUTTON */
         .menu-toggle {
-            display: none; /* Desktop par hide karein */
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 50;
-            background: rgba(30, 30, 30, 0.7);
-            color: white;
-            border: none;
-            padding: 10px 12px;
-            border-radius: 8px;
-            font-size: 1.2em;
-            cursor: pointer;
+            display: none; position: absolute; top: 15px; left: 15px; z-index: 50;
+            background: rgba(30, 30, 30, 0.7); color: white; border: none;
+            padding: 10px 12px; border-radius: 8px; font-size: 1.2em; cursor: pointer;
         }
         
-    /* ... (Yahaan aapka pehle ka sara CSS hai, jaise body, sidebar, reel-card, etc.) ... */
+        /* 6. TRANSLATION WIDGET FIX (To place it neatly) */
+        #google_translate_element {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 101; /* Sidebar se bhi upar */
+            padding: 5px;
+            background: var(--color-background-secondary);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
 
-    /* Action Buttons (Like, Comment) */
-    .actions-bar {
-        /* ... existing actions-bar CSS ... */
-    }
-
-    /* 4. Mute Button Styling (New Addition) */
-    .mute-toggle-btn {
-        position: absolute;
-        top: 20px; /* Top corner position */
-        right: 20px;
-        z-index: 4; /* Overlay se upar */
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        border: 2px solid white;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-
-    .mute-toggle-btn:hover {
-        background: rgba(0, 0, 0, 0.8);
-    }
-    
-    /* ... (Baki media queries aur CSS) ... */
-
-    
         /* ======================================= */
         /* ====== MEDIA QUERIES (RESPONSIVENESS) ===== */
         /* ======================================= */
         @media (max-width: 768px) {
             
-            /* Sidebar ko chhota karein aur screen ke bahar dhakel dein */
             .sidebar {
-                position: fixed;
-                left: -280px; /* Screen se bahar */
-                transition: left 0.3s ease-in-out;
+                position: fixed; left: -280px; transition: left 0.3s ease-in-out; 
                 box-shadow: 8px 0 15px rgba(0, 0, 0, 0.5);
             }
             
-            /* Jab menu open ho */
-            .sidebar.open {
-                left: 0;
-            }
-            
-            /* Mobile Menu button ko dikhayein */
-            .menu-toggle {
-                display: block;
-            }
+            .sidebar.open { left: 0; }
+            .menu-toggle { display: block; }
 
-            /* Reels Container ko mobile par full width dein */
-            #reels-container {
-                max-width: 100%;
-            }
+            #reels-container { max-width: 100%; }
         }
     </style>
 </head>
 <body>
     
+    <div id="google_translate_element"></div>
+
     <button class="menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></button>
 
     <div class="sidebar" id="sidebar">
@@ -229,35 +188,10 @@
         <div id="reels-container">
             </div>
     </div>
-<body>
-    <div id="google_translate_element" style="margin-bottom: 10px;"></div>
-
-    ```
-
-### 2. 📝 JavaScript कोड (जो ट्रांसलेशन सर्विस को लोड करता है)
-
-यह कोड Google की ट्रांसलेशन लाइब्रेरी को लोड करता है और उसे आपके बनाए गए `div` के साथ जोड़ता है।
-
-इस कोड को अपनी **सभी HTML फ़ाइलों** में `</body>` टैग के **ठीक ऊपर** जोड़ें:
-
-```html
-
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en', // आपकी वेबसाइट की मूल भाषा (मान लीजिए English)
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-            }, 'google_translate_element');
-        }
-    
-    
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-</body>
-</html>
 
     <script>
         // ===========================================
-        // === App Logic (Unchanged) ===
+        // === App Logic (Login Check) ===
         // ===========================================
         let myUsername = localStorage.getItem("username");
         if (!myUsername) {
@@ -291,6 +225,10 @@
             card.innerHTML = `
                 <video id="video-${index}" src="${video.source}" loop preload="auto" muted playsinline></video>
                 
+                <div class="mute-toggle-btn" onclick="toggleMute(event, 'video-${index}')">
+                    <i class="fas fa-volume-mute" id="mute-icon-video-${index}"></i> 
+                </div>
+
                 <div class="actions-bar">
                     <div class="action-item"><i class="fas fa-heart"></i><br>120</div>
                     <div class="action-item"><i class="fas fa-comment"></i><br>25</div>
@@ -306,14 +244,42 @@
         });
 
         // ===========================================
-        // === Video Playback Logic (Autoplay & Pause) ===
+        // === Mute Toggle Logic ===
+        // ===========================================
+        function toggleMute(event, videoId) {
+            event.stopPropagation();
+            const video = document.getElementById(videoId);
+            const icon = document.getElementById(`mute-icon-${videoId}`);
+
+            if (video.muted) {
+                video.muted = false;
+                icon.classList.remove('fa-volume-mute');
+                icon.classList.add('fa-volume-up'); 
+            } else {
+                video.muted = true;
+                icon.classList.remove('fa-volume-up');
+                icon.classList.add('fa-volume-mute'); 
+            }
+        }
+
+
+        // ===========================================
+        // === Video Playback Logic (CRITICAL FIX) ===
         // ===========================================
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const video = entry.target;
                 if (entry.isIntersecting) {
                     video.play().catch(error => {
-                        console.log('Video autoplay blocked. User interaction required.', error);
+                        console.log('Video autoplay attempt failed, trying again if muted:', error);
+                        // If play fails (due to audio policy), force mute and try again
+                        if (!video.muted) {
+                            video.muted = true;
+                            // Update the mute icon for the user
+                            document.getElementById(`mute-icon-${video.id}`).classList.remove('fa-volume-up');
+                            document.getElementById(`mute-icon-${video.id}`).classList.add('fa-volume-mute'); 
+                            video.play().catch(err => console.error('Final play attempt failed:', err));
+                        }
                     });
                 } else {
                     video.pause();
@@ -328,7 +294,6 @@
             observer.observe(video);
         });
 
-        // Add a click handler to toggle play/pause
         reelsContainer.addEventListener('click', (e) => {
             if (e.target.tagName === 'VIDEO') {
                 const video = e.target;
@@ -339,18 +304,16 @@
                 }
             }
         });
-
+        
         // ===========================================
-        // === 🔑 NEW: MOBILE MENU TOGGLE LOGIC ===
+        // === Mobile Menu Toggle Logic ===
         // ===========================================
         const sidebar = document.getElementById('sidebar');
         const menuToggle = document.getElementById('menu-toggle');
 
         menuToggle.addEventListener('click', () => {
-            // Sidebar ko open/close karta hai
             sidebar.classList.toggle('open'); 
             
-            // Hamburger icon ko X mein badalna
             const icon = menuToggle.querySelector('i');
             if (sidebar.classList.contains('open')) {
                 icon.classList.remove('fa-bars');
@@ -361,7 +324,6 @@
             }
         });
         
-        // Agar user sidebar ke bahar click karta hai toh usse band kar de
         document.addEventListener('click', (e) => {
             if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
                 sidebar.classList.remove('open');
@@ -369,7 +331,18 @@
                 menuToggle.querySelector('i').classList.add('fa-bars');
             }
         });
-
     </script>
+    
+    <script>
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en', // आपकी वेबसाइट की मूल भाषा (इसे 'hi' करें अगर आपकी वेबसाइट हिंदी में है)
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+        }
+    </script>
+    
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
 </body>
 </html>
