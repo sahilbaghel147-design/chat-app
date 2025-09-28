@@ -3,296 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat - Chat App</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="/style.css"> 
-    <script src="/socket.io/socket.io.js"></script>
+    <title>Chat App - Live Chat</title>
     
-    <style>
-        /* === BASIC & THEME STYLES === */
-        :root {
-            --color-background: #121212;
-            --color-background-secondary: #1e1e1e;
-            --color-accent: #5e6bfe; 
-            --color-text: #e0e0e0;
-            --color-border: #333333;
-        }
-
-        body {
-            background: var(--color-background);
-            color: var(--color-text);
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        .main-chat-container {
-            display: flex;
-            height: 100vh;
-        }
-        
-        .user-list-sidebar {
-            width: 200px;
-            background: var(--color-background-secondary);
-            padding: 20px 10px;
-            overflow-y: auto;
-            border-right: 1px solid var(--color-border);
-            flex-shrink: 0;
-        }
-        
-        .chat-window {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        .messages-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-        .chat-input-area {
-            background: var(--color-background-secondary);
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            border-top: 1px solid var(--color-border);
-        }
-        #message-input {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid var(--color-border);
-            border-radius: 20px;
-            background: var(--color-background);
-            color: var(--color-text);
-            margin: 0 5px;
-            outline: none;
-        }
-        .send-btn {
-            background-color: var(--color-accent);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-        
-        /* Message Bubble Styles */
-        .message-bubble { margin-bottom: 15px; display: flex; }
-        .message-content {
-            padding: 10px 15px;
-            border-radius: 18px;
-            max-width: 60%;
-            word-wrap: break-word;
-        }
-        .my-message { justify-content: flex-end; }
-        .my-message .message-content { background-color: var(--color-accent); color: white; border-bottom-right-radius: 2px; }
-        .other-message .message-content { background-color: var(--color-background-secondary); color: var(--color-text); border: 1px solid var(--color-border); border-bottom-left-radius: 2px; }
-        .message-user { font-weight: bold; font-size: 0.9em; margin-bottom: 3px; color: var(--color-accent); }
-
-        /* 🔑 Attachment Button Styling */
-        .attach-btn {
-            background: transparent;
-            color: var(--color-accent); 
-            border: none;
-            padding: 10px;
-            cursor: pointer;
-            font-size: 1.2em;
-            transition: color 0.2s;
-        }
-
-        /* 🔑 File/Image Display Styles */
-        .file-preview img, .file-preview video {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin-top: 5px;
-            max-height: 200px;
-        }
-        
-        .file-preview a {
-            display: block;
-            background: var(--color-border);
-            padding: 8px 10px;
-            border-radius: 8px;
-            color: var(--color-accent);
-            text-decoration: none;
-            margin-top: 5px;
-            word-break: break-all;
-        }
-    </style>
-</head>
+    <link rel="stylesheet" href="style.css"> 
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    </head>
 <body>
+
+<div id="sidebar" class="active"> 
+    <div class="sidebar-header">
+        <a href="/index.html"><h3>Chat App</h3></a>
+    </div>
+    <ul class="list-unstyled components">
+        <li>
+            <a href="/index.html"><i class="fas fa-home"></i> Home</a>
+        </li>
+        <li class="active"> 
+            <a href="/chat.html"><i class="fas fa-comment-alt"></i> Chat</a>
+        </li>
+        <li>
+            <a href="/games.html"><i class="fas fa-gamepad"></i> Games</a>
+        </li>
+        <li>
+            <a href="/videos.html"><i class="fas fa-video"></i> Videos</a>
+        </li>
+        <li>
+            <a href="/about.html"><i class="fas fa-info-circle"></i> About</a>
+        </li>
+    </ul>
     
-    <div class="header" style="background: var(--color-background-secondary); padding: 10px; display: flex; justify-content: flex-end;">
-        <a href="/index.html" class="home-link" style="color: var(--color-text); margin-right: auto; text-decoration: none; font-weight: bold;">Home</a> 
-        <button onclick="logout()" style="background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Logout</button>
+    <div class="online-users-list">
+        <h4>Online Users</h4>
+        <ul id="onlineUsersList">
+            </ul>
     </div>
+</div>
+<div id="content">
+    
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <button type="button" id="sidebarCollapse" class="btn btn-dark">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <div class="navbar-right">
+             <span class="welcome-text" id="welcomeMessage">Welcome, sahil!</span>
+             <button id="logoutBtn" class="btn btn-danger">Logout</button>
+        </div>
+    </nav>
 
-    <div class="main-chat-container">
-        
-        <div class="user-list-sidebar">
-            <h3>Online Users</h3>
-            <div id="online-users">
+    <div class="chat-wrapper">
+        <h2 id="currentChatRecipient">Select a user to chat</h2>
+
+        <div id="messageDisplayArea" class="message-area">
             </div>
+
+        <div class="message-input-area">
+            
+            <input type="file" id="fileInput" style="display: none;">
+            
+            <button id="attachFileBtn" class="btn-attach" title="Attach File">
+                <i class="fas fa-paperclip"></i>
+            </button>
+
+            <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
+            
+            <button id="sendMessageBtn" class="btn-send">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
 
-        <div class="chat-window">
-            <div class="messages-container" id="messages-container">
-                <p class="system-message">Welcome, <span id="current-user-name"></span>! Start chatting.</p>
-            </div>
-            
-            <div class="chat-input-area">
-                
-                <label for="file-input" class="attach-btn" title="Attach File">
-                    <i class="fas fa-paperclip"></i>
-                </label>
-                <input type="file" id="file-input" name="chatFile" style="display: none;"> 
-                
-                <input type="text" id="message-input" placeholder="Type a message...">
-                
-                <button id="send-btn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
-            </div>
-        </div>
     </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
 
-    <script>
-        const socket = io();
-        const messagesContainer = document.getElementById('messages-container');
-        const messageInput = document.getElementById('message-input');
-        const sendBtn = document.getElementById('send-btn');
-        const onlineUsersDiv = document.getElementById('online-users');
-        const fileInput = document.getElementById('file-input');
+<script src="chat-logic.js"></script> 
 
-        const myUsername = localStorage.getItem("username");
-        if (!myUsername) {
-            window.location.replace("/login.html");
-        }
-        document.getElementById('current-user-name').textContent = myUsername;
-        socket.emit('user-joined', myUsername);
-
-        function logout() {
-            localStorage.removeItem("username");
-            window.location.replace("/login.html");
-        }
-
-        function scrollToBottom() {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-        
-        function createFileContentHTML(fileUrl, mimeType, originalName) {
-            let fileHTML = '';
-            const downloadLink = `<a href="${fileUrl}" target="_blank" download="${originalName}"><i class="fas fa-download"></i> ${originalName}</a>`;
-            
-            if (mimeType.startsWith('image/')) {
-                fileHTML = `<div class="file-preview"><img src="${fileUrl}" alt="${originalName}" loading="lazy"> ${downloadLink}</div>`;
-            } else if (mimeType.startsWith('video/')) {
-                fileHTML = `<div class="file-preview"><video controls src="${fileUrl}"></video> ${downloadLink}</div>`;
-            } else {
-                fileHTML = `<div class="file-preview"><i class="fas fa-file"></i> ${downloadLink}</div>`;
-            }
-            return fileHTML;
-        }
-
-        // Handle file change
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                messageInput.value = `File selected: ${fileInput.files[0].name}. Click Send to upload.`;
-                messageInput.disabled = true;
-                sendBtn.focus();
-            } else {
-                messageInput.value = '';
-                messageInput.disabled = false;
-            }
-        });
-
-        // Main Send function
-        sendBtn.addEventListener('click', async () => {
-            const file = fileInput.files[0];
-            const text = messageInput.value.trim();
-
-            if (file) {
-                // Upload logic
-                const formData = new FormData();
-                formData.append('chatFile', file);
-                const originalText = text.replace(`File selected: ${file.name}. Click Send to upload.`, '').trim();
-
-                try {
-                    const response = await fetch('/upload', { method: 'POST', body: formData });
-                    const data = await response.json();
-
-                    if (data.success) {
-                        // Send the file URL via socket
-                        socket.emit('chat-message', {
-                            text: originalText,
-                            fileUrl: data.fileUrl,
-                            mimeType: data.mimeType,
-                            originalName: data.originalName
-                        });
-                    } else {
-                        alert('File upload failed: ' + data.message);
-                    }
-                } catch (error) {
-                    console.error('Upload Error:', error);
-                    alert('Server error during file upload.');
-                } finally {
-                    // Reset inputs
-                    fileInput.value = '';
-                    messageInput.value = '';
-                    messageInput.disabled = false;
-                }
-
-            } else if (text.length > 0) {
-                // Send text message only
-                socket.emit('chat-message', { text: text });
-                messageInput.value = '';
-            }
-        });
-
-        // SOCKET RECEIVE LOGIC
-        socket.on('chat-message', (data) => {
-            const isMe = data.user === myUsername;
-            const messageClass = isMe ? 'my-message' : 'other-message';
-            const fileContent = data.fileUrl ? createFileContentHTML(data.fileUrl, data.mimeType, data.originalName) : '';
-            const textContent = (data.text && data.text.length > 0) ? `<p>${data.text}</p>` : '';
-            
-            if (!fileContent && !textContent) return; 
-
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message-bubble', messageClass);
-            
-            messageElement.innerHTML = `
-                <div class="message-content">
-                    ${isMe ? '' : `<div class="message-user">${data.user}</div>`}
-                    ${fileContent}
-                    ${textContent}
-                </div>
-            `;
-            
-            messagesContainer.appendChild(messageElement);
-            scrollToBottom();
-        });
-
-        // Online Users List
-        socket.on('online-users', (users) => {
-            onlineUsersDiv.innerHTML = ' ';
-            for (const id in users) {
-                if (users[id] !== myUsername) {
-                    const userDiv = document.createElement('div');
-                    userDiv.classList.add('online-user');
-                    userDiv.innerHTML = `<i class="fas fa-circle"></i> ${users[id]}`;
-                    onlineUsersDiv.appendChild(userDiv);
-                }
-            }
-        });
-
-        // System Status Messages
-        socket.on('user-status', (message) => {
-            const statusElement = document.createElement('p');
-            statusElement.classList.add('system-message');
-            statusElement.textContent = message;
-            messagesContainer.appendChild(statusElement);
-            scrollToBottom();
-        });
-    </script>
 </body>
 </html>
