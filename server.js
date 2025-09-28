@@ -1,3 +1,67 @@
+// server.js
+
+// ... (existing require statements, e.g., const express = require('express');) ...
+const multer = require('multer'); // 🔑 NEW: For file uploads
+const path = require('path');    // 🔑 NEW: For handling file paths
+
+const app = express();
+// ... (rest of your existing setup) ...
+
+
+// ===========================================
+// === 🔑 NEW: FILE UPLOAD CONFIGURATION ===
+// ===========================================
+
+// 1. Storage Configuration: Define where and how files will be saved
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // Files will be saved in a new folder named 'uploads' inside 'public'
+        // IMPORTANT: You MUST create this 'public/uploads' folder manually.
+        cb(null, 'public/uploads'); 
+    },
+    filename: (req, file, cb) => {
+        // Create a unique filename: (timestamp)-(original filename)
+        cb(null, Date.now() + '-' + file.originalname); 
+    }
+});
+
+// 2. Multer Upload Middleware Setup
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // Limit files to 10MB
+    fileFilter: (req, file, cb) => {
+        // Accept only common image/video/pdf formats
+        const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|pdf|zip/;
+        const mimeType = allowedTypes.test(file.mimetype);
+        const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimeType && extName) {
+            return cb(null, true);
+        }
+        cb(new Error('Only images, videos, pdfs, and zip files are allowed'));
+    }
+}).single('chatFile'); // 'chatFile' is the name of the form field
+
+// 3. File Upload POST Route
+app.post('/upload', (req, res) => {
+    upload(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+            return res.status(500).json({ success: false, message: err.message });
+        } else if (err) {
+            return res.status(500).json({ success: false, message: err.message });
+        }
+        
+        if (!req.file) {
+             return res.status(400).json({ success: false, message: "No file selected." });
+        }
+
+        // Success: Construct the URL for the client
+        const fileUrl = `/uploads/${req.file.filename}`;
+        res.json({ success: true, fileUrl: fileUrl, originalName: req.file.originalname, mimeType: req.file.mimetype });
+    });
+});
+// ... (rest of your existing server.js code) ...
+
 // server.js (FINAL CODE: All Features)
 
 const dotenv = require('dotenv');
@@ -203,3 +267,4 @@ io.on("connection", (socket) => {
 // --- SERVER LISTEN ---
 const PORT = process.env.PORT || 4000; 
 server.listen(PORT, () => console.log(`🚀 Final Merged Server running on port ${PORT}`));
+
