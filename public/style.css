@@ -638,4 +638,45 @@ body.light .feature-card {
         max-width: 85%;
     }
 }
+/* Sidebar CSS - style.css में जोड़ें या वेरीफाई करें */
+
+#sidebar {
+    width: 250px; /* साइडबार की चौड़ाई */
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    background: #282a36; /* डार्क बैकग्राउंड */
+    color: #fff;
+    transition: all 0.3s;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+#sidebar.active { /* अगर आप इसे छिपाने/दिखाने की कार्यक्षमता जोड़ते हैं */
+    margin-left: -250px;
+}
+
+#content {
+    width: 100%;
+    padding: 20px;
+    min-height: 100vh;
+    transition: all 0.3s;
+    /* साइडबार के लिए जगह बनाएं */
+    margin-left: 250px; 
+}
+
+/* Nav links styling */
+#sidebar a {
+    padding: 10px;
+    font-size: 1.1em;
+    display: block;
+    color: #bdbdbd; /* हल्का टेक्स्ट रंग */
+}
+
+#sidebar a:hover {
+    color: #fff;
+    background: #44475a; /* हॉवर पर हल्का डार्क बैकग्राउंड */
+    text-decoration: none;
+}
 
