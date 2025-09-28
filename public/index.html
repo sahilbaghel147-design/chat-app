@@ -1,92 +1,375 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home - Your Ultimate Social Hub</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Chat App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* ======================================= */
+        /* ====== GLOBAL & THEME (Dark Mode) ======= */
+        /* ======================================= */
+        :root {
+            --color-background: #121212;
+            --color-background-secondary: #1e1e1e;
+            --color-accent: #5e6bfe; 
+            --color-text: #e0e0e0;
+            --color-text-light: #aaa;
+            --color-border: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: var(--color-background);
+            color: var(--color-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ======================================= */
+        /* ====== TOP NAVIGATION BAR ======= */
+        /* ======================================= */
+        .top-nav {
+            background: var(--color-background-secondary);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-left .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--color-accent);
+            margin-right: 20px;
+        }
+
+        .nav-links a {
+            color: var(--color-text-light);
+            text-decoration: none;
+            margin: 0 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.3s, color 0.3s;
+            font-size: 0.95em;
+        }
+        
+        .nav-links a:hover {
+            background-color: var(--color-border);
+            color: var(--color-text);
+        }
+
+        .nav-links a.active {
+            color: var(--color-accent);
+            font-weight: bold;
+        }
+
+        /* ======================================= */
+        /* ====== TOP RIGHT ACTIONS (New Addition) ======= */
+        /* ======================================= */
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Translation और Logout ke beech space */
+        }
+        
+        .nav-actions .logout-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .nav-actions .logout-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        /* 🔑 MODERN TRANSLATION UI STYLING */
+        #translate-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        #translate-toggle-btn {
+            background-color: transparent;
+            color: var(--color-text);
+            border: none;
+            padding: 5px;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1em;
+            transition: background-color 0.3s;
+        }
+        
+        #translate-toggle-btn:hover {
+            background-color: var(--color-border);
+        }
+
+        /* Google Translate Widget Container ko Floating Box mein daalna */
+        #google_translate_element {
+            position: absolute;
+            top: 45px; /* Button ke neeche dikhega */
+            right: 0;
+            display: none; /* By default hidden */
+            background: var(--color-background-secondary);
+            border: 1px solid var(--color-border);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            z-index: 30; /* Sabse upar */
+            min-width: 150px;
+        }
+        
+        #translate-wrapper.open #google_translate_element {
+            display: block; /* Jab button click ho tab dikhe */
+        }
+
+        /* Google Translate ke default styling ko chupaana (optional, for cleaner look) */
+        .goog-te-gadget {
+            font-family: inherit !important;
+        }
+        .goog-te-gadget .goog-te-combo {
+            background: var(--color-background) !important;
+            color: var(--color-text) !important;
+            border: 1px solid var(--color-border) !important;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+
+        /* ======================================= */
+        /* ====== MAIN CONTENT STYLING ======= */
+        /* ======================================= */
+        #main-content {
+            padding: 50px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            flex-grow: 1;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .hero h1 {
+            font-size: 3em;
+            color: var(--color-text);
+            margin-bottom: 10px;
+        }
+        
+        .hero h1 span {
+            color: var(--color-accent);
+        }
+
+        .hero p {
+            font-size: 1.2em;
+            color: var(--color-text-light);
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .hero .start-btn {
+            background-color: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .hero .start-btn:hover {
+            background-color: #4a59e6; 
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--color-background-secondary);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .card i {
+            font-size: 2.5em;
+            color: var(--color-accent);
+            margin-bottom: 15px;
+        }
+
+        .card h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: var(--color-text);
+        }
+
+        .card p {
+            color: var(--color-text-light);
+            font-size: 0.95em;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .top-nav {
+                padding: 10px 15px;
+            }
+            .nav-left .logo {
+                font-size: 1.2em;
+            }
+            .nav-links {
+                display: none; /* Mobile par links hide karein */
+            }
+            .hero h1 {
+                font-size: 2em;
+            }
+            .hero p {
+                font-size: 1em;
+            }
+            .feature-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     
-    <div class="navbar">
-        <a href="index.html" class="nav-brand">My App</a> 
-
-        <div class="nav-links">
-            <a href="index.html" class="active"><i class="fas fa-home"></i> Home</a>
-            <a href="chat.html"><i class="fas fa-comments"></i> Chat</a>
-            <a href="games.html"><i class="fas fa-gamepad"></i> Games</a>
-            <a href="videos.html"><i class="fas fa-video"></i> Videos</a>
-            <a href="about.html"><i class="fas fa-info-circle"></i> About</a>
-        </div>
-        
-        <button class="toggle-btn" onclick="toggleTheme()">☀️</button>
-        <button onclick="logout()">Logout</button>
-    </div>
-
-    <div class="content">
-        <div class="hero-section">
-            <h1>Connect. Play. Watch. 🚀</h1>
-            <p class="tagline">Your all-in-one hub for real-time chat, fun gaming, and viral videos.</p>
-            <a href="chat.html" class="cta-button">Start Chatting Now <i class="fas fa-arrow-right"></i></a>
-        </div>
-        
-        <div class="features-grid">
-            <div class="feature-card">
-                <h3><i class="fas fa-users"></i> Instant Chat</h3>
-                <p>Connect with your friends privately and securely in real-time.</p>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">My App</div>
+            <div class="nav-links">
+                <a href="/index.html" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/chat.html"><i class="fas fa-comment-dots"></i> Chat</a>
+                <a href="/games.html"><i class="fas fa-gamepad"></i> Games</a>
+                <a href="/videos.html"><i class="fas fa-video"></i> Videos</a>
+                <a href="/about.html"><i class="fas fa-info-circle"></i> About</a>
             </div>
-            <div class="feature-card">
-                <h3><i class="fas fa-car-side"></i> Thrilling Games</h3>
+        </div>
+        
+        <div class="nav-actions">
+            
+            <div id="translate-wrapper">
+                <button id="translate-toggle-btn" title="Translate Page">
+                    <i class="fas fa-globe"></i>
+                </button>
+                <div id="google_translate_element"></div>
+            </div>
+            
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+    
+    <div id="main-content">
+        
+        <div class="hero">
+            <h1>Connect. Play. <span>Watch.</span> <span style="font-size: 1.5em;">🚀</span></h1>
+            <p>Your all-in-one hub for real-time chat, fun gaming, and viral videos.</p>
+            <a href="/chat.html" class="start-btn">Start Chatting Now <i class="fas fa-arrow-right" style="margin-left: 10px;"></i></a>
+        </div>
+
+        <div class="feature-cards">
+            <div class="card">
+                <i class="fas fa-users"></i>
+                <h2>Instant Chat</h2>
+                <p>Connect with your friends privately and securely in real-time. User status included!</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-gamepad"></i>
+                <h2>Thrilling Games</h2>
                 <p>Challenge yourself with our exciting, in-app games like Highway Car Challenge.</p>
             </div>
-            <div class="feature-card">
-                <h3><i class="fas fa-film"></i> Trending Videos</h3>
-                <p>Scroll through your favorite reels and video content seamlessly.</p>
+            <div class="card">
+                <i class="fas fa-video"></i>
+                <h2>Trending Videos</h2>
+                <p>Scroll through your favorite reels and video content seamlessly and sound-ready.</p>
             </div>
         </div>
+        
     </div>
 
-
     <script>
-        // ************************************************************
-        // ** GUARANTEED LOGIN CHECK (MUST BE THE FIRST THING TO RUN) **
-        // ************************************************************
-        const isLoginPage = window.location.pathname.includes('/login') || window.location.pathname.includes('/signup');
-        
-        if (!localStorage.getItem("username") && !isLoginPage) {
-            window.location.replace("/login.html"); 
+        // ===========================================
+        // === App Logic (Login Check & Logout) ===
+        // ===========================================
+        let myUsername = localStorage.getItem("username");
+        if (!myUsername) {
+            window.location.replace("/login.html");
         }
-        // ************************************************************
-        
-        
-        // --- Common Functions ---
         
         function logout() {
-            localStorage.clear(); // Puri local storage saaf kar dega
-            window.location.replace("/login.html"); 
+            localStorage.removeItem("username");
+            window.location.replace("/login.html");
         }
+
+        // ===========================================
+        // === 🔑 MODERN TRANSLATION TOGGLE LOGIC ===
+        // ===========================================
+        const translateToggleBtn = document.getElementById('translate-toggle-btn');
+        const translateWrapper = document.getElementById('translate-wrapper');
         
-        function toggleTheme() {
-            document.body.classList.toggle("light");
-            const isLight = document.body.classList.contains('light');
-            const btn = document.querySelector('.toggle-btn');
-            if (btn) btn.textContent = isLight ? '🌙' : '☀️';
-            localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('theme') === 'light') {
-                document.body.classList.add('light');
-                const btn = document.querySelector('.toggle-btn');
-                if (btn) btn.textContent = '🌙';
-            }
+        // Open/Close the dropdown on button click
+        translateToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            translateWrapper.classList.toggle('open');
         });
         
+        // Close the widget if clicked anywhere else on the page
+        document.addEventListener('click', (e) => {
+            if (translateWrapper.classList.contains('open') && !translateWrapper.contains(e.target)) {
+                translateWrapper.classList.remove('open');
+            }
+        });
+
     </script>
-
-
-    <script src="//code.tidio.co/o4ovphzhupjjy2u3omjywvjdn0aa7qdx.js" async></script>
     
+    <script>
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en', // अपनी वेबसाइट की मूल भाषा सेट करें
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+        }
+    </script>
+    
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
