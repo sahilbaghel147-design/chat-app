@@ -3,8 +3,10 @@
 const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
-const path = require('path'); // 🔑 FIX: path module properly required
+const path = require('path'); 
 const multer = require('multer'); 
+// const mongoose = require('mongoose'); // Uncomment if using MongoDB
+// require('dotenv').config(); // Uncomment if using .env file
 
 const app = express();
 const server = http.createServer(app);
@@ -62,12 +64,12 @@ app.post('/upload', (req, res) => {
 });
 
 // ===========================================
-// === EXISTING SETUP AND SOCKET LOGIC ===
+// === ROUTING AND SOCKET LOGIC ===
 // ===========================================
 
 // Middleware to serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
-// Serving uploaded files
+// Serving uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); 
 
 // Route for the root file
@@ -75,7 +77,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Generic route for other HTML files (like /chat.html, /login.html)
+// Generic route for other HTML files (e.g., /chat.html, /login.html)
 app.get('/:file.html', (req, res) => {
     const fileName = req.params.file + '.html';
     const filePath = path.join(__dirname, 'public', fileName);
@@ -96,7 +98,7 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('user-status', `${username} joined the chat.`);
     });
     
-    // UPDATED: Handle file messages along with text
+    // Handle message (including file info)
     socket.on('chat-message', (data) => {
         const sender = users[socket.id];
         if (sender) {
