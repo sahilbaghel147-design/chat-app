@@ -5,51 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat - Chat App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="/style.css"> <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="/style.css"> 
+    <script src="/socket.io/socket.io.js"></script>
     
     <style>
         /* ======================================= */
-        /* === CHAT-SPECIFIC STYLES (Add this) === */
+        /* === CHAT-SPECIFIC STYLES (Includes new file styles) === */
         /* ======================================= */
+        :root {
+            --color-background: #121212;
+            --color-background-secondary: #1e1e1e;
+            --color-accent: #5e6bfe; 
+            --color-text: #e0e0e0;
+            --color-border: #333333;
+        }
+
+        body {
+            background: var(--color-background);
+            color: var(--color-text);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
         .main-chat-container {
             display: flex;
-            height: calc(100vh - 50px); /* Adjust based on your header height */
+            height: 100vh;
         }
+        
         .user-list-sidebar {
             width: 200px;
             background: var(--color-background-secondary);
             padding: 20px 10px;
             overflow-y: auto;
             border-right: 1px solid var(--color-border);
-        }
-        .user-list-sidebar h3 {
-            color: var(--color-accent);
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--color-border);
-            padding-bottom: 5px;
-        }
-        .online-user {
-            padding: 8px;
-            margin-bottom: 5px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-        }
-        .online-user:hover {
-            background-color: var(--color-border);
-        }
-        .online-user i {
-            color: #2ecc71; /* Green for online */
-            margin-right: 10px;
+            flex-shrink: 0;
         }
         
         .chat-window {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            background: var(--color-background);
         }
         .messages-container {
             flex-grow: 1;
@@ -80,53 +76,22 @@
             padding: 10px 15px;
             border-radius: 20px;
             cursor: pointer;
-            transition: background-color 0.2s;
         }
-        .send-btn:hover {
-            background-color: #4a59e6;
-        }
-
+        
         /* Message Bubble Styles */
-        .message-bubble {
-            display: flex;
-            margin-bottom: 15px;
-        }
+        .message-bubble { margin-bottom: 15px; display: flex; }
         .message-content {
             padding: 10px 15px;
             border-radius: 18px;
             max-width: 60%;
             word-wrap: break-word;
         }
-        .my-message {
-            justify-content: flex-end;
-        }
-        .my-message .message-content {
-            background-color: var(--color-accent);
-            color: white;
-            border-bottom-right-radius: 2px;
-        }
-        .other-message .message-content {
-            background-color: var(--color-background-secondary);
-            color: var(--color-text);
-            border: 1px solid var(--color-border);
-            border-bottom-left-radius: 2px;
-        }
-        .message-user {
-            font-weight: bold;
-            font-size: 0.9em;
-            margin-bottom: 3px;
-            color: var(--color-accent);
-        }
+        .my-message { justify-content: flex-end; }
+        .my-message .message-content { background-color: var(--color-accent); color: white; border-bottom-right-radius: 2px; }
+        .other-message .message-content { background-color: var(--color-background-secondary); color: var(--color-text); border: 1px solid var(--color-border); border-bottom-left-radius: 2px; }
+        .message-user { font-weight: bold; font-size: 0.9em; margin-bottom: 3px; color: var(--color-accent); }
 
-        /* System Messages */
-        .system-message {
-            text-align: center;
-            font-size: 0.8em;
-            color: var(--color-text-light);
-            margin: 10px 0;
-        }
-        
-        /* 🔑 NEW: Attachment Button Styling */
+        /* 🔑 Attachment Button Styling */
         .attach-btn {
             background: transparent;
             color: var(--color-accent); 
@@ -137,16 +102,13 @@
             transition: color 0.2s;
         }
 
-        .attach-btn:hover {
-            color: var(--color-text);
-        }
-        
-        /* 🔑 NEW: File/Image Display Styles */
+        /* 🔑 File/Image Display Styles */
         .file-preview img, .file-preview video {
             max-width: 100%;
             height: auto;
             border-radius: 8px;
             margin-top: 5px;
+            max-height: 200px;
         }
         
         .file-preview a {
@@ -159,29 +121,13 @@
             margin-top: 5px;
             word-break: break-all;
         }
-        
-        /* Mobile Adjustments (Optional) */
-        @media (max-width: 600px) {
-            .user-list-sidebar {
-                width: 100%;
-                height: 100px;
-                order: -1; /* Move to the top */
-                border-bottom: 1px solid var(--color-border);
-            }
-            .main-chat-container {
-                flex-direction: column;
-            }
-            .message-content {
-                max-width: 80%;
-            }
-        }
     </style>
 </head>
 <body>
     
-    <div class="header">
-        <a href="/index.html" class="home-link">Home</a> 
-        <button onclick="logout()">Logout</button>
+    <div class="header" style="background: var(--color-background-secondary); padding: 10px; display: flex; justify-content: flex-end;">
+        <a href="/index.html" class="home-link" style="color: var(--color-text); margin-right: auto; text-decoration: none; font-weight: bold;">Home</a> 
+        <button onclick="logout()" style="background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Logout</button>
     </div>
 
     <div class="main-chat-container">
@@ -189,13 +135,13 @@
         <div class="user-list-sidebar">
             <h3>Online Users</h3>
             <div id="online-users">
-                </div>
+            </div>
         </div>
 
         <div class="chat-window">
             <div class="messages-container" id="messages-container">
                 <p class="system-message">Welcome, <span id="current-user-name"></span>! Start chatting.</p>
-                </div>
+            </div>
             
             <div class="chat-input-area">
                 
@@ -217,7 +163,7 @@
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
         const onlineUsersDiv = document.getElementById('online-users');
-        const fileInput = document.getElementById('file-input'); // 🔑 NEW
+        const fileInput = document.getElementById('file-input');
 
         const myUsername = localStorage.getItem("username");
         if (!myUsername) {
@@ -235,58 +181,52 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
         
-        // ===========================================
-        // === 🔑 NEW: FILE UPLOAD AND SEND LOGIC ===
-        // ===========================================
-
-        // Function to create HTML for file content
         function createFileContentHTML(fileUrl, mimeType, originalName) {
             let fileHTML = '';
             const downloadLink = `<a href="${fileUrl}" target="_blank" download="${originalName}"><i class="fas fa-download"></i> ${originalName}</a>`;
             
             if (mimeType.startsWith('image/')) {
-                // Image preview
                 fileHTML = `<div class="file-preview"><img src="${fileUrl}" alt="${originalName}" loading="lazy"> ${downloadLink}</div>`;
             } else if (mimeType.startsWith('video/')) {
-                // Video preview (with controls)
-                fileHTML = `<div class="file-preview"><video controls src="${fileUrl}" style="max-height: 200px;"></video> ${downloadLink}</div>`;
+                fileHTML = `<div class="file-preview"><video controls src="${fileUrl}"></video> ${downloadLink}</div>`;
             } else {
-                // General file/document link
                 fileHTML = `<div class="file-preview"><i class="fas fa-file"></i> ${downloadLink}</div>`;
             }
             return fileHTML;
         }
 
-        // Handle file change (when user selects a file)
+        // Handle file change
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
-                // Show a temporary message to the user
                 messageInput.value = `File selected: ${fileInput.files[0].name}. Click Send to upload.`;
                 messageInput.disabled = true;
+                // Focus send button for better UX
+                sendBtn.focus();
+            } else {
+                messageInput.value = '';
+                messageInput.disabled = false;
             }
         });
 
-        // Main Send function (handles both text and file)
+        // Main Send function
         sendBtn.addEventListener('click', async () => {
             const file = fileInput.files[0];
             const text = messageInput.value.trim();
 
             if (file) {
-                // 1. Upload the file to the server
+                // Upload logic
                 const formData = new FormData();
                 formData.append('chatFile', file);
+                const originalText = text.replace(`File selected: ${file.name}. Click Send to upload.`, '').trim();
 
                 try {
-                    const response = await fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
+                    const response = await fetch('/upload', { method: 'POST', body: formData });
                     const data = await response.json();
 
                     if (data.success) {
-                        // 2. If upload successful, send the file URL via socket
+                        // Send the file URL via socket
                         socket.emit('chat-message', {
-                            text: text.replace(`File selected: ${file.name}. Click Send to upload.`, '').trim(),
+                            text: originalText,
                             fileUrl: data.fileUrl,
                             mimeType: data.mimeType,
                             originalName: data.originalName
@@ -298,7 +238,7 @@
                     console.error('Upload Error:', error);
                     alert('Server error during file upload.');
                 } finally {
-                    // Reset input fields
+                    // Reset inputs
                     fileInput.value = '';
                     messageInput.value = '';
                     messageInput.disabled = false;
@@ -311,16 +251,15 @@
             }
         });
 
-        // ===========================================
-        // === SOCKET RECEIVE LOGIC (UPDATED) ===
-        // ===========================================
-        
+        // SOCKET RECEIVE LOGIC
         socket.on('chat-message', (data) => {
             const isMe = data.user === myUsername;
             const messageClass = isMe ? 'my-message' : 'other-message';
             const fileContent = data.fileUrl ? createFileContentHTML(data.fileUrl, data.mimeType, data.originalName) : '';
-            const textContent = data.text ? `<p>${data.text}</p>` : '';
+            const textContent = (data.text && data.text.length > 0) ? `<p>${data.text}</p>` : '';
             
+            if (!fileContent && !textContent) return; 
+
             const messageElement = document.createElement('div');
             messageElement.classList.add('message-bubble', messageClass);
             
@@ -338,7 +277,7 @@
 
         // Online Users List
         socket.on('online-users', (users) => {
-            onlineUsersDiv.innerHTML = ' '; // Clear the list
+            onlineUsersDiv.innerHTML = ' ';
             for (const id in users) {
                 if (users[id] !== myUsername) {
                     const userDiv = document.createElement('div');
@@ -358,6 +297,5 @@
             scrollToBottom();
         });
     </script>
-
 </body>
 </html>
