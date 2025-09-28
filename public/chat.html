@@ -200,6 +200,17 @@
             </div>
 
             <div id="input-area">
+                <div class="chat-input-area">
+    <label for="file-input" class="attach-btn" title="Attach File">
+        <i class="fas fa-paperclip"></i>
+    </label>
+    <input type="file" id="file-input" name="chatFile" style="display: none;"> 
+    
+    <input type="text" id="message-input" placeholder="Type a message...">
+    
+    <button id="send-btn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+                
                 <input type="text" id="message-input" placeholder="Type a message..." disabled>
                 <button id="send-button" onclick="sendMessage()" disabled><i class="fas fa-paper-plane"></i> Send</button>
             </div>
