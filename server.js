@@ -1,44 +1,31 @@
-// server.js - Final Code with Auth, Private Messaging, File Sharing & Optimization
-// server.js की शुरुआत
+// server.js - Final Unified Code
+
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs"); // <--- यह लाइन यहाँ होनी चाहिए
+const bcrypt = require("bcryptjs"); // Fixed: Now correctly requiring bcryptjs
 const bodyParser = require("body-parser");
-//... बाकी requires
-
 const cors = require('cors');
 const path = require("path");
-
-// === New Dependencies for Features & Optimization ===
 const multer = require('multer'); 
 const compression = require('compression'); 
-// ====================================================
 
 const app = express();
 const server = http.createServer(app);
 
-// ===========================================
 // === SERVER SETTINGS & MIDDLEWARE ===
-// ===========================================
-
-// 1. Production Optimization and Security
 app.use(cors()); 
 app.use(compression()); 
-
-// 2. Standard Middleware
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 // ===========================================
-// === MONGO DB CONNECTION ===
+// === MONGO DB CONNECTION & SCHEMAS ===
 // ===========================================
 
-// IMPORTANT: Using your provided hardcoded connection string.
-// For best practice, use a Render Environment Variable (process.env.MONGODB_URI)
-const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp";
+// IMPORTANT: Replace with your actual connection string
+const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp"; 
 
 mongoose.connect(MONGO_URI, { 
     useNewUrlParser: true, 
@@ -46,58 +33,38 @@ mongoose.connect(MONGO_URI, {
 }).then(() => console.log("MongoDB Connected"))
   .catch(err => console.error("MongoDB Error:", err));
 
-
-// ===========================================
-// === MONGO DB SCHEMAS ===
-// ===========================================
-
-// User Schema (Auth)
-const UserSchema = new mongoose.Schema({
-  username: String,
-  password: String
-});
+// User Schema
+const UserSchema = new mongoose.Schema({ username: String, password: String });
 const User = mongoose.model("User", UserSchema);
 
-// Private Message Schema (Updated for file details)
+// Message Schema (Updated for file sharing)
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
   text: String,
-  fileUrl: { type: String, default: null },        // NEW: Stores file URL
-  mimeType: { type: String, default: null },       // NEW: Stores file type
-  originalName: { type: String, default: null },   // NEW: Stores original filename
+  fileUrl: { type: String, default: null },
+  mimeType: { type: String, default: null },
+  originalName: { type: String, default: null },
   timestamp: { type: Date, default: Date.now }
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-
 // ===========================================
 // === MULTER FILE UPLOAD CONFIGURATION ===
 // ===========================================
+// Files will be stored in the 'public/uploads' folder.
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // Files are saved to the 'public/uploads' directory
         cb(null, 'public/uploads'); 
     },
     filename: (req, file, cb) => {
-        // Unique filename: (timestamp)-(original filename)
         cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, '_')); 
     }
 });
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|pdf|zip/;
-        const mimeType = allowedTypes.test(file.mimetype);
-        const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-
-        if (mimeType && extName) {
-            return cb(null, true);
-        }
-        cb(new Error('Only allowed file types are supported.'));
-    }
+    limits: { fileSize: 10 * 1024 * 1024 } // Max 10MB
 }).single('chatFile'); 
 
 
@@ -105,26 +72,21 @@ const upload = multer({
 // === API AND AUTHENTICATION ROUTES ===
 // ===========================================
 
-// ✅ Signup Route
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
+    if (await User.findOne({ username })) {
       return res.json({ success: false, message: "User already exists" });
     }
-
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword });
     await newUser.save();
-
     res.json({ success: true, message: "User registered successfully" });
   } catch (err) {
     res.json({ success: false, message: "Error in signup" });
   }
 });
 
-// ✅ Login Route
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -134,25 +96,22 @@ app.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.json({ success: false, message: "Invalid password" });
 
+    // Login successful, return username to the client
     res.json({ success: true, message: "Login successful", username });
   } catch (err) {
     res.json({ success: false, message: "Error in login" });
   }
 });
 
-// ✅ File Upload API Route
 app.post('/upload', (req, res) => {
     upload(req, res, (err) => {
         if (err) {
-            const message = err.message || "File upload failed due to server error.";
             console.error('Upload Error:', err);
-            return res.status(500).json({ success: false, message: message });
+            return res.status(500).json({ success: false, message: err.message || "File upload failed." });
         }
-        
         if (!req.file) {
              return res.status(400).json({ success: false, message: "No file selected." });
         }
-
         const fileUrl = `/uploads/${req.file.filename}`;
         res.json({ 
             success: true, 
@@ -165,27 +124,27 @@ app.post('/upload', (req, res) => {
 
 
 // ===========================================
-// === STATIC FILES AND ROUTING ===
+// === STATIC FILES AND ROUTING (All Pages Live) ===
 // ===========================================
 
-// Serve static files from the 'public' directory
+// Serve static files (HTML, CSS, JS, etc.) from the 'public' directory
 app.use(express.static(path.join(__dirname, "public")));
-// Serve uploaded files statically
+// Serve uploaded content from the specific 'uploads' folder
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); 
 
-// Route for the root file (your login page)
+// Route 1: Serve Login page as the root ('/')
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// Generic route for other HTML files (e.g., /client.html, /games.html, /videos.html)
+// Route 2: Generic route to serve ALL other HTML files (client.html, games.html, videos.html, etc.)
 app.get('/:file.html', (req, res) => {
     const fileName = req.params.file + '.html';
     const filePath = path.join(__dirname, 'public', fileName);
     res.sendFile(filePath, (err) => {
         if (err) {
-            // Handle 404 for missing files
-            res.status(404).sendFile(path.join(__dirname, 'public', '404.html') || 'File Not Found');
+            // Handle 404 for missing HTML files
+            res.status(404).send('404 File Not Found');
         }
     });
 });
@@ -197,7 +156,7 @@ app.get('/:file.html', (req, res) => {
 
 const io = socketIO(server, {
     cors: {
-        origin: "*", // Allows connections from all origins (Render requires this)
+        origin: "*", 
         methods: ["GET", "POST"]
     }
 });
@@ -205,65 +164,40 @@ const io = socketIO(server, {
 let onlineUsers = {};
 
 io.on("connection", (socket) => {
-  console.log("New user connected");
-
   socket.on("newUser", (username) => {
     socket.username = username;
     onlineUsers[username] = socket.id;
     io.emit("updateUsers", Object.keys(onlineUsers));
   });
 
-  // ✅ Load old chat between 2 users
   socket.on("loadChat", async ({ user1, user2 }) => {
-    // Fetches all fields including the new file fields
     const chats = await Message.find({
       $or: [
         { sender: user1, receiver: user2 },
         { sender: user2, receiver: user1 }
       ]
     }).sort({ timestamp: 1 });
-
     socket.emit("chatHistory", chats);
   });
 
-  // ✅ Send private message (Handles both text and file data)
   socket.on("privateMessage", async (data) => {
     const { sender, receiver, text, fileUrl, mimeType, originalName } = data;
     
-    // Create new message object with all data
-    const newMessage = new Message({ 
-        sender, 
-        receiver, 
-        text, 
-        fileUrl: fileUrl || null,
-        mimeType: mimeType || null,
-        originalName: originalName || null
-    });
+    const newMessage = new Message({ sender, receiver, text, fileUrl, mimeType, originalName });
     await newMessage.save();
 
-    // Prepare message object to send via socket
-    const messageToSend = { 
-        sender, 
-        text, 
-        fileUrl: fileUrl || null, 
-        mimeType: mimeType || null, 
-        originalName: originalName || null 
-    };
+    const messageToSend = { sender, text, fileUrl, mimeType, originalName };
 
-    // Send to sender (to display immediately)
     socket.emit("privateMessage", messageToSend);
 
-    // Send to receiver if online
     if (onlineUsers[receiver]) {
       io.to(onlineUsers[receiver]).emit("privateMessage", messageToSend);
     }
   });
 
   socket.on("disconnect", () => {
-    // Clean up online user list
     delete onlineUsers[socket.username];
     io.emit("updateUsers", Object.keys(onlineUsers));
-    console.log("User disconnected");
   });
 });
 
@@ -271,7 +205,5 @@ io.on("connection", (socket) => {
 // ===========================================
 // === SERVER STARTUP ===
 // ===========================================
-const PORT = process.env.PORT || 4000; // Using 4000 as per your original code
+const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-
-
