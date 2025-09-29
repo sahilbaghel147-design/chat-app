@@ -19,7 +19,7 @@ dotenv.config();
 const { GoogleGenAI } = require("@google/genai"); 
 // IMPORTANT: Use environment variable for API Key
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE"; 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: AIzaSyA2JdSuMrAQHaOHDPmGxxggpmqKq2GWwTM });
 const model = "gemini-2.5-flash"; // Fast and capable model
 // -----------------------------------------------------
 
@@ -286,3 +286,4 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
