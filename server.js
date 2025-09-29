@@ -111,6 +111,45 @@ app.post("/login", async (req, res) => {
   }
 });
 
+
+// --- AI Chat Endpoint ---
+app.post('/api/chat/ai', async (req, res) => {
+    const { username, message } = req.body;
+
+    if (!message) {
+        return res.status(400).json({ success: false, message: "Message is required." });
+    }
+
+    console.log(`AI Chat Request from ${username}: ${message}`);
+
+    try {
+        // Simple conversation prompt for the bot
+        const prompt = `You are a friendly and helpful chat assistant named 'Aura Bot' in a social networking app. 
+                        The user is: ${username}. User's question: "${message}"`;
+
+        const result = await ai.models.generateContent({
+            model: model,
+            contents: prompt,
+        });
+
+        const aiResponse = result.text.trim();
+
+        // Send the AI response back to the client
+        res.json({ 
+            success: true, 
+            response: aiResponse,
+            sender: "Aura Bot" // Bot's username
+        });
+
+    } catch (error) {
+        console.error("Gemini AI Error:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Sorry, I am unable to process your request right now. Please try again later." 
+        });
+    }
+});
+
 app.post('/upload', (req, res) => {
     upload(req, res, (err) => {
         if (err) {
@@ -211,4 +250,5 @@ io.on("connection", (socket) => {
 // ===========================================
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+
 
