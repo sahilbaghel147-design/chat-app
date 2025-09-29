@@ -1,4 +1,4 @@
-// server.js - Final Clean and Correct Node.js Server Code
+// server.js - Final Guaranteed Clean Code (No 'document' Error)
 
 const express = require("express");
 const http = require("http");
@@ -44,7 +44,7 @@ const MessageSchema = new mongoose.Schema({
   text: String,
   fileUrl: { type: String, default: null },
   mimeType: { type: String, default: null },
-  originalName: { type: null, default: null },
+  originalName: { type: String, default: null },
   timestamp: { type: Date, default: Date.now }
 });
 const Message = mongoose.model("Message", MessageSchema);
@@ -125,17 +125,13 @@ app.post('/upload', (req, res) => {
 // === STATIC FILES AND ROUTING ===
 // ===========================================
 
-// Serve static files (HTML, CSS, JS, etc.) from the 'public' directory
 app.use(express.static(path.join(__dirname, "public")));
-// Serve uploaded content from the specific 'uploads' folder
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); 
 
-// Route 1: Serve Login page as the root ('/')
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// Route 2: Generic route to serve ALL other HTML files (like chat.html)
 app.get('/:file.html', (req, res) => {
     const fileName = req.params.file + '.html';
     const filePath = path.join(__dirname, 'public', fileName);
