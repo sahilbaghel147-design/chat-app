@@ -1,682 +1,250 @@
-/* 🌍 Global Reset */
+/* style.css - Clean, Unified, and Responsive Code for All Pages (Home, Chat, Games, Videos, About) */
+
+/* 1. Global Reset & Variables */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-body {
-  font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: white;
-  min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/* 🔹 Navbar */
-.navbar {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  background: #1e293b;
-  padding: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-.navbar a {
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-  transition: 0.3s;
-}
-.navbar a:hover {
-  color: #38bdf8;
-}
-.navbar button {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-}
-/* ==================================== */
-/* 🚀 Global Reset & Typography */
-/* ==================================== */
 :root {
-  /* Define Color Variables (Modern Dark Palette) */
-  --bg-primary: #121212;         /* Deep Black-Gray */
-  --bg-secondary: #1e1e1e;       /* Medium Gray for components */
-  --bg-tertiary: #2a2a2a;        /* Light Gray for hover/active */
-  --color-text-main: #f0f0f0;    /* Light Text */
-  --color-text-secondary: #aaaaaa; /* Lighter Text for details */
-  --color-accent: #007bff;       /* Blue Accent (Primary Action Color) */
-  --color-hover: #0056b3;        /* Darker Blue on Hover */
-  --color-error: #ef4444;        /* Red for error/logout */
-}
-
-/* Light Mode Variables (for toggleTheme) */
-body.light {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f0f0f0;
-  --bg-tertiary: #e0e0e0;
-  --color-text-main: #121212;
-  --color-text-secondary: #444444;
-  --color-accent: #007bff;
-  --color-hover: #0056b3;
-  --color-error: #dc2626;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    --bg-main: #1a1a2e;         /* Main Page Background */
+    --bg-sidebar: #282a36;      /* Sidebar Background */
+    --bg-component: #333642;    /* Card/Input Background */
+    --color-accent: #79a6fe;    /* Primary Action Blue */
+    --color-text: #f0f0f0;      /* Main Text Color */
+    --color-secondary: #bdbdbd; /* Secondary Text Color */
+    --color-border: #44475a;    /* Border/Divider Color */
+    --color-error: #ef4444;     /* Logout/Error Red */
 }
 
 body {
-  font-family: 'Inter', sans-serif; /* Modern Font */
-  background: var(--bg-primary);
-  color: var(--color-text-main);
-  min-height: 100vh;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-/* 🧱 Main Layout Container */
-.main-container {
-    display: flex;
-    height: 100vh; /* Full viewport height */
-    overflow: hidden; /* Prevent body scroll due to fixed height */
-}
-
-/* ==================================== */
-/* 👨‍💻 Users List / Sidebar */
-/* ==================================== */
-.users-list {
-  width: 280px; /* Slightly wider for better visibility */
-  background: var(--bg-secondary);
-  padding: 20px 15px;
-  border-right: 1px solid var(--bg-tertiary);
-  display: flex;
-  flex-direction: column;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
-}
-
-.users-list h2 {
-  margin-bottom: 20px;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-accent);
-}
-
-#usersDiv div { /* Targetting dynamically created user divs */
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.95rem;
-  border-left: 3px solid transparent; /* For active indicator */
-}
-
-#usersDiv div:hover {
-  background: var(--bg-tertiary);
-  border-left-color: var(--color-accent);
-}
-
-/* Add a class for selected user (You need to add this class in JS) */
-#usersDiv div.selected { 
-    background: var(--color-accent);
-    color: white;
-    font-weight: 600;
-    border-left-color: var(--color-accent);
-}
-
-
-/* ==================================== */
-/* 💬 Chat Area */
-/* ==================================== */
-.chat-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-primary);
-}
-
-/* 🏷️ Chat Header */
-.chat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--bg-tertiary);
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
-  flex-shrink: 0;
-}
-
-.chat-header span {
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.chat-header button {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.2s;
-}
-
-.chat-header .toggle-btn {
-    background: var(--bg-tertiary);
-    color: var(--color-text-main);
-    margin-right: 10px;
-}
-
-.chat-header .toggle-btn:hover {
-    background: #555;
-}
-
-.chat-header button[onclick="logout()"] {
-    background: var(--color-error);
-    color: white;
-}
-
-.chat-header button[onclick="logout()"]:hover {
-    background: var(--color-hover);
-}
-
-
-/* 📝 Messages Container */
-#messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  /* Styling Scrollbar for aesthetics */
-  scrollbar-width: thin;
-  scrollbar-color: var(--bg-tertiary) transparent;
-}
-
-#messages::-webkit-scrollbar {
-  width: 8px;
-}
-
-#messages::-webkit-scrollbar-thumb {
-  background-color: var(--bg-tertiary);
-  border-radius: 4px;
-}
-
-/* 💬 Message Bubbles */
-.message {
-  max-width: 70%;
-  margin-bottom: 15px;
-  padding: 10px 15px;
-  border-radius: 18px;
-  line-height: 1.4;
-  word-wrap: break-word;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.message.you {
-  /* Outgoing message (You) */
-  background: var(--color-accent);
-  color: white;
-  margin-left: auto; /* Aligns to the right */
-  border-bottom-right-radius: 5px; /* Slight bubble effect */
-}
-
-.message.other {
-  /* Incoming message (Other users) */
-  background: var(--bg-secondary);
-  color: var(--color-text-main);
-  margin-right: auto; /* Aligns to the left */
-  border-bottom-left-radius: 5px;
-}
-
-
-/* ⌨️ Input Area */
-.message-input-area {
-  display: flex;
-  padding: 15px 20px;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--bg-tertiary);
-  flex-shrink: 0;
-}
-
-.message-input-area input {
-  flex: 1;
-  padding: 12px 15px;
-  border: 1px solid var(--bg-tertiary);
-  border-radius: 25px; /* Rounded input */
-  outline: none;
-  background: var(--bg-primary);
-  color: var(--color-text-main);
-  margin-right: 10px;
-  font-size: 1rem;
-}
-
-.message-input-area button {
-  padding: 10px 20px;
-  background: var(--color-accent);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.2s;
-  flex-shrink: 0;
-}
-
-.message-input-area button:hover {
-  background: var(--color-hover);
-}
-
-
-/* ==================================== */
-/* 📱 Mobile Responsiveness (MAX-WIDTH: 768px) */
-/* ==================================== */
-@media (max-width: 768px) {
-  .main-container {
-    flex-direction: column;
-    height: 100vh;
-  }
-  
-  /* Users List: Mobile Drawer/Hidden */
-  .users-list {
-    width: 100%;
-    height: 60px; /* Fixed height for mobile header */
-    padding: 10px 20px;
-    border-right: none;
-    border-bottom: 1px solid var(--bg-tertiary);
-    
-    /* Initially hide the actual list on small screens */
-    position: absolute; /* Change later if using a full drawer */
-    transform: translateY(-100%); /* Hiding temporarily for simplicity */
-    visibility: hidden;
-    /* NOTE: For true responsiveness, you should turn this into a drawer menu controlled by JS */
-  }
-  
-  .users-list h2 {
-      display: none; /* Hide header on small screen */
-  }
-
-  /* Chat Area takes up all available space */
-  .chat-area {
-    width: 100%;
-    height: 100%; /* Use remaining height */
-  }
-
-  /* Ensure message input is easy to use */
-  .message-input-area {
-      padding: 10px;
-  }
-  
-  .message-input-area input {
-      padding: 10px 15px;
-      font-size: 0.9rem;
-  }
-
-  /* Make message bubbles narrower on mobile */
-  .message {
-      max-width: 85%;
-  }
-
-  /* Header buttons smaller on mobile */
-  .chat-header button {
-      padding: 6px 10px;
-      font-size: 0.8rem;
-  }
-}
-
-
-
-/* ======================================= */
-/* ====== INDEX.HTML UI IMPROVEMENTS ======= */
-/* ======================================= */
-
-/* 1. Hero Section Styling */
-.hero-section {
-    padding: 80px 20px;
-    text-align: center;
-    border-radius: 12px;
-    margin-bottom: 40px;
-    /* Theme ke anusaar background aur shadow */
-    background: var(--color-background-secondary); 
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); 
-    transition: all 0.3s ease;
-}
-
-.hero-section h1 {
-    font-size: 3em;
-    margin-bottom: 15px;
-    color: var(--color-text-highlight); /* Accent color use karein */
-    font-weight: 700;
-}
-
-.hero-section .tagline {
-    font-size: 1.25em;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-main);
     color: var(--color-text);
-    margin-bottom: 30px;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
 }
 
-/* CTA Button Styling */
-.cta-button {
-    display: inline-block;
-    background-color: var(--color-accent); /* Aapka main blue/highlight color */
-    color: var(--color-background); /* Button par text hamesha dark/background color ka ho */
-    padding: 12px 30px;
-    font-size: 1.1em;
-    font-weight: bold;
-    border-radius: 50px;
+a {
     text-decoration: none;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.cta-button:hover {
-    background-color: var(--color-text-highlight); /* Hover par thoda dark ho jaye */
-    transform: translateY(-2px); /* Halki si uthti hui animation */
-}
-
-/* 2. Feature Grid Styling */
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
-    margin-top: 30px;
-}
-
-.feature-card {
-    background: var(--color-background-secondary);
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border-left: 5px solid var(--color-accent); /* Professional touch */
-}
-
-.feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-
-.feature-card h3 {
-    font-size: 1.5em;
-    color: var(--color-text-highlight);
-    margin-top: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.feature-card i {
     color: var(--color-accent);
 }
 
-.feature-card p {
-    color: var(--color-text-secondary);
-}
-
-/* 3. Responsive Adjustments */
-@media (max-width: 768px) {
-    .hero-section {
-        padding: 50px 15px;
-    }
-    .hero-section h1 {
-        font-size: 2.2em;
-    }
-    .features-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* 4. Light Theme Overrides (Agar light theme me colors change karne ho) */
-body.light .hero-section {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-body.light .feature-card {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-/* ======================================= */
-/* ====== CHAT.HTML UI IMPROVEMENTS ======== */
-/* ======================================= */
-
-/* Main Container: Flexbox to hold sidebar and chat window */
-#app-container {
-    display: flex;
-    height: 100vh;
-    overflow: hidden; /* Scrollbar ko bahar aane se rokenge */
-}
-
-/* 1. Modern Sidebar Styling */
-.sidebar {
-    width: 280px; /* Thoda zyada space denge */
-    background: var(--color-background-secondary); 
-    padding: 20px 15px;
-    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); 
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    transition: width 0.3s ease;
-    border-right: 1px solid var(--color-border);
-}
-
-.sidebar .nav-brand {
-    font-size: 1.8em;
-    font-weight: 800;
-    color: var(--color-accent); /* Logo ko highlight karein */
-    text-align: center;
-    margin-bottom: 25px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--color-accent);
-}
-
-/* Sidebar Navigation Links */
-.sidebar .nav-link-item {
-    padding: 12px 10px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-.sidebar .nav-link-item i {
-    margin-right: 10px;
-    width: 20px;
-}
-
-.sidebar .nav-link-item:hover {
-    background-color: var(--color-border); /* Light hover effect */
-}
-
-.sidebar .nav-link-item.active {
-    background-color: var(--color-accent);
-    color: #fff !important; /* White text on accent */
-    font-weight: bold;
-}
-
-/* Online Users Section */
-.sidebar h3 {
-    font-size: 1.1em;
-    color: var(--color-text-highlight);
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 8px;
-    margin-top: 25px;
-    margin-bottom: 10px;
-}
-
-#online-users li {
-    padding: 8px 5px;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-    color: var(--color-text);
-}
-
-#online-users li:hover {
-    background-color: rgba(var(--color-accent-rgb), 0.2);
-}
-
-/* 2. Main Chat Window Styling */
-#chat-window {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--color-background); /* Main chat area background */
-}
-
-/* Chat Header */
-#chat-header {
-    padding: 15px 20px;
-    background: var(--color-background-secondary);
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-#current-receiver {
-    font-weight: bold;
-    color: var(--color-accent);
-    font-size: 1.2em;
-}
-
-/* Message Area */
-#messages {
-    flex-grow: 1;
-    padding: 20px;
-    overflow-y: auto; /* Scrollable message history */
-    display: flex;
-    flex-direction: column;
-    gap: 15px; /* Messages ke beech ki space */
-}
-
-.message {
-    max-width: 65%;
-    padding: 10px 15px;
-    border-radius: 18px;
-    line-height: 1.5;
-    word-wrap: break-word;
-}
-
-.message.sender {
-    align-self: flex-end; /* Right side */
-    background-color: var(--color-accent); /* User ke messages highlight hon */
-    color: white;
-    border-bottom-right-radius: 4px; /* Corner ko sharp karein */
-}
-
-.message.receiver {
-    align-self: flex-start; /* Left side */
-    background-color: var(--color-background-secondary);
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
-    border-bottom-left-radius: 4px; /* Corner ko sharp karein */
-}
-
-/* Input Area */
-#input-area {
-    display: flex;
-    padding: 15px;
-    border-top: 1px solid var(--color-border);
-    background: var(--color-background-secondary);
-}
-
-#message-input {
-    flex-grow: 1;
-    padding: 12px 15px;
-    border: 1px solid var(--color-border);
-    border-radius: 25px;
-    margin-right: 10px;
-    background: var(--color-background);
-    color: var(--color-text);
-    outline: none;
-    transition: border-color 0.3s;
-}
-
-#message-input:focus {
-    border-color: var(--color-accent);
-}
-
-#send-button {
-    background-color: var(--color-accent);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 25px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-#send-button:hover {
-    background-color: var(--color-text-highlight);
-    transform: translateY(-1px);
-}
-
-/* Mobile Responsive Fix */
-@media (max-width: 768px) {
-    .sidebar {
-        position: absolute; /* Mobile par sidebar ko hide/show karne ke liye */
-        transform: translateX(-100%);
-        z-index: 100;
-        width: 80%;
-    }
-    #app-container.show-sidebar .sidebar {
-        transform: translateX(0);
-    }
-    #messages {
-        padding: 10px;
-    }
-    .message {
-        max-width: 85%;
-    }
-}
-/* Sidebar CSS - style.css में जोड़ें या वेरीफाई करें */
-
+/* 2. Main Layout (Sidebar & Content) */
+/* यह लेआउट सभी pages.html पर लागू होगा */
 #sidebar {
-    width: 250px; /* साइडबार की चौड़ाई */
+    width: 250px; 
     position: fixed;
     top: 0;
-    left: 0;
+    left: 0; 
     height: 100vh;
     z-index: 1000;
-    background: #282a36; /* डार्क बैकग्राउंड */
-    color: #fff;
+    background: var(--bg-sidebar); 
+    color: var(--color-text);
+    padding: 20px 0;
     transition: all 0.3s;
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-}
-
-#sidebar.active { /* अगर आप इसे छिपाने/दिखाने की कार्यक्षमता जोड़ते हैं */
-    margin-left: -250px;
+    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.4);
 }
 
 #content {
-    width: 100%;
+    /* FIX: Sidebar के लिए हमेशा जगह बनाता है */
+    margin-left: 250px; 
     padding: 20px;
     min-height: 100vh;
     transition: all 0.3s;
-    /* साइडबार के लिए जगह बनाएं */
-    margin-left: 250px; 
+    width: calc(100% - 250px);
 }
 
-/* Nav links styling */
+/* Sidebar Header and Navigation Links */
+.sidebar-header {
+    padding: 20px;
+    padding-bottom: 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-header h3 a {
+    color: var(--color-accent); 
+    font-size: 1.5em;
+    font-weight: 700;
+}
+
+.list-unstyled {
+    list-style: none;
+    padding: 0;
+}
+
 #sidebar a {
+    color: var(--color-secondary); 
+    display: flex; /* Icons और Text को align करने के लिए */
+    align-items: center;
+    padding: 12px 20px;
+    font-size: 1em;
+    transition: background 0.2s;
+}
+
+#sidebar a i {
+    margin-right: 15px;
+    width: 18px;
+    text-align: center;
+}
+
+#sidebar a:hover,
+#sidebar li.active a {
+    color: var(--color-text);
+    background: var(--color-border); 
+    border-left: 5px solid var(--color-accent); /* Active indicator */
+}
+
+/* Online Users List (Sidebar ka hissa) */
+.online-users-list {
+    padding: 20px;
+    border-top: 1px solid var(--color-border);
+    margin-top: 20px;
+}
+
+.online-users-list h4 {
+    color: var(--color-accent);
+    margin-bottom: 10px;
+}
+
+#onlineUsersList li {
+    padding: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-radius: 4px;
+}
+
+#onlineUsersList li:hover {
+    background-color: #3e414f;
+}
+
+
+/* 3. Top Navbar (Logout Area) */
+.top-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 25px;
+}
+
+.welcome-text {
+    font-weight: 600;
+    color: var(--color-accent);
+    margin-right: 15px;
+}
+
+.btn-danger {
+    background-color: var(--color-error);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+#sidebarCollapse {
+    background: var(--bg-component);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* 4. Chat Interface Specifics (chat.html) */
+.chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 100px); 
+    background: var(--bg-main);
+}
+
+.message-area {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.message-input-area {
+    display: flex;
     padding: 10px;
-    font-size: 1.1em;
-    display: block;
-    color: #bdbdbd; /* हल्का टेक्स्ट रंग */
+    background-color: var(--bg-component);
+    border-radius: 25px;
+    align-items: center;
 }
 
-#sidebar a:hover {
-    color: #fff;
-    background: #44475a; /* हॉवर पर हल्का डार्क बैकग्राउंड */
-    text-decoration: none;
+#messageInput {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border: none;
+    background: transparent;
+    color: var(--color-text);
+    outline: none;
 }
 
+.btn-send, .btn-attach {
+    background: none;
+    border: none;
+    color: var(--color-accent);
+    cursor: pointer;
+    font-size: 1.3em;
+    padding: 5px 10px;
+}
+
+.btn-send:hover, .btn-attach:hover {
+    color: #a0c2ff;
+}
+
+/* 5. Generic Page Content Styling (Index, Games, Videos, About) */
+.page-container {
+    padding: 20px;
+    background: var(--bg-component);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.page-container h1 {
+    color: var(--color-accent);
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 10px;
+}
+
+.page-container p {
+    line-height: 1.6;
+    color: var(--color-secondary);
+}
+
+
+/* 6. Mobile Responsiveness */
+@media (max-width: 768px) {
+    /* Mobile par sidebar ko chhipa do */
+    #sidebar {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    /* Mobile par content ko poori width do */
+    #content {
+        margin-left: 0;
+        width: 100%;
+        padding: 10px;
+    }
+
+    /* Jab sidebar dikhe, to content ko halka sa margin do */
+    #sidebar.show {
+        transform: translateX(0);
+    }
+}
