@@ -1,4 +1,6 @@
-// server.js - Final AI-Free Code with MongoDB URI hardcoded
+// server.js - FINAL production-ready code for root directory (chatapp/server.js)
+// AI-free, Hardcoded MongoDB URI, and correct pathing.
+
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
@@ -27,29 +29,47 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serving static files from the 'public' folder (Corrected path for root server.js)
+// Serving static files from the 'public' folder (Correct path for root server.js)
 app.use(express.static(path.join(__dirname, 'public')));
 
 
 // MONGODB CONNECTION
-// 🚨 IMPORTANT: Replace the placeholder string with your ACTUAL MongoDB Atlas Connection String
-// मैंने इसे आपके स्क्रीनशॉट के आधार पर एक उदाहरण के साथ बदला है
+// 🚨 IMPORTANT: This hardcoded URI must be your correct Atlas connection string.
+// I have included 'retryWrites=true&w=majority' which is standard for Atlas.
 const MONGO_URI = 'mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority';
 
 mongoose.connect(MONGO_URI)
+  // 💡 Mongoose connect options (useNewUrlParser, useUnifiedTopology) are deprecated 
+  // and no longer needed. Connecting directly:
   .then(() => console.log("MongoDB connected successfully."))
   .catch(err => console.error("MongoDB connection error:", err));
 
-// MongoDB Schemas (Profile/Bio fields included)
+// MongoDB Schemas
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   bio: { type: String, default: "Hey there! I'm new to Aura Hub.", maxlength: 160 },
   profilePicture: { type: String, default: '/uploads/default_avatar.png' } 
 });
-// ... (बाकी Schemas और API/Socket.IO लॉजिक पिछले जवाब जैसा ही है, कोई बदलाव नहीं)
-const MessageSchema = new mongoose.Schema({ /* ... */ });
-const HighScoreSchema = new mongoose.Schema({ /* ... */ });
+
+// ✅ MessageSchema completed
+const MessageSchema = new mongoose.Schema({
+  sender: { type: String, required: true },
+  receiver: { type: String, required: true },
+  text: { type: String },
+  fileDir: { type: String },
+  fileMimeType: { type: String },
+  originalName: { type: String }, 
+  timestamp: { type: Date, default: Date.now }
+});
+
+const HighScoreSchema = new mongoose.Schema({
+    username: { type: String, required: true },
+    game: { type: String, required: true, default: 'snake' }, 
+    score: { type: Number, required: true },
+    timestamp: { type: Date, default: Date.now }
+});
+
 
 const User = mongoose.model('User', UserSchema);
 const Message = mongoose.model('Message', MessageSchema);
@@ -59,7 +79,7 @@ const HighScore = mongoose.model('HighScore', HighScoreSchema);
 // MULTER FILE UPLOAD CONFIGURATION (Used for chat attachments and profile pics)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, 'public/uploads'));
+    cb(null, path.join(__dirname, 'public/uploads')); // Correct path
   },
   filename: (req, file, cb) => {
     const prefix = req.body.isProfilePic ? 'profile-' : '';
@@ -270,6 +290,7 @@ io.on('connection', (socket) => {
 
     socket.on('privateMessage', async (msg) => {
         try {
+            // Note: msg object will contain fileDir, fileMimeType, originalName if a file was uploaded
             const newMessage = new Message({
                 sender: msg.sender, receiver: msg.receiver, text: msg.text,
                 fileDir: msg.fileDir, fileMimeType: msg.fileMimeType, originalName: msg.originalName,
@@ -299,4 +320,4 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-                                                             
+                 
