@@ -24,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 // === MONGO DB CONNECTION & SCHEMAS ===
 // ===========================================
 
-// IMPORTANT: Replace with your actual connection string
+// IMPORTANT: Replace with your actual connection string (आपके क्लस्टर का URI)
 const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp"; 
 
 mongoose.connect(MONGO_URI, { 
@@ -55,6 +55,7 @@ const Message = mongoose.model("Message", MessageSchema);
 // Files will be stored in the 'public/uploads' folder.
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
+        // सुनिश्चित करें कि public/uploads फ़ोल्डर GitHub और Render पर मौजूद है
         cb(null, 'public/uploads'); 
     },
     filename: (req, file, cb) => {
@@ -73,6 +74,7 @@ const upload = multer({
 // ===========================================
 
 app.post("/signup", async (req, res) => {
+  // Signup Logic... (जैसा पहले था)
   try {
     const { username, password } = req.body;
     if (await User.findOne({ username })) {
@@ -88,6 +90,7 @@ app.post("/signup", async (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
+  // Login Logic... (जैसा पहले था)
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
@@ -104,6 +107,7 @@ app.post("/login", async (req, res) => {
 });
 
 app.post('/upload', (req, res) => {
+    // File Upload Logic... (जैसा पहले था)
     upload(req, res, (err) => {
         if (err) {
             console.error('Upload Error:', err);
@@ -137,7 +141,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// Route 2: Generic route to serve ALL other HTML files (client.html, games.html, videos.html, etc.)
+// Route 2: Generic route to serve ALL other HTML files (client.html, games.html, videos.html, about.html)
 app.get('/:file.html', (req, res) => {
     const fileName = req.params.file + '.html';
     const filePath = path.join(__dirname, 'public', fileName);
@@ -164,6 +168,7 @@ const io = socketIO(server, {
 let onlineUsers = {};
 
 io.on("connection", (socket) => {
+  // Socket.io Logic... (जैसा पहले था)
   socket.on("newUser", (username) => {
     socket.username = username;
     onlineUsers[username] = socket.id;
