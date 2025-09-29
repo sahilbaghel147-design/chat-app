@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #f0f2f5;         
+            --bg-card: #ffffff;      
+            --color-primary: #007bff;   
+            --color-text: #212529;      
+            --color-secondary: #6c757d; 
+            --color-border: #dee2e6;    
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--color-text);
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: var(--color-primary);
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .profile-pic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--color-primary);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+        .profile-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--color-border);
+        }
+        .profile-detail:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: var(--color-secondary);
+        }
+        .detail-value {
+            font-weight: 500;
+            color: var(--color-text);
+        }
+        .back-link {
+            display: block;
+            margin-top: 30px;
+            text-align: center;
+            font-size: 1.1em;
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/chat.html" class="back-link" style="margin-bottom: 20px; display: inline-block;">
+        <i class="fas fa-arrow-left"></i> Back to Chat
+    </a>
+    
+    <h1>User Profile: <span id="profileUsername">Loading...</span></h1>
+
+    <div class="profile-header">
+        <img id="profileImage" class="profile-pic" src="uploads/default_avatar.png" alt="Profile Picture">
+        <h2 id="displayName" style="margin-top: 10px;"></h2>
+    </div>
+
+    <div id="profileDetails">
+        <div class="profile-detail">
+            <span class="detail-label"><i class="fas fa-envelope"></i> Status:</span>
+            <span class="detail-value" id="userStatus">Loading...</span>
+        </div>
+        <div class="profile-detail">
+            <span class="detail-label"><i class="fas fa-trophy"></i> Best Snake Score:</span>
+            <span class="detail-value" id="bestScore">Loading...</span>
+        </div>
+        <p style="text-align: center; margin-top: 25px; color: var(--color-secondary);">
+            Future Update: Edit profile, change avatar, and add bio coming soon!
+        </p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const loggedInUser = localStorage.getItem('username');
+        const urlParams = new URLSearchParams(window.location.search);
+        // Get the username from the URL (e.g., /profile.html?user=Alice)
+        const profileUser = urlParams.get('user') || loggedInUser;
+
+        if (!profileUser) {
+            document.getElementById('profileUsername').textContent = 'Error';
+            alert("User not found. Redirecting to login.");
+            window.location.href = '/login.html';
+            return;
+        }
+        
+        document.getElementById('profileUsername').textContent = profileUser;
+        document.getElementById('displayName').textContent = profileUser;
+        
+        // --- 1. Fetch High Score for the User ---
+        try {
+            // Use the high score API to get the user's best score
+            const scoreResponse = await fetch(`/api/scores?game=snake`);
+            const scoreData = await scoreResponse.json();
+            
+            if (scoreData.success) {
+                const userScoreRecord = scoreData.scores.find(s => s.username === profileUser);
+                const bestScore = userScoreRecord ? userScoreRecord.score : 0;
+                document.getElementById('bestScore').textContent = bestScore;
+            } else {
+                 document.getElementById('bestScore').textContent = 'N/A';
+                 console.error("Failed to fetch scores.");
+            }
+        } catch (error) {
+            document.getElementById('bestScore').textContent = 'Error';
+            console.error("Network error fetching scores:", error);
+        }
+
+        // --- 2. Simple Online/Offline Status (Placeholder for now) ---
+        // Since we don't have a direct API for online status per user, 
+        // we'll just show a default status. In a future update, we'll
+        // check the active socket list on the server.
+        document.getElementById('userStatus').textContent = "Offline (Need to connect to live status)";
+
+        // --- 3. Profile Picture (Placeholder) ---
+        // For now, we use a default image path. In the next big update, 
+        // we'll fetch the actual image directory from the User Schema.
+        const profileImg = document.getElementById('profileImage');
+        profileImg.src = 'https://via.placeholder.com/120/007bff/ffffff?text=' + profileUser.charAt(0).toUpperCase();
+        // Fallback or default profile picture is also a good idea:
+        // profileImg.onerror = () => { profileImg.src = 'uploads/default_avatar.png'; }; 
+    });
+</script>
+
+</body>
+</html>
