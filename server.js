@@ -1,3 +1,13 @@
+// Gemini AI setup
+const { GoogleGenAI } = require("@google/genai"); 
+// 🚨 IMPORTANT: यहाँ अपनी API Key डालें या Environment Variable का उपयोग करें (सुरक्षा के लिए बेहतर)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE"; 
+const ai = new GoogleGenAI({ apiKey: AIzaSyA2JdSuMrAQHaOHDPmGxxggpmqKq2GWwTM });
+const model = "gemini-2.5-flash"; // Fast and capable model
+
+
+
+
 // server.js - Final Guaranteed Clean Code (No 'document' Error)
 
 const express = require("express");
@@ -201,3 +211,4 @@ io.on("connection", (socket) => {
 // ===========================================
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+
