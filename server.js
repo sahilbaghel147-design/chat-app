@@ -1,4 +1,4 @@
-// server.js - Complete code without AI Chatbot, with HighScore Feature
+// server.js - Complete code with HighScore and Profile Update Features
 
 const express = require("express");
 const http = require("http");
@@ -27,7 +27,8 @@ const io = socketIO(server, {
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '../public')));
+// Static content (HTML, CSS, JS, and UPLOADS) is served from public
+app.use(express.static(path.join(__dirname, '../public'))); 
 
 
 // MONGODB CONNECTION
@@ -39,8 +40,10 @@ mongoose.connect(MONGO_URI)
 // MongoDB Schemas
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
-  // 🚨 Note: ProfilePicture field will be added in the next update if you choose
+  password: { type: String, required: true },
+  // 🚨 NEW FIELDS for Profile
+  bio: { type: String, default: "Hey there! I'm new to Aura Hub.", maxlength: 160 },
+  profilePicture: { type: String, default: '/uploads/default_avatar.png' } 
 });
 
 const MessageSchema = new mongoose.Schema({
@@ -66,24 +69,25 @@ const Message = mongoose.model('Message', MessageSchema);
 const HighScore = mongoose.model('HighScore', HighScoreSchema); 
 
 
-// MULTER FILE UPLOAD CONFIGURATION
+// MULTER FILE UPLOAD CONFIGURATION (Used for chat attachments and profile pics)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Files are stored in the public/uploads folder
     cb(null, path.join(__dirname, '../public/uploads'));
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname.replace(/ /g, '_')); 
+    // Prefix profile images differently for clarity
+    const prefix = req.body.isProfilePic ? 'profile-' : '';
+    cb(null, prefix + Date.now() + '-' + file.originalname.replace(/ /g, '_')); 
   }
 });
 
 const upload = multer({ 
     storage: storage,
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-}).single('chatFile');
+}).single('chatFile'); // Using single file upload for simplicity
 
 
-// --- API AND AUTHENTICATION CONTROLS ---
+// --- AUTHENTICATION CONTROLS ---
 
 app.post('/signup', async (req, res) => {
     try {
@@ -94,7 +98,8 @@ app.post('/signup', async (req, res) => {
         }
         
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ username, password: hashedPassword });
+        // New user gets default bio and profile picture
+        const newUser = new User({ username, password: hashedPassword }); 
         await newUser.save();
 
         res.json({ success: true, message: "User registered successfully" });
@@ -122,6 +127,7 @@ app.post('/login', async (req, res) => {
 });
 
 
+// --- FILE UPLOAD API ---
 app.post('/upload', (req, res) => {
     upload(req, res, async (err) => {
         if (err) {
@@ -132,7 +138,8 @@ app.post('/upload', (req, res) => {
         if (!req.file) {
              return res.status(400).json({ success: false, message: "No file selected for upload." });
         }
-
+        
+        // Return the file path (used for chat or profile update)
         res.json({ 
             success: true, 
             fileDir: '/uploads/' + req.file.filename,
@@ -144,64 +151,107 @@ app.post('/upload', (req, res) => {
 
 
 // -----------------------------------------------------
-// HIGH SCORE API ENDPOINTS (Kept)
+// 🚨 NEW: PROFILE API ENDPOINTS
 // -----------------------------------------------------
 
-// Submit a new high score
-app.post('/api/scores', async (req, res) => {
-    const { username, score, game = 'snake' } = req.body;
+// GET: Fetch a user's public profile data (Bio, Picture, etc.)
+app.get('/api/profile/:username', async (req, res) => {
+    try {
+        const username = req.params.username;
+        const user = await User.findOne({ username }).select('username bio profilePicture'); 
 
-    if (!username || typeof score !== 'number' || score < 0) {
-        return res.status(400).json({ success: false, message: "Invalid score or username." });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User profile not found." });
+        }
+        
+        res.json({ success: true, profile: user });
+
+    } catch (error) {
+        console.error("Error fetching profile:", error);
+        res.status(500).json({ success: false, message: "Server error fetching profile." });
+    }
+});
+
+
+// POST: Update a user's profile (Currently only supports Bio)
+// For security, Profile Picture upload will happen through the /upload endpoint first.
+app.post('/api/profile/update', async (req, res) => {
+    const { username, bio, profilePicture } = req.body;
+    
+    if (!username) {
+        return res.status(400).json({ success: false, message: "Username is required." });
     }
 
     try {
+        const updateFields = {};
+        if (bio !== undefined) {
+            updateFields.bio = bio.substring(0, 160); // Enforce max length
+        }
+        if (profilePicture !== undefined) {
+            updateFields.profilePicture = profilePicture;
+        }
+
+        const user = await User.findOneAndUpdate(
+            { username: username }, 
+            { $set: updateFields },
+            { new: true, runValidators: true } // Return the updated document
+        ).select('username bio profilePicture');
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found." });
+        }
+
+        res.json({ success: true, message: "Profile updated successfully.", profile: user });
+        
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        res.status(500).json({ success: false, message: "Failed to update profile." });
+    }
+});
+// -----------------------------------------------------
+
+
+// --- HIGH SCORE API ENDPOINTS (Kept) ---
+app.post('/api/scores', async (req, res) => {
+    const { username, score, game = 'snake' } = req.body;
+    if (!username || typeof score !== 'number' || score < 0) {
+        return res.status(400).json({ success: false, message: "Invalid score or username." });
+    }
+    try {
         const newScore = new HighScore({ username, game, score });
         await newScore.save();
-        
         const personalBest = await HighScore.findOne({ username, game }).sort({ score: -1 });
-
         res.json({ 
             success: true, 
             message: "Score submitted successfully.", 
             isNewRecord: personalBest ? (score >= personalBest.score) : true
         });
-
     } catch (error) {
         console.error("Score submission error:", error);
         res.status(500).json({ success: false, message: "Failed to save score." });
     }
 });
 
-// Get the top 10 high scores
 app.get('/api/scores', async (req, res) => {
     const game = req.query.game || 'snake';
-
     try {
-        // Aggregation to find the highest score per user for the game
         const topScores = await HighScore.aggregate([
             { $match: { game: game } },
-            // Sort by score (descending) and timestamp (ascending) to get the best and earliest one
             { $sort: { score: -1, timestamp: 1 } },
-            // Group by username and keep the highest score found
             { $group: { _id: "$username", maxScore: { $first: "$score" } } },
-            // Sort the final list by the max score
             { $sort: { maxScore: -1 } },
             { $limit: 10 },
             { $project: { _id: 0, username: "$_id", score: "$maxScore" } }
         ]);
-
         res.json({ success: true, scores: topScores });
-
     } catch (error) {
         console.error("Error fetching high scores:", error);
         res.status(500).json({ success: false, message: "Failed to fetch scores." });
     }
 });
-// -----------------------------------------------------
 
 
-// --- ROUTE TO SERVE HTML PAGES ---
+// --- ROUTE TO SERVE HTML PAGES & SOCKET.IO CHAT LOGIC (Kept) ---
 app.get('/:fileName', (req, res) => {
     const fileName = req.params.fileName;
     if (fileName.includes('..') || !fileName.endsWith('.html')) {
@@ -253,9 +303,7 @@ io.on('connection', (socket) => {
                 (socketId) => onlineUsers[socketId] === msg.receiver
             );
 
-            // Send message back to sender (for confirmation/display)
             socket.emit('privateMessage', newMessage); 
-            // Send message to receiver
             receiverSocketIds.forEach(id => io.to(id).emit('privateMessage', newMessage));
 
         } catch (err) { console.error("Error saving/sending message:", err); }
