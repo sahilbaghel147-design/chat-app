@@ -5,9 +5,287 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat App - Live Chat</title>
     
-    <link rel="stylesheet" href="style.css"> 
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* 1. Global Reset & Variables */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            /* ये रंग पिछले डार्क मोड से अलग हैं, एक साफ़ और उज्जवल अनुभव के लिए */
+            --bg-main: #f0f2f5;         /* Light Gray Background */
+            --bg-sidebar: #ffffff;      /* White Sidebar */
+            --bg-component: #e9ecef;    /* Light component background */
+            --color-primary: #007bff;   /* Blue Accent */
+            --color-text: #212529;      /* Dark Text */
+            --color-secondary: #6c757d; /* Gray Text */
+            --color-border: #dee2e6;    /* Light Border */
+            --color-error: #dc3545;     /* Red Error */
+        }
+
+        body {
+            background: var(--bg-main);
+            color: var(--color-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex; /* Sidebar और Content को एक साथ रखने के लिए */
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--color-primary);
+        }
+
+        /* 2. Main Layout (Sidebar & Content) */
+        #sidebar {
+            width: 250px; 
+            position: fixed;
+            top: 0;
+            left: 0; 
+            height: 100vh;
+            z-index: 1000;
+            background: var(--bg-sidebar); 
+            color: var(--color-text);
+            padding: 20px 0;
+            transition: all 0.3s;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* FIX: JS द्वारा जोड़ा गया क्लास: साइडबार को छिपाता है */
+        #sidebar.active { 
+            left: -250px; 
+        }
+
+        #content {
+            margin-left: 250px; 
+            padding: 20px;
+            min-height: 100vh;
+            transition: all 0.3s;
+            width: calc(100% - 250px);
+            background: var(--bg-main);
+        }
+
+        /* FIX: JS द्वारा जोड़ा गया क्लास: कंटेंट को पूरी चौड़ाई देता है */
+        #content.active {
+            margin-left: 0; 
+            width: 100%;
+        }
+
+        /* Sidebar Header & Links */
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .sidebar-header h3 a {
+            color: var(--color-primary); 
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        
+        #dismiss { /* Close Button */
+            font-size: 1.5em;
+            cursor: pointer;
+            color: var(--color-secondary);
+        }
+        #dismiss:hover {
+            color: var(--color-error);
+        }
+
+        .list-unstyled {
+            list-style: none;
+            padding: 0;
+        }
+
+        #sidebar a {
+            color: var(--color-secondary); 
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+
+        #sidebar a i {
+            margin-right: 15px;
+            width: 18px;
+            text-align: center;
+        }
+
+        #sidebar a:hover,
+        #sidebar li.active a {
+            color: var(--color-text);
+            background: var(--bg-component); 
+            border-left: 5px solid var(--color-primary);
+        }
+
+        .online-users-list {
+            padding: 20px;
+            border-top: 1px solid var(--color-border);
+            margin-top: 20px;
+        }
+        
+        .online-user-item {
+            padding: 5px 0;
+            cursor: pointer;
+            color: var(--color-secondary);
+        }
+        .online-user-item:hover, .online-user-item.active { 
+            color: var(--color-primary);
+            font-weight: bold;
+        }
+
+        /* 3. Top Navbar */
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--color-border);
+            margin-bottom: 25px;
+        }
+
+        .welcome-text {
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-right: 15px;
+        }
+
+        .btn-danger {
+            background-color: var(--color-error);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #sidebarCollapse {
+            background: var(--color-primary);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background 0.2s;
+        }
+        #sidebarCollapse:hover {
+            background: #0056b3;
+        }
+
+        /* 4. Chat Interface Specifics */
+        .chat-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px); 
+            background: var(--bg-sidebar); /* White chat background */
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .message-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        /* Message Bubble Styling */
+        .message {
+            max-width: 65%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+        }
+
+        .message.sender {
+            align-self: flex-end; 
+            background-color: var(--color-primary); 
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px; 
+        }
+
+        .message.receiver {
+            align-self: flex-start; 
+            background-color: var(--bg-component);
+            color: var(--color-text);
+            margin-right: auto;
+            border-bottom-left-radius: 4px; 
+        }
+        
+        .message-input-area {
+            display: flex;
+            padding: 5px;
+            background-color: var(--bg-component);
+            border-radius: 25px;
+            align-items: center;
+        }
+
+        #messageInput {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: none;
+            background: transparent;
+            color: var(--color-text);
+            outline: none;
+        }
+
+        .btn-send, .btn-attach {
+            background: none;
+            border: none;
+            color: var(--color-primary);
+            cursor: pointer;
+            font-size: 1.3em;
+            padding: 5px 10px;
+            transition: color 0.2s;
+        }
+        .btn-send:hover, .btn-attach:hover {
+            color: #0056b3;
+        }
+
+        /* 5. Mobile Responsiveness */
+        @media (max-width: 768px) {
+            
+            #sidebar {
+                left: -250px; 
+                position: absolute; 
+            }
+            
+            #content {
+                margin-left: 0;
+                width: 100%;
+                padding: 10px;
+            }
+
+            #sidebar.active {
+                left: 0; 
+            }
+            
+            #content.active {
+                margin-left: 0; 
+                width: 100%;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+    </style>
     
 </head>
 <body>
@@ -15,6 +293,7 @@
 <div id="sidebar"> 
     <div class="sidebar-header">
         <a href="/index.html"><h3>Chat App</h3></a>
+        <div id="dismiss"><i class="fas fa-times"></i></div>
     </div>
     <ul class="list-unstyled components">
         <li>
@@ -78,6 +357,61 @@
     </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
+<script>
+    // यह फ़ंक्शन sidebarCollapse और dismiss बटन दोनों के लिए काम करता है
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        if (sidebar && content) {
+            sidebar.classList.toggle('active');
+            content.classList.toggle('active'); 
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. SIDEBAR TOGGLE LOGIC ---
+        const sidebarCollapse = document.getElementById('sidebarCollapse');
+        const dismiss = document.getElementById('dismiss');
+        
+        if (sidebarCollapse) {
+            sidebarCollapse.addEventListener('click', toggleSidebar);
+        }
+        if (dismiss) {
+            dismiss.addEventListener('click', toggleSidebar); // 'X' button will close it
+        }
+
+        // --- 2. REST OF CHAT LOGIC (जैसा chat-logic.js में था) ---
+        
+        const username = localStorage.getItem('username');
+        const welcomeMessageEl = document.getElementById('welcomeMessage');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        if (!username) {
+            if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('signup.html')) {
+                 window.location.href = '/login.html'; 
+            }
+            return;
+        }
+        
+        if (welcomeMessageEl) {
+            welcomeMessageEl.textContent = `Welcome, ${username}!`;
+        }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('username');
+                window.location.href = '/login.html';
+            });
+        }
+        
+        // --- 3. SOCKET.IO CHAT LOGIC (Minimized to keep code clean) ---
+        // नोट: इस लॉजिक को अभी भी आपकी `public/chat-logic.js` फ़ाइल से लोड किया जाना चाहिए। 
+        // अगर आपने इसे पूरी तरह से हटा दिया है, तो आपको इसे फिर से जोड़ना होगा या इस HTML में पूरा कोड पेस्ट करना होगा।
+        // सुरक्षा के लिए, मैं मान रहा हूँ कि आपने बाहरी `chat-logic.js` को नहीं हटाया है।
+        // (अगर आप चाहते हैं कि पूरा JS यहीं हो, तो मुझे बताएं, मैं पूरा chat-logic.js कोड यहाँ पेस्ट कर दूँगा।)
+    });
+</script>
+
 <script src="chat-logic.js"></script> 
 
 </body>
