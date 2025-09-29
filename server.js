@@ -1,131 +1,170 @@
-// Gemini AI setup
-const { GoogleGenAI } = require("@google/genai"); 
-// 🚨 IMPORTANT: यहाँ अपनी API Key डालें या Environment Variable का उपयोग करें (सुरक्षा के लिए बेहतर)
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE"; 
-const ai = new GoogleGenAI({ apiKey: AIzaSyA2JdSuMrAQHaOHDPmGxxggpmqKq2GWwTM });
-const model = "gemini-2.5-flash"; // Fast and capable model
-
-
-
-
-// server.js - Final Guaranteed Clean Code (No 'document' Error)
+// server.js - Complete code with AI Chatbot Logic
 
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const bodyParser = require("body-parser");
-const cors = require('cors');
 const path = require("path");
-const multer = require('multer'); 
-const compression = require('compression'); 
+const compression = require("compression");
+const bcrypt = require("bcryptjs");
+const multer = require("multer");
+const dotenv = require('dotenv');
+
+// Load environment variables from .env file (for MongoDB URI, etc.)
+dotenv.config(); 
+
+// -----------------------------------------------------
+// 🚨 GEMINI AI SETUP (NEW)
+// -----------------------------------------------------
+const { GoogleGenAI } = require("@google/genai"); 
+// IMPORTANT: Use environment variable for API Key
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE"; 
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const model = "gemini-2.5-flash"; // Fast and capable model
+// -----------------------------------------------------
+
 
 const app = express();
 const server = http.createServer(app);
 
-// === SERVER SETTINGS & MIDDLEWARE ===
-app.use(cors()); 
-app.use(compression()); 
-app.use(bodyParser.json());
+// SOCKET.IO CONFIGURATION
+const io = socketIO(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+// EXPRESS SETTINGS & MIDDLEWARE
+app.use(compression());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, '../public')));
 
-// ===========================================
-// === MONGO DB CONNECTION & SCHEMAS ===
-// ===========================================
 
-// IMPORTANT: Replace with your actual connection string 
-const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp"; 
+// MONGODB CONNECTION
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/chatapp';
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("MongoDB connected successfully."))
+  .catch(err => console.error("MongoDB connection error:", err));
 
-mongoose.connect(MONGO_URI, { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true 
-}).then(() => console.log("MongoDB Connected"))
-  .catch(err => console.error("MongoDB Error:", err));
+// MongoDB Schemas
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
+});
 
-// User Schema
-const UserSchema = new mongoose.Schema({ username: String, password: String });
-const User = mongoose.model("User", UserSchema);
-
-// Message Schema (Updated for file sharing)
 const MessageSchema = new mongoose.Schema({
-  sender: String,
-  receiver: String,
-  text: String,
-  fileUrl: { type: String, default: null },
-  mimeType: { type: String, default: null },
-  originalName: { type: String, default: null },
+  sender: { type: String, required: true },
+  receiver: { type: String, required: true },
+  text: { type: String },
+  fileDir: { type: String },
+  fileMimeType: { type: String },
+  originalName: { type: String },
   timestamp: { type: Date, default: Date.now }
 });
-const Message = mongoose.model("Message", MessageSchema);
 
-// ===========================================
-// === MULTER FILE UPLOAD CONFIGURATION ===
-// ===========================================
+const User = mongoose.model('User', UserSchema);
+const Message = mongoose.model('Message', MessageSchema);
+
+
+// MULTER FILE UPLOAD CONFIGURATION
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'public/uploads'); 
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, '_')); 
-    }
+  destination: (req, file, cb) => {
+    // Files will be stored in the 'public/uploads' folder
+    cb(null, path.join(__dirname, '../public/uploads'));
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname.replace(/ /g, '_'));
+  }
 });
 
 const upload = multer({ 
     storage: storage,
     limits: { fileSize: 10 * 1024 * 1024 } // Max 10MB
-}).single('chatFile'); 
+}).single('chatFile');
 
 
-// ===========================================
-// === API AND AUTHENTICATION ROUTES ===
-// ===========================================
+// --- API AND AUTHENTICATION CONTROLS ---
 
-app.post("/signup", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (await User.findOne({ username })) {
-      return res.json({ success: false, message: "User already exists" });
+// SIGNUP
+app.post('/signup', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+        if (user) {
+            return res.json({ success: false, message: "User already exists" });
+        }
+        
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ username, password: hashedPassword });
+        await newUser.save();
+
+        res.json({ success: true, message: "User registered successfully" });
+
+    } catch (error) {
+        console.error("Signup Error:", error);
+        res.status(500).json({ success: false, message: "Server error during signup" });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, password: hashedPassword });
-    await newUser.save();
-    res.json({ success: true, message: "User registered successfully" });
-  } catch (err) {
-    res.json({ success: false, message: "Error in signup" });
-  }
 });
 
-app.post("/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (!user) return res.json({ success: false, message: "User not found" });
+// LOGIN
+app.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.json({ success: false, message: "Invalid password" });
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.json({ success: false, message: "Invalid username or password" });
+        }
 
-    res.json({ success: true, message: "Login successful", username });
-  } catch (err) {
-    res.json({ success: false, message: "Error in login" });
-  }
+        res.json({ success: true, message: "Login successful" });
+    } catch (error) {
+        console.error("Login Error:", error);
+        res.status(500).json({ success: false, message: "Server error during login" });
+    }
 });
 
 
-// --- AI Chat Endpoint ---
+// FILE UPLOAD
+app.post('/upload', (req, res) => {
+    upload(req, res, async (err) => {
+        if (err) {
+            console.error("Upload Error:", err);
+            return res.status(500).json({ success: false, message: "File upload failed", error: err.message });
+        }
+        
+        if (!req.file) {
+             return res.status(400).json({ success: false, message: "No file selected for upload." });
+        }
+
+        // Send back file information
+        res.json({ 
+            success: true, 
+            fileDir: '/uploads/' + req.file.filename,
+            fileMimeType: req.file.mimetype,
+            originalName: req.file.originalname 
+        });
+    });
+});
+
+
+// -----------------------------------------------------
+// 🚨 AI CHAT ENDPOINT (NEW)
+// -----------------------------------------------------
 app.post('/api/chat/ai', async (req, res) => {
     const { username, message } = req.body;
+    const AI_BOT_USERNAME = "Aura Bot 🤖"; // Match frontend name
 
     if (!message) {
         return res.status(400).json({ success: false, message: "Message is required." });
     }
 
-    console.log(`AI Chat Request from ${username}: ${message}`);
-
     try {
-        // Simple conversation prompt for the bot
-        const prompt = `You are a friendly and helpful chat assistant named 'Aura Bot' in a social networking app. 
-                        The user is: ${username}. User's question: "${message}"`;
+        // Simple prompt to define the bot's persona
+        const prompt = `You are a friendly and helpful chat assistant named '${AI_BOT_USERNAME}' in a social networking app. 
+                        Keep your responses concise and engaging. The user is: ${username}. User's question: "${message}"`;
 
         const result = await ai.models.generateContent({
             model: model,
@@ -138,7 +177,7 @@ app.post('/api/chat/ai', async (req, res) => {
         res.json({ 
             success: true, 
             response: aiResponse,
-            sender: "Aura Bot" // Bot's username
+            sender: AI_BOT_USERNAME // Bot's username
         });
 
     } catch (error) {
@@ -149,106 +188,101 @@ app.post('/api/chat/ai', async (req, res) => {
         });
     }
 });
-
-app.post('/upload', (req, res) => {
-    upload(req, res, (err) => {
-        if (err) {
-            console.error('Upload Error:', err);
-            return res.status(500).json({ success: false, message: err.message || "File upload failed." });
-        }
-        if (!req.file) {
-             return res.status(400).json({ success: false, message: "No file selected." });
-        }
-        const fileUrl = `/uploads/${req.file.filename}`;
-        res.json({ 
-            success: true, 
-            fileUrl: fileUrl, 
-            originalName: req.file.originalname, 
-            mimeType: req.file.mimetype 
-        });
-    });
-});
+// -----------------------------------------------------
 
 
-// ===========================================
-// === STATIC FILES AND ROUTING ===
-// ===========================================
-
-app.use(express.static(path.join(__dirname, "public")));
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); 
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
-
-app.get('/:file.html', (req, res) => {
-    const fileName = req.params.file + '.html';
-    const filePath = path.join(__dirname, 'public', fileName);
+// --- ROUTE TO SERVE HTML PAGES ---
+app.get('/:fileName', (req, res) => {
+    const fileName = req.params.fileName;
+    // Prevent directory traversal
+    if (fileName.includes('..') || !fileName.endsWith('.html')) {
+        return res.status(404).sendFile(path.join(__dirname, '../public/404.html'));
+    }
+    const filePath = path.join(__dirname, '../public', fileName);
     res.sendFile(filePath, (err) => {
         if (err) {
-            res.status(404).send('404 File Not Found');
+            res.status(404).sendFile(path.join(__dirname, '../public/404.html'));
         }
     });
 });
 
-
-// ===========================================
-// === SOCKET.IO COMMUNICATION LOGIC ===
-// ===========================================
-
-const io = socketIO(server, {
-    cors: {
-        origin: "*", 
-        methods: ["GET", "POST"]
-    }
-});
-
-let onlineUsers = {};
-
-io.on("connection", (socket) => {
-  
-  socket.on("newUser", (username) => {
-    socket.username = username;
-    onlineUsers[username] = socket.id;
-    io.emit("updateUsers", Object.keys(onlineUsers));
-  });
-
-  socket.on("loadChat", async ({ user1, user2 }) => {
-    const chats = await Message.find({
-      $or: [
-        { sender: user1, receiver: user2 },
-        { sender: user2, receiver: user1 }
-      ]
-    }).sort({ timestamp: 1 });
-    socket.emit("chatHistory", chats);
-  });
-
-  socket.on("privateMessage", async (data) => {
-    const { sender, receiver, text, fileUrl, mimeType, originalName } = data;
-    
-    const newMessage = new Message({ sender, receiver, text, fileUrl, mimeType, originalName });
-    await newMessage.save();
-
-    const messageToSend = { sender, text, fileUrl, mimeType, originalName };
-
-    socket.emit("privateMessage", messageToSend);
-
-    if (onlineUsers[receiver]) {
-      io.to(onlineUsers[receiver]).emit("privateMessage", messageToSend);
-    }
-  });
-
-  socket.on("disconnect", () => {
-    delete onlineUsers[socket.username];
-    io.emit("updateUsers", Object.keys(onlineUsers));
-  });
+// Route for root directory (serves index.html)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 
-// ===========================================
-// === SERVER STARTUP ===
-// ===========================================
+// --- SOCKET.IO CHAT LOGIC ---
+let onlineUsers = {}; // { socketId: username }
+
+io.on('connection', (socket) => {
+    console.log('A user connected:', socket.id);
+
+    // New user joins/logs in
+    socket.on('newUser', (username) => {
+        onlineUsers[socket.id] = username;
+        // Broadcast the updated user list to everyone
+        io.emit('updateUsers', Object.values(onlineUsers));
+        console.log(`User ${username} connected.`);
+    });
+
+    // Load Chat History
+    socket.on('loadChat', async ({ sender, receiver }) => {
+        try {
+            const chats = await Message.find({
+                $or: [
+                    { sender: sender, receiver: receiver },
+                    { sender: receiver, receiver: sender }
+                ]
+            }).sort({ timestamp: 1 });
+
+            socket.emit('chatHistory', chats);
+        } catch (err) {
+            console.error("Error loading chat:", err);
+        }
+    });
+
+    // Handle Private Message
+    socket.on('privateMessage', async (msg) => {
+        try {
+            // Save message to DB
+            const newMessage = new Message({
+                sender: msg.sender,
+                receiver: msg.receiver,
+                text: msg.text,
+                fileDir: msg.fileDir,
+                fileMimeType: msg.fileMimeType,
+                originalName: msg.originalName,
+            });
+            await newMessage.save();
+
+            // Find receiver's socket ID(s)
+            const receiverSocketIds = Object.keys(onlineUsers).filter(
+                (socketId) => onlineUsers[socketId] === msg.receiver
+            );
+
+            // Emit message to sender and receiver
+            socket.emit('privateMessage', newMessage);
+            receiverSocketIds.forEach(id => io.to(id).emit('privateMessage', newMessage));
+
+        } catch (err) {
+            console.error("Error saving/sending message:", err);
+        }
+    });
+
+    // Disconnect handler
+    socket.on('disconnect', () => {
+        const username = onlineUsers[socket.id];
+        delete onlineUsers[socket.id];
+        // Broadcast the updated user list
+        io.emit('updateUsers', Object.values(onlineUsers));
+        console.log(`User ${username} disconnected. Socket ID: ${socket.id}`);
+    });
+});
+
+
+// --- SERVER STARTUP ---
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-
-
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
