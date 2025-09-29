@@ -2,15 +2,14 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- 1. SIDEBAR TOGGLE LOGIC (FIX FOR ☰ BUTTON) ---
-    // यह CSS में .active क्लास को toggle करके Sidebar को दिखाता/छिपाता है
+    // --- 1. SIDEBAR TOGGLE LOGIC (☰ बटन के लिए फिक्स) ---
     const sidebar = document.getElementById('sidebar');
     const sidebarCollapse = document.getElementById('sidebarCollapse');
     const content = document.getElementById('content');
 
     if (sidebar && sidebarCollapse && content) {
         sidebarCollapse.addEventListener('click', () => {
-            // #sidebar और #content दोनों पर 'active' क्लास को toggle करें
+            // #sidebar और #content पर 'active' क्लास को toggle करें
             sidebar.classList.toggle('active');
             content.classList.toggle('active'); 
         });
@@ -22,8 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
 
     if (!username) {
-        // अगर username नहीं है, तो login पेज पर भेजें (Auth check)
-        // Ensure you have a login.html in your public folder
+        // अगर username नहीं है और हम login/signup पेज पर नहीं हैं, तो redirect करें
         if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('signup.html')) {
              window.location.href = '/login.html'; 
         }
@@ -39,17 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('username');
-            // Redirect to login page
             window.location.href = '/login.html';
         });
     }
     
-    // --- 3. CHAT AND SOCKET.IO LOGIC ---
+    // --- 3. CHAT AND SOCKET.IO LOGIC (केवल chat.html पर) ---
     
-    // यह लॉजिक केवल 'chat.html' पेज पर चलेगा।
     if (window.location.pathname.includes('chat.html')) {
         
-        // Socket.IO Connection (server.js से कनेक्ट करने के लिए)
         const socket = io(); 
 
         // DOM Elements
@@ -73,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const li = document.createElement('li');
                     li.textContent = user;
                     li.dataset.username = user;
-                    li.classList.add('online-user-item'); // CSS styling के लिए class
+                    li.classList.add('online-user-item');
                     li.addEventListener('click', () => selectRecipient(user, li));
                     onlineUsersList.appendChild(li);
                 }
@@ -81,17 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         function selectRecipient(recipient, clickedElement) {
-            // Remove 'active' class from all users
             document.querySelectorAll('.online-user-item').forEach(el => el.classList.remove('active'));
-            
-            // Add 'active' class to the clicked user
             if(clickedElement) clickedElement.classList.add('active');
 
             currentRecipient = recipient;
             currentChatRecipientEl.textContent = `Chatting with: ${recipient}`;
-            messageDisplayArea.innerHTML = ''; // Clear previous chat
+            messageDisplayArea.innerHTML = ''; 
             
-            // Load chat history from the server (handled by server.js)
             socket.emit("loadChat", { user1: username, user2: recipient });
         }
 
@@ -112,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 originalName 
             };
             
-            // Send the message to the server
             socket.emit("privateMessage", messageData);
             messageInput.value = '';
         }
@@ -122,14 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') sendMessage(messageInput.value);
         });
 
-        // Load history from server
         socket.on("chatHistory", (chats) => {
             messageDisplayArea.innerHTML = '';
             chats.forEach(msg => displayMessage(msg));
             messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
         });
 
-        // Receive new message from server
         socket.on("privateMessage", (msg) => {
             if (msg.sender === currentRecipient || msg.receiver === currentRecipient) {
                 displayMessage(msg);
@@ -149,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('chatFile', file);
             
-            // Fetch API to send file to '/upload' route on server.js
             fetch('/upload', {
                 method: 'POST',
                 body: formData
@@ -157,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    // Once uploaded, send a chat message with the file details
                     const fileNameText = `[File shared: ${data.originalName}]`;
                     sendMessage(fileNameText, data.fileUrl, data.mimeType, data.originalName);
                 } else {
@@ -166,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => console.error('Error uploading file:', error));
             
-            fileInput.value = ''; // Reset file input
+            fileInput.value = ''; 
         }
 
         function displayMessage(msg) {
@@ -176,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
             messageEl.classList.add('message');
             messageEl.classList.add(isSender ? 'sender' : 'receiver');
             
-            // File Link Display
             if (msg.fileUrl) {
                  const fileLink = document.createElement('a');
                  fileLink.href = msg.fileUrl;
@@ -188,7 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
                  messageEl.appendChild(fileLink);
             }
             
-            // Text Content
             const textContent = document.createElement('p');
             textContent.textContent = msg.text || '';
             messageEl.appendChild(textContent);
@@ -196,8 +180,4 @@ document.addEventListener('DOMContentLoaded', () => {
             messageDisplayArea.appendChild(messageEl);
         }
     }
-    
-    // --- 4. NAVIGATION LOGIC (For other pages like games.html, videos.html) ---
-    // If you add interactive elements on other pages, you'll put their JS here.
-    
 });
