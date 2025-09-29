@@ -1,4 +1,4 @@
-/* style.css - Clean, Unified, and Responsive Code for All Pages (Home, Chat, Games, Videos, About) */
+/* style.css - Clean, Unified, and Responsive Code for All Pages (Home, Chat, Videos, etc.) */
 
 /* 1. Global Reset & Variables */
 * {
@@ -32,7 +32,7 @@ a {
 }
 
 /* 2. Main Layout (Sidebar & Content) */
-/* यह लेआउट सभी pages.html पर लागू होगा */
+
 #sidebar {
     width: 250px; 
     position: fixed;
@@ -47,8 +47,13 @@ a {
     box-shadow: 3px 0 15px rgba(0, 0, 0, 0.4);
 }
 
+/* जब JS से .active क्लास जोड़ी जाती है, तो साइडबार छिप जाता है */
+#sidebar.active { 
+    left: -250px; 
+}
+
 #content {
-    /* FIX: Sidebar के लिए हमेशा जगह बनाता है */
+    /* Side bar ke liye jagah */
     margin-left: 250px; 
     padding: 20px;
     min-height: 100vh;
@@ -56,7 +61,13 @@ a {
     width: calc(100% - 250px);
 }
 
-/* Sidebar Header and Navigation Links */
+/* जब sidebar छिपा होता है, content पूरी चौड़ाई लेता है */
+#content.active {
+    margin-left: 0; 
+    width: 100%;
+}
+
+/* Sidebar Navigation Links */
 .sidebar-header {
     padding: 20px;
     padding-bottom: 20px;
@@ -77,7 +88,7 @@ a {
 
 #sidebar a {
     color: var(--color-secondary); 
-    display: flex; /* Icons और Text को align करने के लिए */
+    display: flex;
     align-items: center;
     padding: 12px 20px;
     font-size: 1em;
@@ -94,34 +105,16 @@ a {
 #sidebar li.active a {
     color: var(--color-text);
     background: var(--color-border); 
-    border-left: 5px solid var(--color-accent); /* Active indicator */
+    border-left: 5px solid var(--color-accent);
 }
 
-/* Online Users List (Sidebar ka hissa) */
 .online-users-list {
     padding: 20px;
     border-top: 1px solid var(--color-border);
     margin-top: 20px;
 }
 
-.online-users-list h4 {
-    color: var(--color-accent);
-    margin-bottom: 10px;
-}
-
-#onlineUsersList li {
-    padding: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    border-radius: 4px;
-}
-
-#onlineUsersList li:hover {
-    background-color: #3e414f;
-}
-
-
-/* 3. Top Navbar (Logout Area) */
+/* 3. Top Navbar (Welcome/Logout/Toggle Button) */
 .top-navbar {
     display: flex;
     justify-content: space-between;
@@ -147,10 +140,6 @@ a {
     transition: background-color 0.2s;
 }
 
-.btn-danger:hover {
-    background-color: #c0392b;
-}
-
 #sidebarCollapse {
     background: var(--bg-component);
     border: 1px solid var(--color-border);
@@ -158,6 +147,7 @@ a {
     padding: 8px 12px;
     border-radius: 5px;
     cursor: pointer;
+    font-size: 1.2em; /* Ensure the icon is visible */
 }
 
 /* 4. Chat Interface Specifics (chat.html) */
@@ -203,48 +193,30 @@ a {
     padding: 5px 10px;
 }
 
-.btn-send:hover, .btn-attach:hover {
-    color: #a0c2ff;
-}
-
-/* 5. Generic Page Content Styling (Index, Games, Videos, About) */
-.page-container {
-    padding: 20px;
-    background: var(--bg-component);
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.page-container h1 {
-    color: var(--color-accent);
-    margin-bottom: 15px;
-    border-bottom: 2px solid var(--color-border);
-    padding-bottom: 10px;
-}
-
-.page-container p {
-    line-height: 1.6;
-    color: var(--color-secondary);
-}
-
-
-/* 6. Mobile Responsiveness */
+/* 5. Mobile Responsiveness */
 @media (max-width: 768px) {
-    /* Mobile par sidebar ko chhipa do */
+    
+    /* Mobile पर sidebar हमेशा छिपा रहता है */
     #sidebar {
-        transform: translateX(-100%);
-        box-shadow: none;
+        left: -250px; 
+        position: absolute; 
     }
-
-    /* Mobile par content ko poori width do */
+    
+    /* Mobile में content पूरी width लेता है */
     #content {
         margin-left: 0;
         width: 100%;
         padding: 10px;
     }
 
-    /* Jab sidebar dikhe, to content ko halka sa margin do */
-    #sidebar.show {
-        transform: translateX(0);
+    /* जब sidebar बटन दबे, तब sidebar दिखे */
+    #sidebar.active {
+        left: 0; 
+    }
+    
+    /* Mobile पर content को हिलने की ज़रूरत नहीं है */
+    #content.active {
+        margin-left: 0; 
+        width: 100%;
     }
 }
