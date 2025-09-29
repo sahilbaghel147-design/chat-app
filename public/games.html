@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Snake Game</title>
     
-    <link rel="stylesheet" href="https://cdnjs.com/libraries/font-awesome/6.0.0-beta3">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
         :root {
@@ -16,6 +16,7 @@
             --color-secondary-text: #b8c2cc;/* Subdued Text */
             --color-snake: #4CAF50;         /* Green Snake */
             --color-food: #FF5722;          /* Orange Food */
+            --color-button-hover: #5d88ff;  /* Primary Hover */
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -56,6 +57,9 @@
             margin: 0 auto;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(121, 166, 254, 0.5);
+            /* FIX: Fixed size for consistent display */
+            width: 400px; 
+            height: 400px;
         }
 
         .controls {
@@ -103,8 +107,9 @@
         }
         
         @media (max-width: 600px) {
+            /* FIX: Ensure canvas fits smaller screens */
             #gameCanvas {
-                width: 95%;
+                width: 90%; 
                 height: 350px;
             }
             .game-info {
@@ -154,30 +159,42 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
+            // FIX: canvas context retrieval
+            const ctx = canvas.getContext('2d'); 
             const currentScoreEl = document.getElementById('currentScore');
             const highScoreEl = document.getElementById('highScore');
             const startButton = document.getElementById('startButton');
 
-            const gridSize = 20; // 20x20 grid
-            const tileCount = canvas.width / gridSize;
+            const gridSize = 20; 
+            // FIX: Calculate tile count based on fixed canvas width/height
+            const tileCount = 400 / gridSize; // 20 tiles
+            
             let snake = [];
             let food = {};
             let velocity = { x: 1, y: 0 };
             let gameLoop;
-            let gameSpeed = 150; // milliseconds
+            let gameSpeed = 150; 
             let score = 0;
             let isGameOver = true;
-            let nextDirection = null; // To handle fast key presses
+            let nextDirection = null;
 
-            // Load High Score
             let highScore = localStorage.getItem('snakeHighScore') || 0;
             highScoreEl.textContent = highScore;
+            
+            // --- Helper Function: Draw a single square (tile) ---
+            function drawSquare(x, y, color, shadowBlur = 0, shadowColor = 'transparent') {
+                ctx.fillStyle = color;
+                ctx.shadowColor = shadowColor;
+                ctx.shadowBlur = shadowBlur;
+                ctx.fillRect(x * gridSize, y * gridSize, gridSize - 1, gridSize - 1);
+                ctx.shadowBlur = 0; // Reset shadow
+            }
             
             // --- Game Functions ---
             
             function startGame() {
-                if (!isGameOver) return;
+                // FIX: If already running, clear first
+                if (gameLoop) clearInterval(gameLoop); 
                 
                 isGameOver = false;
                 score = 0;
@@ -189,36 +206,44 @@
                 
                 placeFood();
                 
-                clearInterval(gameLoop);
+                // Draw initial state immediately
+                draw();
+
                 gameLoop = setInterval(gameTick, gameSpeed);
                 startButton.textContent = "Restart Game";
             }
             
             function placeFood() {
-                food = {
-                    x: Math.floor(Math.random() * tileCount),
-                    y: Math.floor(Math.random() * tileCount)
-                };
-                
-                // Ensure food doesn't spawn on the snake
-                for (const segment of snake) {
-                    if (segment.x === food.x && segment.y === food.y) {
-                        placeFood();
-                        return;
+                let newFood;
+                do {
+                    newFood = {
+                        x: Math.floor(Math.random() * tileCount),
+                        y: Math.floor(Math.random() * tileCount)
+                    };
+                    
+                    // Check if food spawns on the snake
+                    let onSnake = false;
+                    for (const segment of snake) {
+                        if (segment.x === newFood.x && segment.y === newFood.y) {
+                            onSnake = true;
+                            break;
+                        }
                     }
-                }
+                    if (!onSnake) {
+                        food = newFood;
+                        break;
+                    }
+                } while (true);
             }
             
             function update() {
                 if (isGameOver) return;
                 
-                // Handle queued direction change
                 if (nextDirection) {
                     velocity = nextDirection;
                     nextDirection = null;
                 }
                 
-                // New head position
                 const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
                 
                 // --- Check for Game Over ---
@@ -245,14 +270,14 @@
                     currentScoreEl.textContent = score;
                     placeFood();
                     
-                    // Increase speed slightly after every 3 points
-                    if (score % 3 === 0 && gameSpeed > 50) {
-                        gameSpeed -= 5;
+                    // Increase speed
+                    if (gameSpeed > 50) {
+                        gameSpeed -= 3; // Smaller, more frequent speed increase
                         clearInterval(gameLoop);
                         gameLoop = setInterval(gameTick, gameSpeed);
                     }
                 } else {
-                    // Remove tail only if food was NOT eaten
+                    // Remove tail
                     snake.pop();
                 }
             }
@@ -262,35 +287,28 @@
                 ctx.fillStyle = '#000000';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // Draw Snake (Aura look with subtle white border)
-                ctx.fillStyle = 'var(--color-snake)';
-                ctx.strokeStyle = '#ffffff50'; // White border with transparency
-                snake.forEach((segment, index) => {
-                    ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
-                    // Draw a subtle border for separation
-                    ctx.strokeRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
-                    
-                    // Highlight the head
-                    if (index === 0) {
-                        ctx.fillStyle = 'white';
-                        ctx.fillRect(segment.x * gridSize + 5, segment.y * gridSize + 5, 5, 5);
-                        ctx.fillStyle = 'var(--color-snake)'; // Reset color
-                    }
-                });
+                // Draw Food (Aura effect)
+                drawSquare(food.x, food.y, 'var(--color-food)', 15, 'var(--color-food)');
                 
-                // Draw Food (Pulsing effect with shadow/aura)
-                ctx.fillStyle = 'var(--color-food)';
-                ctx.shadowColor = 'var(--color-food)';
-                ctx.shadowBlur = 15;
-                ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
-                ctx.shadowBlur = 0; // Reset shadow
+                // Draw Snake 
+                snake.forEach((segment, index) => {
+                    let color = 'var(--color-snake)';
+                    let blur = 0;
+                    
+                    // Head: slightly brighter/different color
+                    if (index === 0) {
+                        color = '#66BB6A'; // Lighter green for head
+                        blur = 10;
+                    }
+                    
+                    drawSquare(segment.x, segment.y, color, blur, color);
+                });
             }
             
             function gameOver() {
                 isGameOver = true;
                 clearInterval(gameLoop);
                 
-                // Update High Score
                 if (score > highScore) {
                     highScore = score;
                     localStorage.setItem('snakeHighScore', highScore);
@@ -313,7 +331,7 @@
                 draw();
             }
             
-            // --- Event Listeners ---
+            // --- Event Listeners (Controls) ---
             
             // Keyboard Controls
             document.addEventListener('keydown', (e) => {
@@ -321,22 +339,25 @@
                 
                 switch (e.key) {
                     case 'ArrowUp':
+                    case 'w':
                         if (velocity.y === 0) newVel = { x: 0, y: -1 };
                         break;
                     case 'ArrowDown':
+                    case 's':
                         if (velocity.y === 0) newVel = { x: 0, y: 1 };
                         break;
                     case 'ArrowLeft':
+                    case 'a':
                         if (velocity.x === 0) newVel = { x: -1, y: 0 };
                         break;
                     case 'ArrowRight':
+                    case 'd':
                         if (velocity.x === 0) newVel = { x: 1, y: 0 };
                         break;
                     default:
-                        return; // Ignore other keys
+                        return;
                 }
 
-                // Prevent moving backwards immediately
                 if ((velocity.x * -1 !== newVel.x) || (velocity.y * -1 !== newVel.y)) {
                     nextDirection = newVel;
                 }
@@ -358,11 +379,20 @@
 
             startButton.addEventListener('click', startGame);
             
-            // Initial Draw (Game Start Screen)
-            ctx.fillStyle = 'var(--color-primary)';
-            ctx.font = "30px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("Press Start to Play", canvas.width / 2, canvas.height / 2);
+            // Initial Draw: Show the game is ready
+            function drawStartScreen() {
+                 // Initialize snake and food just for drawing purposes
+                snake = [{ x: 10, y: 10 }]; 
+                food = { x: 15, y: 5 }; 
+                draw();
+
+                ctx.fillStyle = 'white';
+                ctx.font = "30px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("Press Start to Play", canvas.width / 2, canvas.height / 2);
+            }
+            
+            drawStartScreen();
         });
     </script>
 </body>
