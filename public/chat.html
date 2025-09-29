@@ -16,14 +16,14 @@
         }
 
         :root {
-            --bg-main: #f0f2f5;         /* Light Gray Background */
-            --bg-sidebar: #ffffff;      /* White Sidebar */
-            --bg-component: #e9ecef;    /* Light component background */
-            --color-primary: #007bff;   /* Blue Accent */
-            --color-text: #212529;      /* Dark Text */
-            --color-secondary: #6c757d; /* Gray Text */
-            --color-border: #dee2e6;    /* Light Border */
-            --color-error: #dc3545;     /* Red Error */
+            --bg-main: #f0f2f5;         
+            --bg-sidebar: #ffffff;      
+            --bg-component: #e9ecef;    
+            --color-primary: #007bff;   
+            --color-text: #212529;      
+            --color-secondary: #6c757d; 
+            --color-border: #dee2e6;    
+            --color-error: #dc3545;     
         }
 
         body {
@@ -33,10 +33,7 @@
             overflow-x: hidden;
         }
 
-        a {
-            text-decoration: none;
-            color: var(--color-primary);
-        }
+        a { text-decoration: none; color: var(--color-primary); }
 
         /* 2. Main Layout (Sidebar & Content) */
         #sidebar {
@@ -53,11 +50,12 @@
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         }
 
-        /* JS द्वारा जोड़ा गया क्लास: साइडबार को छिपाता है (डिफ़ॉल्ट रूप से यह खुला है) */
-        #sidebar.active { 
-            left: -250px; 
+        @media (max-width: 768px) {
+            #sidebar { left: -250px; position: absolute; }
+            #content { margin-left: 0; width: 100%; }
         }
 
+        #sidebar.active { left: 0; }
         #content {
             margin-left: 250px; 
             padding: 20px;
@@ -67,11 +65,7 @@
             background: var(--bg-main);
         }
 
-        /* JS द्वारा जोड़ा गया क्लास: कंटेंट को पूरी चौड़ाई देता है */
-        #content.active {
-            margin-left: 0; 
-            width: 100%;
-        }
+        #content.active { margin-left: 0; width: 100%; }
 
         /* Sidebar Header & Links */
         .sidebar-header {
@@ -82,25 +76,11 @@
             border-bottom: 1px solid var(--color-border);
         }
 
-        .sidebar-header h3 a {
-            color: var(--color-primary); 
-            font-size: 1.5em;
-            font-weight: 700;
-        }
-        
-        #dismiss { /* Close Button */
-            font-size: 1.5em;
-            cursor: pointer;
-            color: var(--color-secondary);
-        }
-        #dismiss:hover {
-            color: var(--color-error);
-        }
+        .sidebar-header h3 a { color: var(--color-primary); font-size: 1.5em; font-weight: 700; }
+        #dismiss { font-size: 1.5em; cursor: pointer; color: var(--color-secondary); }
+        #dismiss:hover { color: var(--color-error); }
 
-        .list-unstyled {
-            list-style: none;
-            padding: 0;
-        }
+        .list-unstyled { list-style: none; padding: 0; }
 
         #sidebar a {
             color: var(--color-secondary); 
@@ -110,12 +90,17 @@
             font-size: 1em;
             transition: background 0.2s;
         }
-
-        #sidebar a i {
-            margin-right: 15px;
-            width: 18px;
-            text-align: center;
+        
+        /* NEW: Profile Link Style */
+        #sidebar li.profile-link a {
+             color: var(--color-text);
+             background: var(--bg-component);
+             font-weight: bold;
+             margin-bottom: 10px;
+             border-left: 5px solid #ffc107; /* Yellow highlight */
         }
+
+        #sidebar a i { margin-right: 15px; width: 18px; text-align: center; }
 
         #sidebar a:hover,
         #sidebar li.active a {
@@ -131,25 +116,11 @@
         }
         
         .online-user-item {
-            padding: 10px 0; /* Increased padding */
+            padding: 10px 0; 
             cursor: pointer;
             color: var(--color-secondary);
-            display: flex; /* For icon alignment */
+            display: flex; 
             align-items: center;
-        }
-        
-        /* AI BOT SPECIAL STYLE */
-        #ai-bot-user {
-            font-weight: bold;
-            color: #28a745; /* Green color for bot */
-            background-color: #f0fff0;
-            border-radius: 5px;
-            padding: 10px 15px;
-            border: 1px solid #c3e6cb;
-            margin-bottom: 5px;
-        }
-        #ai-bot-user:hover {
-            background-color: #e2ffe2;
         }
 
         .online-user-item:hover, .online-user-item.active { 
@@ -169,11 +140,7 @@
             margin-bottom: 25px;
         }
 
-        .welcome-text {
-            font-weight: 600;
-            color: var(--color-primary);
-            margin-right: 15px;
-        }
+        .welcome-text { font-weight: 600; color: var(--color-primary); margin-right: 15px; }
 
         .btn-danger {
             background-color: var(--color-error);
@@ -195,15 +162,12 @@
             font-size: 1.2em;
             transition: background 0.2s;
         }
-        #sidebarCollapse:hover {
-            background: #0056b3;
-        }
+        #sidebarCollapse:hover { background: #0056b3; }
 
         /* 4. Chat Interface Specifics */
         .chat-wrapper {
             display: flex;
             flex-direction: column;
-            /* 100px = top-navbar height + padding */
             height: calc(100vh - 100px); 
             background: var(--bg-sidebar); 
             border: 1px solid var(--color-border);
@@ -273,36 +237,14 @@
             padding: 5px 10px;
             transition: color 0.2s;
         }
-        .btn-send:hover, .btn-attach:hover {
-            color: #0056b3;
-        }
+        .btn-send:hover, .btn-attach:hover { color: #0056b3; }
 
         /* 5. Mobile Responsiveness */
         @media (max-width: 768px) {
-            
-            #sidebar {
-                left: -250px; 
-                position: absolute; 
-            }
-            
-            #sidebar.active { 
-                left: 0; 
-            }
-            
-            #content {
-                margin-left: 0;
-                width: 100%;
-                padding: 10px;
-            }
-
-            #content.active {
-                margin-left: 0; 
-                width: 100%;
-            }
-            
-            .message {
-                max-width: 85%;
-            }
+            #sidebar.active { left: 0; }
+            #content { margin-left: 0; width: 100%; padding: 10px; }
+            #content.active { margin-left: 0; width: 100%; }
+            .message { max-width: 85%; }
         }
     </style>
     </head>
@@ -314,21 +256,14 @@
         <div id="dismiss"><i class="fas fa-times"></i></div>
     </div>
     <ul class="list-unstyled components">
-        <li>
-            <a href="/index.html"><i class="fas fa-home"></i> Home</a>
+        <li class="profile-link"> 
+            <a href="/profile.html" id="profileLink"><i class="fas fa-user-circle"></i> My Profile</a>
         </li>
-        <li class="active"> 
-            <a href="/chat.html"><i class="fas fa-comment-alt"></i> Chat</a>
-        </li>
-        <li>
-            <a href="/games.html"><i class="fas fa-gamepad"></i> Games</a>
-        </li>
-        <li>
-            <a href="/videos.html"><i class="fas fa-video"></i> Videos</a>
-        </li>
-        <li>
-            <a href="/about.html"><i class="fas fa-info-circle"></i> About</a>
-        </li>
+        <li> <a href="/index.html"><i class="fas fa-home"></i> Home</a> </li>
+        <li class="active"> <a href="/chat.html"><i class="fas fa-comment-alt"></i> Chat</a> </li>
+        <li> <a href="/games.html"><i class="fas fa-gamepad"></i> Games</a> </li>
+        <li> <a href="/videos.html"><i class="fas fa-video"></i> Videos</a> </li>
+        <li> <a href="/about.html"><i class="fas fa-info-circle"></i> About</a> </li>
     </ul>
     
     <div class="online-users-list">
@@ -352,10 +287,11 @@
     </nav>
 
     <div class="chat-wrapper">
-        <h2 id="currentChatRecipient">Select a user or Aura Bot 🤖 to chat</h2>
+        <h2 id="currentChatRecipient">Select a user to chat</h2>
 
         <div id="messageDisplayArea" class="message-area">
-            </div>
+            <div class="message receiver">Welcome to Chat App! Select an online user to start talking.</div>
+        </div>
 
         <div class="message-input-area">
             
@@ -379,7 +315,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         // --- CONSTANTS ---
         const username = localStorage.getItem('username');
-        const AI_BOT_USERNAME = "Aura Bot 🤖"; // Define bot's username
 
         // --- ELEMENTS ---
         const sidebarCollapse = document.getElementById('sidebarCollapse');
@@ -393,6 +328,7 @@
         const sendMessageBtn = document.getElementById('sendMessageBtn');
         const attachFileBtn = document.getElementById('attachFileBtn');
         const fileInput = document.getElementById('fileInput');
+        const profileLink = document.getElementById('profileLink');
 
         let currentChatRecipient = null;
         const socket = io();
@@ -405,7 +341,9 @@
             const content = document.getElementById('content');
             if (sidebar && content) {
                 sidebar.classList.toggle('active');
-                content.classList.toggle('active'); 
+                if (window.innerWidth > 768) {
+                    content.classList.toggle('active'); 
+                }
             }
         }
         
@@ -439,18 +377,23 @@
 
         function loadChatHistory(messages) {
             messageDisplayArea.innerHTML = ''; // Clear previous messages
+            
+             const welcome = document.createElement('div');
+             welcome.className = 'message receiver';
+             welcome.textContent = 'Welcome back! Starting conversation...';
+             messageDisplayArea.appendChild(welcome);
+
             messages.forEach(msg => {
                 const type = (msg.sender === username) ? 'sender' : 'receiver';
                 displayMessage(msg.sender, msg.text, type, msg.fileDir, msg.fileMimeType, msg.originalName);
             });
+             messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
         }
         
         function selectUser(user) {
-            // Remove 'active' class from all users
             document.querySelectorAll('.online-user-item').forEach(item => item.classList.remove('active'));
 
-            // Set the new active user
-            const newUserElement = document.getElementById(user === AI_BOT_USERNAME ? 'ai-bot-user' : `user-${user}`);
+            const newUserElement = document.getElementById(`user-${user}`);
             if (newUserElement) {
                 newUserElement.classList.add('active');
             }
@@ -458,20 +401,17 @@
             currentChatRecipient = user;
             currentChatRecipientEl.textContent = `Chatting with: ${user}`;
             
-            messageDisplayArea.innerHTML = ''; // Clear messages
+            messageDisplayArea.innerHTML = ''; 
             
-            // Load history only for real users, not for the AI bot
-            if (user !== AI_BOT_USERNAME) {
-                socket.emit('loadChat', { sender: username, receiver: user });
-            }
+            // Load history for real users
+            socket.emit('loadChat', { sender: username, receiver: user });
         }
 
 
         // --- INITIAL SETUP AND AUTH ---
 
         if (!username) {
-            // Redirect to login if not authenticated
-            if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('signup.html')) {
+             if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('signup.html')) {
                  window.location.href = '/login.html'; 
             }
             return;
@@ -479,6 +419,11 @@
         
         if (welcomeMessageEl) {
             welcomeMessageEl.textContent = `Welcome, ${username}!`;
+        }
+        
+        if (profileLink) {
+            // Set the profile link URL to show the current user's profile
+            profileLink.href = `/profile.html?user=${username}`;
         }
 
         // --- EVENT LISTENERS ---
@@ -495,7 +440,6 @@
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
                 localStorage.removeItem('username');
-                // Socket disconnect handled by server on page unload
                 window.location.href = '/login.html';
             });
         }
@@ -503,11 +447,8 @@
         // File Attachment
         if(attachFileBtn && fileInput) {
             attachFileBtn.addEventListener('click', () => {
-                // Only allow file upload for real users, not AI Bot
-                if (currentChatRecipient && currentChatRecipient !== AI_BOT_USERNAME) {
+                if (currentChatRecipient) {
                     fileInput.click();
-                } else if (currentChatRecipient === AI_BOT_USERNAME) {
-                     alert("File attachments are not allowed when chatting with the Aura Bot.");
                 } else {
                      alert("Please select a user to chat with first.");
                 }
@@ -517,29 +458,14 @@
         // --- SOCKET.IO EVENTS ---
 
         socket.on('connect', () => {
-            console.log("Connected to socket server.");
-            socket.emit('newUser', username); // Announce new user
+            socket.emit('newUser', username); 
         });
 
-        // Update User List (including AI Bot insertion)
+        // Update User List (No AI Bot)
         socket.on('updateUsers', (users) => {
             onlineUsersList.innerHTML = ''; // Clear current list
             
-            // 1. Add AI Bot (NEW)
-            const aiLi = document.createElement('li');
-            aiLi.className = 'online-user-item';
-            aiLi.id = 'ai-bot-user';
-            aiLi.innerHTML = `<i class="fas fa-robot" style="margin-right: 10px; color: #28a745;"></i> ${AI_BOT_USERNAME}`;
-            onlineUsersList.appendChild(aiLi); 
-            
-            // Re-apply active class if AI Bot was selected
-            if (currentChatRecipient === AI_BOT_USERNAME) {
-                aiLi.classList.add('active');
-            }
-            
-            aiLi.addEventListener('click', () => selectUser(AI_BOT_USERNAME));
-
-            // 2. Add Real Users
+            // Add Real Users (excluding self)
             users.filter(u => u !== username).forEach(user => {
                 const li = document.createElement('li');
                 li.className = 'online-user-item';
@@ -558,7 +484,6 @@
 
         // Receive Private Message
         socket.on('privateMessage', (msg) => {
-            // Only display if message is for the current active chat
             if (msg.sender === currentChatRecipient || (msg.sender === username && msg.receiver === currentChatRecipient)) {
                 const type = (msg.sender === username) ? 'sender' : 'receiver';
                 displayMessage(msg.sender, msg.text, type, msg.fileDir, msg.fileMimeType, msg.originalName);
@@ -570,48 +495,21 @@
 
         // --- MESSAGE SENDING LOGIC ---
 
-        async function handleSendMessage(message, fileData = {}) {
+        function handleSendMessage(message, fileData = {}) {
             if (!currentChatRecipient) {
-                alert("Please select a user or Aura Bot to chat with first.");
+                alert("Please select a user to chat with first.");
                 return;
             }
-
-            // --- 1. AI CHAT LOGIC ---
-            if (currentChatRecipient === AI_BOT_USERNAME) {
-                displayMessage(username, message, 'sender'); // Show user message immediately
-
-                try {
-                    const response = await fetch('/api/chat/ai', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username: username, message: message })
-                    });
-                    const data = await response.json();
-
-                    if (data.success) {
-                        displayMessage(data.sender, data.response, 'receiver'); // Show AI response
-                    } else {
-                        displayMessage("System", `Error: ${data.message}`, 'receiver');
-                    }
-                } catch (error) {
-                    console.error("AI Fetch Error:", error);
-                    displayMessage("System", "AI connection failed. Check server logs.", 'receiver');
-                }
-            } 
             
-            // --- 2. REAL USER CHAT LOGIC ---
-            else {
-                // Emit message via Socket.IO
-                socket.emit('privateMessage', {
-                    sender: username,
-                    receiver: currentChatRecipient,
-                    text: message,
-                    fileDir: fileData.fileDir,
-                    fileMimeType: fileData.fileMimeType,
-                    originalName: fileData.originalName
-                });
-                // The message will be displayed back by the 'privateMessage' listener
-            }
+            // Emit message via Socket.IO
+            socket.emit('privateMessage', {
+                sender: username,
+                receiver: currentChatRecipient,
+                text: message,
+                fileDir: fileData.fileDir,
+                fileMimeType: fileData.fileMimeType,
+                originalName: fileData.originalName
+            });
         }
         
         // Text Message Send Handler
@@ -641,7 +539,6 @@
 
             const file = fileInput.files[0];
             
-            // Show a placeholder message while uploading
             displayMessage(username, `Uploading file: ${file.name}...`, 'sender');
             
             const formData = new FormData();
@@ -672,7 +569,6 @@
                 messageDisplayArea.lastChild.remove(); 
                 alert("File upload failed due to server error.");
             }
-            // Clear the file input
             fileInput.value = '';
         });
     });
