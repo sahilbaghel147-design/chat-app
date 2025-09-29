@@ -1,5 +1,4 @@
-// server.js - FINAL production-ready code for root directory (chatapp/server.js)
-// AI-free, Hardcoded MongoDB URI, and correct pathing.
+// server.js - FINAL Code with Profile Picture in Chat Feature
 
 const express = require("express");
 const http = require("http");
@@ -34,13 +33,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 // MONGODB CONNECTION
-// 🚨 IMPORTANT: This hardcoded URI must be your correct Atlas connection string.
-// I have included 'retryWrites=true&w=majority' which is standard for Atlas.
+// 🚨 NOTE: Using your hardcoded Atlas URI.
 const MONGO_URI = 'mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority';
 
 mongoose.connect(MONGO_URI)
-  // 💡 Mongoose connect options (useNewUrlParser, useUnifiedTopology) are deprecated 
-  // and no longer needed. Connecting directly:
   .then(() => console.log("MongoDB connected successfully."))
   .catch(err => console.error("MongoDB connection error:", err));
 
@@ -52,7 +48,6 @@ const UserSchema = new mongoose.Schema({
   profilePicture: { type: String, default: '/uploads/default_avatar.png' } 
 });
 
-// ✅ MessageSchema completed
 const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   receiver: { type: String, required: true },
@@ -79,7 +74,7 @@ const HighScore = mongoose.model('HighScore', HighScoreSchema);
 // MULTER FILE UPLOAD CONFIGURATION (Used for chat attachments and profile pics)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, 'public/uploads')); // Correct path
+    cb(null, path.join(__dirname, 'public/uploads'));
   },
   filename: (req, file, cb) => {
     const prefix = req.body.isProfilePic ? 'profile-' : '';
@@ -93,7 +88,7 @@ const upload = multer({
 }).single('chatFile'); 
 
 
-// --- AUTHENTICATION CONTROLS ---
+// --- AUTHENTICATION CONTROLS (Login/Signup/Upload/Profile APIs remain unchanged) ---
 
 app.post('/signup', async (req, res) => {
     try {
@@ -132,7 +127,6 @@ app.post('/login', async (req, res) => {
 });
 
 
-// --- FILE UPLOAD API ---
 app.post('/upload', (req, res) => {
     upload(req, res, async (err) => {
         if (err) {
@@ -154,7 +148,6 @@ app.post('/upload', (req, res) => {
 });
 
 
-// --- PROFILE API ENDPOINTS ---
 app.get('/api/profile/:username', async (req, res) => {
     try {
         const username = req.params.username;
@@ -208,7 +201,6 @@ app.post('/api/profile/update', async (req, res) => {
 });
 
 
-// --- HIGH SCORE API ENDPOINTS ---
 app.post('/api/scores', async (req, res) => {
     const { username, score, game = 'snake' } = req.body;
     if (!username || typeof score !== 'number' || score < 0) {
@@ -248,7 +240,7 @@ app.get('/api/scores', async (req, res) => {
 });
 
 
-// --- ROUTE TO SERVE HTML PAGES ---
+// --- ROUTE TO SERVE HTML PAGES (Remains unchanged) ---
 app.get('/:fileName', (req, res) => {
     const fileName = req.params.fileName;
     if (fileName.includes('..') || !fileName.endsWith('.html')) {
@@ -267,7 +259,7 @@ app.get('/', (req, res) => {
 });
 
 
-// --- SOCKET.IO CHAT LOGIC ---
+// --- SOCKET.IO CHAT LOGIC (UPDATED FOR PROFILE PICTURES) ---
 let onlineUsers = {}; 
 
 io.on('connection', (socket) => {
@@ -276,6 +268,7 @@ io.on('connection', (socket) => {
         io.emit('updateUsers', Object.values(onlineUsers));
     });
 
+    // 🔄 UPDATED: loadChat - Fetches profile pictures for all messages
     socket.on('loadChat', async ({ sender, receiver }) => {
         try {
             const chats = await Message.find({
@@ -284,25 +277,56 @@ io.on('connection', (socket) => {
                     { sender: receiver, receiver: sender }
                 ]
             }).sort({ timestamp: 1 });
-            socket.emit('chatHistory', chats);
+            
+            // 1. Fetch all unique senders' profile pictures
+            const uniqueSenders = [...new Set(chats.map(msg => msg.sender))];
+            const senderProfiles = await User.find({ username: { $in: uniqueSenders } })
+                .select('username profilePicture');
+
+            const profileMap = senderProfiles.reduce((map, user) => {
+                map[user.username] = user.profilePicture;
+                return map;
+            }, {});
+
+            // 2. Attach profile picture URL to each message
+            const chatsWithProfiles = chats.map(msg => ({
+                ...msg.toObject(),
+                senderPicture: profileMap[msg.sender] || '/uploads/default_avatar.png'
+            }));
+
+            socket.emit('chatHistory', chatsWithProfiles);
         } catch (err) { console.error("Error loading chat:", err); }
     });
 
+    // 🔄 UPDATED: privateMessage - Fetches the sender's profile picture for the new message
     socket.on('privateMessage', async (msg) => {
         try {
-            // Note: msg object will contain fileDir, fileMimeType, originalName if a file was uploaded
+            // 1. Save the new message
             const newMessage = new Message({
                 sender: msg.sender, receiver: msg.receiver, text: msg.text,
                 fileDir: msg.fileDir, fileMimeType: msg.fileMimeType, originalName: msg.originalName,
             });
             await newMessage.save();
 
+            // 2. Fetch sender's profile picture
+            const senderUser = await User.findOne({ username: msg.sender })
+                .select('profilePicture');
+            
+            const senderPicture = senderUser ? senderUser.profilePicture : '/uploads/default_avatar.png';
+
+            // 3. Prepare message object to send to client
+            const messageToSend = {
+                ...newMessage.toObject(),
+                senderPicture: senderPicture
+            };
+
             const receiverSocketIds = Object.keys(onlineUsers).filter(
                 (socketId) => onlineUsers[socketId] === msg.receiver
             );
 
-            socket.emit('privateMessage', newMessage); 
-            receiverSocketIds.forEach(id => io.to(id).emit('privateMessage', newMessage));
+            // 4. Send the enriched message to both sender and receiver
+            socket.emit('privateMessage', messageToSend); 
+            receiverSocketIds.forEach(id => io.to(id).emit('privateMessage', messageToSend));
 
         } catch (err) { console.error("Error saving/sending message:", err); }
     });
@@ -320,4 +344,4 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-                 
+    
