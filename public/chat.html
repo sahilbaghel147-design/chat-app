@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
-        /* 1. Global Reset & Variables */
         * {
             margin: 0;
             padding: 0;
@@ -32,7 +31,6 @@
             color: var(--color-text);
             min-height: 100vh;
             overflow-x: hidden;
-            /* display: flex; हटा दिया गया क्योंकि sidebar fixed है */
         }
 
         a {
@@ -133,13 +131,32 @@
         }
         
         .online-user-item {
-            padding: 5px 0;
+            padding: 10px 0; /* Increased padding */
             cursor: pointer;
             color: var(--color-secondary);
+            display: flex; /* For icon alignment */
+            align-items: center;
         }
+        
+        /* AI BOT SPECIAL STYLE */
+        #ai-bot-user {
+            font-weight: bold;
+            color: #28a745; /* Green color for bot */
+            background-color: #f0fff0;
+            border-radius: 5px;
+            padding: 10px 15px;
+            border: 1px solid #c3e6cb;
+            margin-bottom: 5px;
+        }
+        #ai-bot-user:hover {
+            background-color: #e2ffe2;
+        }
+
         .online-user-item:hover, .online-user-item.active { 
             color: var(--color-primary);
             font-weight: bold;
+            background-color: var(--bg-component);
+            border-radius: 5px;
         }
 
         /* 3. Top Navbar */
@@ -199,7 +216,7 @@
             overflow-y: auto;
             padding: 15px;
             margin-bottom: 10px;
-            display: flex; /* messages को bottom में रखने के लिए */
+            display: flex; 
             flex-direction: column;
         }
 
@@ -266,10 +283,8 @@
             #sidebar {
                 left: -250px; 
                 position: absolute; 
-                /* जब active क्लास न हो (यानी खुला हो) */
             }
             
-            /* जब active क्लास हो (यानी बंद हो) */
             #sidebar.active { 
                 left: 0; 
             }
@@ -280,7 +295,6 @@
                 padding: 10px;
             }
 
-            /* content की चौड़ाई बदलने की ज़रूरत नहीं है जब sidebar absolute हो */
             #content.active {
                 margin-left: 0; 
                 width: 100%;
@@ -338,7 +352,7 @@
     </nav>
 
     <div class="chat-wrapper">
-        <h2 id="currentChatRecipient">Select a user to chat</h2>
+        <h2 id="currentChatRecipient">Select a user or Aura Bot 🤖 to chat</h2>
 
         <div id="messageDisplayArea" class="message-area">
             </div>
@@ -362,37 +376,101 @@
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    // यह फ़ंक्शन sidebarCollapse (☰) और dismiss (X) बटन दोनों के लिए काम करता है
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const content = document.getElementById('content');
-        if (sidebar && content) {
-            // 'active' क्लास को toggle करके side-bar को खोलता/बंद करता है
-            sidebar.classList.toggle('active');
-            content.classList.toggle('active'); 
-        }
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-        // --- 1. SIDEBAR TOGGLE LOGIC ---
+        // --- CONSTANTS ---
+        const username = localStorage.getItem('username');
+        const AI_BOT_USERNAME = "Aura Bot 🤖"; // Define bot's username
+
+        // --- ELEMENTS ---
         const sidebarCollapse = document.getElementById('sidebarCollapse');
         const dismiss = document.getElementById('dismiss');
-        
-        // ☰ बटन के लिए
-        if (sidebarCollapse) {
-            sidebarCollapse.addEventListener('click', toggleSidebar);
+        const logoutBtn = document.getElementById('logoutBtn');
+        const welcomeMessageEl = document.getElementById('welcomeMessage');
+        const onlineUsersList = document.getElementById('onlineUsersList');
+        const currentChatRecipientEl = document.getElementById('currentChatRecipient');
+        const messageDisplayArea = document.getElementById('messageDisplayArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const attachFileBtn = document.getElementById('attachFileBtn');
+        const fileInput = document.getElementById('fileInput');
+
+        let currentChatRecipient = null;
+        const socket = io();
+
+
+        // --- UTILITY FUNCTIONS ---
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            if (sidebar && content) {
+                sidebar.classList.toggle('active');
+                content.classList.toggle('active'); 
+            }
         }
-        // X बटन के लिए (साइडबार के अंदर)
-        if (dismiss) {
-            dismiss.addEventListener('click', toggleSidebar); 
+        
+        function displayMessage(sender, text, type, fileDir, fileMimeType, originalName) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${type}`;
+            
+            if (fileDir) {
+                // Handle File Message
+                let content = `<div class="file-content"><strong>File from ${sender}:</strong><br>`;
+                
+                if (fileMimeType && fileMimeType.startsWith('image/')) {
+                    content += `<a href="${fileDir}" target="_blank"><img src="${fileDir}" alt="Image" style="max-width: 100%; height: auto; border-radius: 5px;"></a>`;
+                } else if (fileMimeType && fileMimeType.startsWith('video/')) {
+                    content += `<video controls style="max-width: 100%; height: auto; border-radius: 5px;"><source src="${fileDir}" type="${fileMimeType}"></video>`;
+                } else {
+                    content += `<i class="fas fa-file"></i> <a href="${fileDir}" target="_blank">${originalName || 'Download File'}</a>`;
+                }
+                
+                content += `</div>`;
+                messageElement.innerHTML = content;
+            } else {
+                 // Handle Text Message
+                messageElement.textContent = text;
+            }
+            
+            messageDisplayArea.appendChild(messageElement);
+            // Scroll to bottom
+            messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
         }
 
-        // --- 2. USER/LOGOUT SETUP ---
-        const username = localStorage.getItem('username');
-        const welcomeMessageEl = document.getElementById('welcomeMessage');
-        const logoutBtn = document.getElementById('logoutBtn');
+        function loadChatHistory(messages) {
+            messageDisplayArea.innerHTML = ''; // Clear previous messages
+            messages.forEach(msg => {
+                const type = (msg.sender === username) ? 'sender' : 'receiver';
+                displayMessage(msg.sender, msg.text, type, msg.fileDir, msg.fileMimeType, msg.originalName);
+            });
+        }
+        
+        function selectUser(user) {
+            // Remove 'active' class from all users
+            document.querySelectorAll('.online-user-item').forEach(item => item.classList.remove('active'));
+
+            // Set the new active user
+            const newUserElement = document.getElementById(user === AI_BOT_USERNAME ? 'ai-bot-user' : `user-${user}`);
+            if (newUserElement) {
+                newUserElement.classList.add('active');
+            }
+
+            currentChatRecipient = user;
+            currentChatRecipientEl.textContent = `Chatting with: ${user}`;
+            
+            messageDisplayArea.innerHTML = ''; // Clear messages
+            
+            // Load history only for real users, not for the AI bot
+            if (user !== AI_BOT_USERNAME) {
+                socket.emit('loadChat', { sender: username, receiver: user });
+            }
+        }
+
+
+        // --- INITIAL SETUP AND AUTH ---
 
         if (!username) {
+            // Redirect to login if not authenticated
             if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('signup.html')) {
                  window.location.href = '/login.html'; 
             }
@@ -403,20 +481,200 @@
             welcomeMessageEl.textContent = `Welcome, ${username}!`;
         }
 
+        // --- EVENT LISTENERS ---
+
+        // Sidebar Toggles
+        if (sidebarCollapse) {
+            sidebarCollapse.addEventListener('click', toggleSidebar);
+        }
+        if (dismiss) {
+            dismiss.addEventListener('click', toggleSidebar); 
+        }
+
+        // Logout
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
                 localStorage.removeItem('username');
+                // Socket disconnect handled by server on page unload
                 window.location.href = '/login.html';
             });
         }
         
-        // 🚨 IMPORTANT: Chat Logic (Socket.IO, Fetch, etc.)
-        // चूंकि आपने `chat-logic.js` हटा दिया होगा, आपको यहां पूरा चैट लॉजिक पेस्ट करना होगा
-        // या अपनी `public/chat-logic.js` फ़ाइल को मेरे पिछले कोड से रिस्टोर करना होगा
+        // File Attachment
+        if(attachFileBtn && fileInput) {
+            attachFileBtn.addEventListener('click', () => {
+                // Only allow file upload for real users, not AI Bot
+                if (currentChatRecipient && currentChatRecipient !== AI_BOT_USERNAME) {
+                    fileInput.click();
+                } else if (currentChatRecipient === AI_BOT_USERNAME) {
+                     alert("File attachments are not allowed when chatting with the Aura Bot.");
+                } else {
+                     alert("Please select a user to chat with first.");
+                }
+            });
+        }
+
+        // --- SOCKET.IO EVENTS ---
+
+        socket.on('connect', () => {
+            console.log("Connected to socket server.");
+            socket.emit('newUser', username); // Announce new user
+        });
+
+        // Update User List (including AI Bot insertion)
+        socket.on('updateUsers', (users) => {
+            onlineUsersList.innerHTML = ''; // Clear current list
+            
+            // 1. Add AI Bot (NEW)
+            const aiLi = document.createElement('li');
+            aiLi.className = 'online-user-item';
+            aiLi.id = 'ai-bot-user';
+            aiLi.innerHTML = `<i class="fas fa-robot" style="margin-right: 10px; color: #28a745;"></i> ${AI_BOT_USERNAME}`;
+            onlineUsersList.appendChild(aiLi); 
+            
+            // Re-apply active class if AI Bot was selected
+            if (currentChatRecipient === AI_BOT_USERNAME) {
+                aiLi.classList.add('active');
+            }
+            
+            aiLi.addEventListener('click', () => selectUser(AI_BOT_USERNAME));
+
+            // 2. Add Real Users
+            users.filter(u => u !== username).forEach(user => {
+                const li = document.createElement('li');
+                li.className = 'online-user-item';
+                li.id = `user-${user}`;
+                li.innerHTML = `<i class="fas fa-circle" style="font-size: 8px; color: #28a745; margin-right: 10px;"></i> ${user}`;
+                onlineUsersList.appendChild(li);
+
+                // Re-apply active class if user was selected
+                if (currentChatRecipient === user) {
+                    li.classList.add('active');
+                }
+
+                li.addEventListener('click', () => selectUser(user));
+            });
+        });
+
+        // Receive Private Message
+        socket.on('privateMessage', (msg) => {
+            // Only display if message is for the current active chat
+            if (msg.sender === currentChatRecipient || (msg.sender === username && msg.receiver === currentChatRecipient)) {
+                const type = (msg.sender === username) ? 'sender' : 'receiver';
+                displayMessage(msg.sender, msg.text, type, msg.fileDir, msg.fileMimeType, msg.originalName);
+            }
+        });
+
+        // Receive Chat History
+        socket.on('chatHistory', loadChatHistory);
+
+        // --- MESSAGE SENDING LOGIC ---
+
+        async function handleSendMessage(message, fileData = {}) {
+            if (!currentChatRecipient) {
+                alert("Please select a user or Aura Bot to chat with first.");
+                return;
+            }
+
+            // --- 1. AI CHAT LOGIC ---
+            if (currentChatRecipient === AI_BOT_USERNAME) {
+                displayMessage(username, message, 'sender'); // Show user message immediately
+
+                try {
+                    const response = await fetch('/api/chat/ai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: username, message: message })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        displayMessage(data.sender, data.response, 'receiver'); // Show AI response
+                    } else {
+                        displayMessage("System", `Error: ${data.message}`, 'receiver');
+                    }
+                } catch (error) {
+                    console.error("AI Fetch Error:", error);
+                    displayMessage("System", "AI connection failed. Check server logs.", 'receiver');
+                }
+            } 
+            
+            // --- 2. REAL USER CHAT LOGIC ---
+            else {
+                // Emit message via Socket.IO
+                socket.emit('privateMessage', {
+                    sender: username,
+                    receiver: currentChatRecipient,
+                    text: message,
+                    fileDir: fileData.fileDir,
+                    fileMimeType: fileData.fileMimeType,
+                    originalName: fileData.originalName
+                });
+                // The message will be displayed back by the 'privateMessage' listener
+            }
+        }
         
-        // **अगर आप चाहते हैं कि आपका पूरा चैट लॉजिक (Socket.IO, loadChat, sendMessage, etc.) काम करे, 
-        // तो आपको पिछली बार दिया गया पूरा `chat-logic.js` कोड इस `<script>` टैग के अंदर पेस्ट करना होगा।**
-        // फिलहाल, मैं यहाँ केवल साइडबार फिक्स दे रहा हूँ।
+        // Text Message Send Handler
+        sendMessageBtn.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                handleSendMessage(message);
+                messageInput.value = '';
+            }
+        });
+
+        // Press Enter to send
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (message) {
+                    handleSendMessage(message);
+                    messageInput.value = '';
+                }
+            }
+        });
+        
+        // File Input Change Handler
+        fileInput.addEventListener('change', async () => {
+            if (!fileInput.files.length) return;
+
+            const file = fileInput.files[0];
+            
+            // Show a placeholder message while uploading
+            displayMessage(username, `Uploading file: ${file.name}...`, 'sender');
+            
+            const formData = new FormData();
+            formData.append('chatFile', file);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                // Remove placeholder message
+                messageDisplayArea.lastChild.remove(); 
+
+                if (data.success) {
+                    // Send the file details as a message
+                    handleSendMessage(`Sent file: ${file.name}`, {
+                        fileDir: data.fileDir,
+                        fileMimeType: data.fileMimeType,
+                        originalName: data.originalName
+                    });
+                } else {
+                    alert(`Upload failed: ${data.message}`);
+                }
+            } catch (error) {
+                console.error("File upload error:", error);
+                messageDisplayArea.lastChild.remove(); 
+                alert("File upload failed due to server error.");
+            }
+            // Clear the file input
+            fileInput.value = '';
+        });
     });
 </script> 
 
