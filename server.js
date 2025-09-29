@@ -1,4 +1,4 @@
-// server.js - Complete code with AI Chatbot Logic
+// server.js - Complete code without AI Chatbot, with HighScore Feature
 
 const express = require("express");
 const http = require("http");
@@ -10,19 +10,11 @@ const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const dotenv = require('dotenv');
 
-// Load environment variables from .env file (for MongoDB URI, etc.)
 dotenv.config(); 
 
 // -----------------------------------------------------
-// 🚨 GEMINI AI SETUP (NEW)
+// 🗑️ AI SETUP REMOVED
 // -----------------------------------------------------
-const { GoogleGenAI } = require("@google/genai"); 
-// IMPORTANT: Use environment variable for API Key
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE"; 
-const ai = new GoogleGenAI({ apiKey: AIzaSyA2JdSuMrAQHaOHDPmGxxggpmqKq2GWwTM });
-const model = "gemini-2.5-flash"; // Fast and capable model
-// -----------------------------------------------------
-
 
 const app = express();
 const server = http.createServer(app);
@@ -39,7 +31,6 @@ const io = socketIO(server, {
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, '../public')));
 
 
@@ -61,34 +52,41 @@ const MessageSchema = new mongoose.Schema({
   text: { type: String },
   fileDir: { type: String },
   fileMimeType: { type: String },
-  originalName: { type: String },
+  originalName: { type: String }, 
   timestamp: { type: Date, default: Date.now }
 });
 
+const HighScoreSchema = new mongoose.Schema({
+    username: { type: String, required: true },
+    game: { type: String, required: true, default: 'snake' }, 
+    score: { type: Number, required: true },
+    timestamp: { type: Date, default: Date.now }
+});
+
+
 const User = mongoose.model('User', UserSchema);
 const Message = mongoose.model('Message', MessageSchema);
+const HighScore = mongoose.model('HighScore', HighScoreSchema); 
 
 
 // MULTER FILE UPLOAD CONFIGURATION
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Files will be stored in the 'public/uploads' folder
     cb(null, path.join(__dirname, '../public/uploads'));
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname.replace(/ /g, '_'));
+    cb(null, Date.now() + '-' + file.originalname.replace(/ /g, '_')); 
   }
 });
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // Max 10MB
+    limits: { fileSize: 10 * 1024 * 1024 } 
 }).single('chatFile');
 
 
 // --- API AND AUTHENTICATION CONTROLS ---
 
-// SIGNUP
 app.post('/signup', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -109,7 +107,6 @@ app.post('/signup', async (req, res) => {
     }
 });
 
-// LOGIN
 app.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -127,7 +124,6 @@ app.post('/login', async (req, res) => {
 });
 
 
-// FILE UPLOAD
 app.post('/upload', (req, res) => {
     upload(req, res, async (err) => {
         if (err) {
@@ -139,7 +135,6 @@ app.post('/upload', (req, res) => {
              return res.status(400).json({ success: false, message: "No file selected for upload." });
         }
 
-        // Send back file information
         res.json({ 
             success: true, 
             fileDir: '/uploads/' + req.file.filename,
@@ -151,41 +146,59 @@ app.post('/upload', (req, res) => {
 
 
 // -----------------------------------------------------
-// 🚨 AI CHAT ENDPOINT (NEW)
+// 🗑️ AI CHAT ENDPOINT REMOVED (Deleted /api/chat/ai)
 // -----------------------------------------------------
-app.post('/api/chat/ai', async (req, res) => {
-    const { username, message } = req.body;
-    const AI_BOT_USERNAME = "Aura Bot 🤖"; // Match frontend name
 
-    if (!message) {
-        return res.status(400).json({ success: false, message: "Message is required." });
+
+// -----------------------------------------------------
+// HIGH SCORE API ENDPOINTS (Kept)
+// -----------------------------------------------------
+
+// Submit a new high score
+app.post('/api/scores', async (req, res) => {
+    const { username, score, game = 'snake' } = req.body;
+
+    if (!username || typeof score !== 'number' || score < 0) {
+        return res.status(400).json({ success: false, message: "Invalid score or username." });
     }
 
     try {
-        // Simple prompt to define the bot's persona
-        const prompt = `You are a friendly and helpful chat assistant named '${AI_BOT_USERNAME}' in a social networking app. 
-                        Keep your responses concise and engaging. The user is: ${username}. User's question: "${message}"`;
+        const newScore = new HighScore({ username, game, score });
+        await newScore.save();
+        
+        const personalBest = await HighScore.findOne({ username, game }).sort({ score: -1 });
 
-        const result = await ai.models.generateContent({
-            model: model,
-            contents: prompt,
-        });
-
-        const aiResponse = result.text.trim();
-
-        // Send the AI response back to the client
         res.json({ 
             success: true, 
-            response: aiResponse,
-            sender: AI_BOT_USERNAME // Bot's username
+            message: "Score submitted successfully.", 
+            isNewRecord: personalBest ? (score >= personalBest.score) : true
         });
 
     } catch (error) {
-        console.error("Gemini AI Error:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Sorry, I am unable to process your request right now. Please try again later." 
-        });
+        console.error("Score submission error:", error);
+        res.status(500).json({ success: false, message: "Failed to save score." });
+    }
+});
+
+// Get the top 10 high scores
+app.get('/api/scores', async (req, res) => {
+    const game = req.query.game || 'snake';
+
+    try {
+        const topScores = await HighScore.aggregate([
+            { $match: { game: game } },
+            { $sort: { score: -1, timestamp: 1 } },
+            { $group: { _id: "$username", maxScore: { $first: "$score" } } },
+            { $sort: { maxScore: -1 } },
+            { $limit: 10 },
+            { $project: { _id: 0, username: "$_id", score: "$maxScore" } }
+        ]);
+
+        res.json({ success: true, scores: topScores });
+
+    } catch (error) {
+        console.error("Error fetching high scores:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch scores." });
     }
 });
 // -----------------------------------------------------
@@ -194,7 +207,6 @@ app.post('/api/chat/ai', async (req, res) => {
 // --- ROUTE TO SERVE HTML PAGES ---
 app.get('/:fileName', (req, res) => {
     const fileName = req.params.fileName;
-    // Prevent directory traversal
     if (fileName.includes('..') || !fileName.endsWith('.html')) {
         return res.status(404).sendFile(path.join(__dirname, '../public/404.html'));
     }
@@ -206,27 +218,20 @@ app.get('/:fileName', (req, res) => {
     });
 });
 
-// Route for root directory (serves index.html)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 
 // --- SOCKET.IO CHAT LOGIC ---
-let onlineUsers = {}; // { socketId: username }
+let onlineUsers = {}; 
 
 io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
-
-    // New user joins/logs in
     socket.on('newUser', (username) => {
         onlineUsers[socket.id] = username;
-        // Broadcast the updated user list to everyone
         io.emit('updateUsers', Object.values(onlineUsers));
-        console.log(`User ${username} connected.`);
     });
 
-    // Load Chat History
     socket.on('loadChat', async ({ sender, receiver }) => {
         try {
             const chats = await Message.find({
@@ -235,48 +240,32 @@ io.on('connection', (socket) => {
                     { sender: receiver, receiver: sender }
                 ]
             }).sort({ timestamp: 1 });
-
             socket.emit('chatHistory', chats);
-        } catch (err) {
-            console.error("Error loading chat:", err);
-        }
+        } catch (err) { console.error("Error loading chat:", err); }
     });
 
-    // Handle Private Message
     socket.on('privateMessage', async (msg) => {
         try {
-            // Save message to DB
             const newMessage = new Message({
-                sender: msg.sender,
-                receiver: msg.receiver,
-                text: msg.text,
-                fileDir: msg.fileDir,
-                fileMimeType: msg.fileMimeType,
-                originalName: msg.originalName,
+                sender: msg.sender, receiver: msg.receiver, text: msg.text,
+                fileDir: msg.fileDir, fileMimeType: msg.fileMimeType, originalName: msg.originalName,
             });
             await newMessage.save();
 
-            // Find receiver's socket ID(s)
             const receiverSocketIds = Object.keys(onlineUsers).filter(
                 (socketId) => onlineUsers[socketId] === msg.receiver
             );
 
-            // Emit message to sender and receiver
             socket.emit('privateMessage', newMessage);
             receiverSocketIds.forEach(id => io.to(id).emit('privateMessage', newMessage));
 
-        } catch (err) {
-            console.error("Error saving/sending message:", err);
-        }
+        } catch (err) { console.error("Error saving/sending message:", err); }
     });
 
-    // Disconnect handler
     socket.on('disconnect', () => {
         const username = onlineUsers[socket.id];
         delete onlineUsers[socket.id];
-        // Broadcast the updated user list
         io.emit('updateUsers', Object.values(onlineUsers));
-        console.log(`User ${username} disconnected. Socket ID: ${socket.id}`);
     });
 });
 
@@ -286,4 +275,3 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
