@@ -12,10 +12,6 @@ const dotenv = require('dotenv');
 
 dotenv.config(); 
 
-// -----------------------------------------------------
-// 🗑️ AI SETUP REMOVED
-// -----------------------------------------------------
-
 const app = express();
 const server = http.createServer(app);
 
@@ -44,6 +40,7 @@ mongoose.connect(MONGO_URI)
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true }
+  // 🚨 Note: ProfilePicture field will be added in the next update if you choose
 });
 
 const MessageSchema = new mongoose.Schema({
@@ -72,6 +69,7 @@ const HighScore = mongoose.model('HighScore', HighScoreSchema);
 // MULTER FILE UPLOAD CONFIGURATION
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Files are stored in the public/uploads folder
     cb(null, path.join(__dirname, '../public/uploads'));
   },
   filename: (req, file, cb) => {
@@ -81,7 +79,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 } 
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 }).single('chatFile');
 
 
@@ -146,11 +144,6 @@ app.post('/upload', (req, res) => {
 
 
 // -----------------------------------------------------
-// 🗑️ AI CHAT ENDPOINT REMOVED (Deleted /api/chat/ai)
-// -----------------------------------------------------
-
-
-// -----------------------------------------------------
 // HIGH SCORE API ENDPOINTS (Kept)
 // -----------------------------------------------------
 
@@ -185,10 +178,14 @@ app.get('/api/scores', async (req, res) => {
     const game = req.query.game || 'snake';
 
     try {
+        // Aggregation to find the highest score per user for the game
         const topScores = await HighScore.aggregate([
             { $match: { game: game } },
+            // Sort by score (descending) and timestamp (ascending) to get the best and earliest one
             { $sort: { score: -1, timestamp: 1 } },
+            // Group by username and keep the highest score found
             { $group: { _id: "$username", maxScore: { $first: "$score" } } },
+            // Sort the final list by the max score
             { $sort: { maxScore: -1 } },
             { $limit: 10 },
             { $project: { _id: 0, username: "$_id", score: "$maxScore" } }
@@ -256,7 +253,9 @@ io.on('connection', (socket) => {
                 (socketId) => onlineUsers[socketId] === msg.receiver
             );
 
-            socket.emit('privateMessage', newMessage);
+            // Send message back to sender (for confirmation/display)
+            socket.emit('privateMessage', newMessage); 
+            // Send message to receiver
             receiverSocketIds.forEach(id => io.to(id).emit('privateMessage', newMessage));
 
         } catch (err) { console.error("Error saving/sending message:", err); }
