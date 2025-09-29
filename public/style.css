@@ -1,4 +1,4 @@
-/* style.css - Clean, Unified, and Responsive Code for All Pages (Home, Chat, Videos, etc.) */
+/* style.css - Final Unified Working CSS Code */
 
 /* 1. Global Reset & Variables */
 * {
@@ -8,14 +8,14 @@
 }
 
 :root {
-    --bg-main: #1a1a2e;         /* Main Page Background */
-    --bg-sidebar: #282a36;      /* Sidebar Background */
-    --bg-component: #333642;    /* Card/Input Background */
-    --color-accent: #79a6fe;    /* Primary Action Blue */
-    --color-text: #f0f0f0;      /* Main Text Color */
-    --color-secondary: #bdbdbd; /* Secondary Text Color */
-    --color-border: #44475a;    /* Border/Divider Color */
-    --color-error: #ef4444;     /* Logout/Error Red */
+    --bg-main: #1a1a2e;         
+    --bg-sidebar: #282a36;      
+    --bg-component: #333642;    
+    --color-accent: #79a6fe;    
+    --color-text: #f0f0f0;      
+    --color-secondary: #bdbdbd; 
+    --color-border: #44475a;    
+    --color-error: #ef4444;     
 }
 
 body {
@@ -47,13 +47,12 @@ a {
     box-shadow: 3px 0 15px rgba(0, 0, 0, 0.4);
 }
 
-/* जब JS से .active क्लास जोड़ी जाती है, तो साइडबार छिप जाता है */
+/* JS द्वारा जोड़ा गया क्लास: साइडबार को छिपाता है */
 #sidebar.active { 
     left: -250px; 
 }
 
 #content {
-    /* Side bar ke liye jagah */
     margin-left: 250px; 
     padding: 20px;
     min-height: 100vh;
@@ -61,7 +60,7 @@ a {
     width: calc(100% - 250px);
 }
 
-/* जब sidebar छिपा होता है, content पूरी चौड़ाई लेता है */
+/* JS द्वारा जोड़ा गया क्लास: कंटेंट को पूरी चौड़ाई देता है */
 #content.active {
     margin-left: 0; 
     width: 100%;
@@ -73,12 +72,6 @@ a {
     padding-bottom: 20px;
     text-align: center;
     border-bottom: 1px solid var(--color-border);
-}
-
-.sidebar-header h3 a {
-    color: var(--color-accent); 
-    font-size: 1.5em;
-    font-weight: 700;
 }
 
 .list-unstyled {
@@ -113,8 +106,13 @@ a {
     border-top: 1px solid var(--color-border);
     margin-top: 20px;
 }
+.online-user-item.active { 
+    color: white;
+    font-weight: bold;
+    background-color: #3e414f;
+}
 
-/* 3. Top Navbar (Welcome/Logout/Toggle Button) */
+/* 3. Top Navbar (Toggle Button included) */
 .top-navbar {
     display: flex;
     justify-content: space-between;
@@ -147,10 +145,10 @@ a {
     padding: 8px 12px;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 1.2em; /* Ensure the icon is visible */
+    font-size: 1.2em;
 }
 
-/* 4. Chat Interface Specifics (chat.html) */
+/* 4. Chat Interface Specifics */
 .chat-wrapper {
     display: flex;
     flex-direction: column;
@@ -165,6 +163,32 @@ a {
     border: 1px solid var(--color-border);
     border-radius: 8px;
     margin-bottom: 10px;
+}
+
+/* Message Bubble Styling */
+.message {
+  max-width: 65%;
+  padding: 10px 15px;
+  border-radius: 18px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  margin-bottom: 10px;
+}
+
+.message.sender {
+    align-self: flex-end; 
+    background-color: var(--color-accent); 
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 4px; 
+}
+
+.message.receiver {
+    align-self: flex-start; 
+    background-color: var(--bg-component);
+    color: var(--color-text);
+    margin-right: auto;
+    border-bottom-left-radius: 4px; 
 }
 
 .message-input-area {
@@ -196,27 +220,27 @@ a {
 /* 5. Mobile Responsiveness */
 @media (max-width: 768px) {
     
-    /* Mobile पर sidebar हमेशा छिपा रहता है */
     #sidebar {
         left: -250px; 
         position: absolute; 
     }
     
-    /* Mobile में content पूरी width लेता है */
     #content {
         margin-left: 0;
         width: 100%;
         padding: 10px;
     }
 
-    /* जब sidebar बटन दबे, तब sidebar दिखे */
     #sidebar.active {
         left: 0; 
     }
     
-    /* Mobile पर content को हिलने की ज़रूरत नहीं है */
     #content.active {
         margin-left: 0; 
         width: 100%;
+    }
+    
+    .message {
+        max-width: 85%;
     }
 }
