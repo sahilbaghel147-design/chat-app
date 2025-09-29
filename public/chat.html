@@ -3,512 +3,576 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Snake Game - Leaderboard</title>
+    <title>Chat App - Live Chat</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
-        :root {
-            --color-dark-bg: #1a1a2e;       
-            --color-card-bg: #22223b;       
-            --color-primary: #79a6fe;       
-            --color-text: #f0f4f8;          
-            --color-secondary-text: #b8c2cc;
-            --color-snake: #4CAF50;         
-            --color-food: #FF5722;          
-            --color-button-hover: #5d88ff;  
-        }
-        body {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--color-dark-bg);
+        }
+
+        :root {
+            --bg-main: #f0f2f5;         
+            --bg-sidebar: #ffffff;      
+            --bg-component: #e9ecef;    
+            --color-primary: #007bff;   
+            --color-text: #212529;      
+            --color-secondary: #6c757d; 
+            --color-border: #dee2e6;    
+            --color-error: #dc3545;     
+        }
+
+        body {
+            background: var(--bg-main);
             color: var(--color-text);
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
-        .game-container {
-            padding: 20px 20px 50px;
-            max-width: 900px; /* Increased max width to fit leaderboard */
-            margin: 0 auto;
-        }
-        h1 {
-            color: var(--color-primary);
-            margin-bottom: 5px;
-        }
-        .game-main-content {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-top: 20px;
-        }
-        .game-info {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 20px;
-            font-size: 1.2em;
-        }
-        .score, .high-score {
-            padding: 8px 15px;
-            background: var(--color-card-bg);
-            border-radius: 8px;
-            border: 1px solid var(--color-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* --- Game Canvas Area --- */
-        #gameCanvas {
-            border: 5px solid var(--color-primary);
-            background-color: #000000;
-            display: block;
-            margin: 0; /* Adjusted margin */
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(121, 166, 254, 0.5);
-            width: 400px; 
-            height: 400px;
+        a { text-decoration: none; color: var(--color-primary); }
+
+        /* 2. Main Layout (Sidebar & Content) */
+        #sidebar {
+            width: 250px; 
+            position: fixed;
+            top: 0;
+            left: 0; 
+            height: 100vh;
+            z-index: 1000;
+            background: var(--bg-sidebar); 
+            color: var(--color-text);
+            padding: 20px 0;
+            transition: all 0.3s;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         }
 
-        .controls {
-            margin-top: 30px;
+        @media (max-width: 768px) {
+            #sidebar { left: -250px; position: absolute; }
+            #content { margin-left: 0; width: 100%; }
         }
-        .btn-start {
-            background-color: var(--color-primary);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1.1em;
-            transition: background-color 0.3s;
+
+        #sidebar.active { left: 0; }
+        #content {
+            margin-left: 250px; 
+            padding: 20px;
+            min-height: 100vh;
+            transition: all 0.3s;
+            width: calc(100% - 250px);
+            background: var(--bg-main);
         }
-        .btn-start:hover {
-            background-color: var(--color-button-hover);
-        }
-        .back-button {
-            background: none;
-            color: var(--color-secondary-text);
-            border: none;
-            padding: 10px;
-            cursor: pointer;
-            text-decoration: none;
-            margin-left: 20px;
-        }
-        
-        /* --- Leaderboard Styles --- */
-        .leaderboard {
-            width: 300px;
-            background: var(--color-card-bg);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-            text-align: left;
-        }
-        .leaderboard h3 {
-            color: var(--color-food);
-            border-bottom: 2px solid var(--color-primary);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        .leaderboard ol {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .leaderboard li {
+
+        #content.active { margin-left: 0; width: 100%; }
+
+        /* Sidebar Header & Links */
+        .sidebar-header {
             display: flex;
             justify-content: space-between;
-            padding: 8px 5px;
-            border-bottom: 1px dashed var(--color-secondary-text);
-            font-size: 1.1em;
-        }
-        .leaderboard li:last-child {
-            border-bottom: none;
-        }
-        .rank {
-            font-weight: bold;
-            color: var(--color-primary);
-            width: 30px;
-        }
-        .score-value {
-            color: var(--color-food);
-            font-weight: bold;
+            align-items: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid var(--color-border);
         }
 
-        /* Mobile Controls */
-        .mobile-controls {
-            display: none;
-            margin-top: 20px;
-            justify-content: center;
-            gap: 10px;
-        }
-        .mobile-controls button {
-            background: var(--color-card-bg);
-            color: var(--color-primary);
-            border: 2px solid var(--color-primary);
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            font-size: 1.5em;
-            cursor: pointer;
+        .sidebar-header h3 a { color: var(--color-primary); font-size: 1.5em; font-weight: 700; }
+        #dismiss { font-size: 1.5em; cursor: pointer; color: var(--color-secondary); }
+        #dismiss:hover { color: var(--color-error); }
+
+        .list-unstyled { list-style: none; padding: 0; }
+
+        #sidebar a {
+            color: var(--color-secondary); 
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            font-size: 1em;
+            transition: background 0.2s;
         }
         
-        @media (max-width: 900px) {
-            .game-main-content {
-                flex-direction: column;
-                align-items: center;
-            }
-            .leaderboard {
-                width: 400px;
-                margin-top: 30px;
-            }
+        /* NEW: Profile Link Style */
+        #sidebar li.profile-link a {
+             color: var(--color-text);
+             background: var(--bg-component);
+             font-weight: bold;
+             margin-bottom: 10px;
+             border-left: 5px solid #ffc107; /* Yellow highlight */
         }
-        @media (max-width: 600px) {
-            #gameCanvas, .leaderboard {
-                width: 95%; 
-                height: 350px;
-            }
-            .mobile-controls {
-                display: flex;
-            }
+
+        #sidebar a i { margin-right: 15px; width: 18px; text-align: center; }
+
+        #sidebar a:hover,
+        #sidebar li.active a {
+            color: var(--color-text);
+            background: var(--bg-component); 
+            border-left: 5px solid var(--color-primary);
+        }
+
+        .online-users-list {
+            padding: 20px;
+            border-top: 1px solid var(--color-border);
+            margin-top: 20px;
+        }
+        
+        .online-user-item {
+            padding: 10px 0; 
+            cursor: pointer;
+            color: var(--color-secondary);
+            display: flex; 
+            align-items: center;
+        }
+
+        .online-user-item:hover, .online-user-item.active { 
+            color: var(--color-primary);
+            font-weight: bold;
+            background-color: var(--bg-component);
+            border-radius: 5px;
+        }
+
+        /* 3. Top Navbar */
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--color-border);
+            margin-bottom: 25px;
+        }
+
+        .welcome-text { font-weight: 600; color: var(--color-primary); margin-right: 15px; }
+
+        .btn-danger {
+            background-color: var(--color-error);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #sidebarCollapse {
+            background: var(--color-primary);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background 0.2s;
+        }
+        #sidebarCollapse:hover { background: #0056b3; }
+
+        /* 4. Chat Interface Specifics */
+        .chat-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px); 
+            background: var(--bg-sidebar); 
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .message-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex; 
+            flex-direction: column;
+        }
+
+        /* Message Bubble Styling */
+        .message {
+            max-width: 65%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+        }
+
+        .message.sender {
+            align-self: flex-end; 
+            background-color: var(--color-primary); 
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px; 
+        }
+
+        .message.receiver {
+            align-self: flex-start; 
+            background-color: var(--bg-component);
+            color: var(--color-text);
+            margin-right: auto;
+            border-bottom-left-radius: 4px; 
+        }
+        
+        .message-input-area {
+            display: flex;
+            padding: 5px;
+            background-color: var(--bg-component);
+            border-radius: 25px;
+            align-items: center;
+        }
+
+        #messageInput {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: none;
+            background: transparent;
+            color: var(--color-text);
+            outline: none;
+        }
+
+        .btn-send, .btn-attach {
+            background: none;
+            border: none;
+            color: var(--color-primary);
+            cursor: pointer;
+            font-size: 1.3em;
+            padding: 5px 10px;
+            transition: color 0.2s;
+        }
+        .btn-send:hover, .btn-attach:hover { color: #0056b3; }
+
+        /* 5. Mobile Responsiveness */
+        @media (max-width: 768px) {
+            #sidebar.active { left: 0; }
+            #content { margin-left: 0; width: 100%; padding: 10px; }
+            #content.active { margin-left: 0; width: 100%; }
+            .message { max-width: 85%; }
         }
     </style>
-</head>
+    </head>
 <body>
-    <div class="game-container">
-        <h1>Retro Snake Game 🐍</h1>
-        <p style="color: var(--color-secondary-text);">Use Arrow Keys or Mobile Controls to play!</p>
 
-        <div class="game-info">
-            <div class="score">Score: <span id="currentScore">0</span></div>
-            <div class="high-score">My Best: <span id="highScore">0</span></div>
+<div id="sidebar"> 
+    <div class="sidebar-header">
+        <a href="/index.html"><h3>Chat App</h3></a>
+        <div id="dismiss"><i class="fas fa-times"></i></div>
+    </div>
+    <ul class="list-unstyled components">
+        <li class="profile-link"> 
+            <a href="/profile.html" id="profileLink"><i class="fas fa-user-circle"></i> My Profile</a>
+        </li>
+        <li> <a href="/index.html"><i class="fas fa-home"></i> Home</a> </li>
+        <li class="active"> <a href="/chat.html"><i class="fas fa-comment-alt"></i> Chat</a> </li>
+        <li> <a href="/games.html"><i class="fas fa-gamepad"></i> Games</a> </li>
+        <li> <a href="/videos.html"><i class="fas fa-video"></i> Videos</a> </li>
+        <li> <a href="/about.html"><i class="fas fa-info-circle"></i> About</a> </li>
+    </ul>
+    
+    <div class="online-users-list">
+        <h4>Online Users</h4>
+        <ul id="onlineUsersList">
+            </ul>
+    </div>
+</div>
+<div id="content">
+    
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <button type="button" id="sidebarCollapse" class="btn btn-dark">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <div class="navbar-right">
+             <span class="welcome-text" id="welcomeMessage">Welcome, user!</span>
+             <button id="logoutBtn" class="btn btn-danger">Logout</button>
+        </div>
+    </nav>
+
+    <div class="chat-wrapper">
+        <h2 id="currentChatRecipient">Select a user to chat</h2>
+
+        <div id="messageDisplayArea" class="message-area">
+            <div class="message receiver">Welcome to Chat App! Select an online user to start talking.</div>
         </div>
 
-        <div class="game-main-content">
-            <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div class="message-input-area">
+            
+            <input type="file" id="fileInput" style="display: none;">
+            
+            <button id="attachFileBtn" class="btn-attach" title="Attach File">
+                <i class="fas fa-paperclip"></i>
+            </button>
 
-            <div class="leaderboard">
-                <h3>Top 10 Global Scores</h3>
-                <ol id="leaderboardList">
-                    <li>Loading...</li>
-                </ol>
-            </div>
-        </div>
-
-
-        <div class="controls">
-            <button id="startButton" class="btn-start">Start Game</button>
-            <a href="/index.html" class="back-button">Back to Hub</a>
-        </div>
-        
-        <div class="mobile-controls">
-            <button id="upBtn"><i class="fas fa-arrow-up"></i></button>
-            <button id="leftBtn"><i class="fas fa-arrow-left"></i></button>
-            <button id="downBtn"><i class="fas fa-arrow-down"></i></button>
-            <button id="rightBtn"><i class="fas fa-arrow-right"></i></button>
+            <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
+            
+            <button id="sendMessageBtn" class="btn-send">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
 
     </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONSTANTS ---
+        const username = localStorage.getItem('username');
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Elements and Constants ---
-            const username = localStorage.getItem('username');
-            if (!username) {
-                alert("Please login to play the game and save your score.");
+        // --- ELEMENTS ---
+        const sidebarCollapse = document.getElementById('sidebarCollapse');
+        const dismiss = document.getElementById('dismiss');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const welcomeMessageEl = document.getElementById('welcomeMessage');
+        const onlineUsersList = document.getElementById('onlineUsersList');
+        const currentChatRecipientEl = document.getElementById('currentChatRecipient');
+        const messageDisplayArea = document.getElementById('messageDisplayArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const attachFileBtn = document.getElementById('attachFileBtn');
+        const fileInput = document.getElementById('fileInput');
+        const profileLink = document.getElementById('profileLink');
+
+        let currentChatRecipient = null;
+        const socket = io();
+
+
+        // --- UTILITY FUNCTIONS ---
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            if (sidebar && content) {
+                sidebar.classList.toggle('active');
+                if (window.innerWidth > 768) {
+                    content.classList.toggle('active'); 
+                }
+            }
+        }
+        
+        function displayMessage(sender, text, type, fileDir, fileMimeType, originalName) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${type}`;
+            
+            if (fileDir) {
+                // Handle File Message
+                let content = `<div class="file-content"><strong>File from ${sender}:</strong><br>`;
+                
+                if (fileMimeType && fileMimeType.startsWith('image/')) {
+                    content += `<a href="${fileDir}" target="_blank"><img src="${fileDir}" alt="Image" style="max-width: 100%; height: auto; border-radius: 5px;"></a>`;
+                } else if (fileMimeType && fileMimeType.startsWith('video/')) {
+                    content += `<video controls style="max-width: 100%; height: auto; border-radius: 5px;"><source src="${fileDir}" type="${fileMimeType}"></video>`;
+                } else {
+                    content += `<i class="fas fa-file"></i> <a href="${fileDir}" target="_blank">${originalName || 'Download File'}</a>`;
+                }
+                
+                content += `</div>`;
+                messageElement.innerHTML = content;
+            } else {
+                 // Handle Text Message
+                messageElement.textContent = text;
+            }
+            
+            messageDisplayArea.appendChild(messageElement);
+            // Scroll to bottom
+            messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
+        }
+
+        function loadChatHistory(messages) {
+            messageDisplayArea.innerHTML = ''; // Clear previous messages
+            
+             const welcome = document.createElement('div');
+             welcome.className = 'message receiver';
+             welcome.textContent = 'Welcome back! Starting conversation...';
+             messageDisplayArea.appendChild(welcome);
+
+            messages.forEach(msg => {
+                const type = (msg.sender === username) ? 'sender' : 'receiver';
+                displayMessage(msg.sender, msg.text, type, msg.fileDir, msg.fileMimeType, msg.originalName);
+            });
+             messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
+        }
+        
+        function selectUser(user) {
+            document.querySelectorAll('.online-user-item').forEach(item => item.classList.remove('active'));
+
+            const newUserElement = document.getElementById(`user-${user}`);
+            if (newUserElement) {
+                newUserElement.classList.add('active');
+            }
+
+            currentChatRecipient = user;
+            currentChatRecipientEl.textContent = `Chatting with: ${user}`;
+            
+            messageDisplayArea.innerHTML = ''; 
+            
+            // Load history for real users
+            socket.emit('loadChat', { sender: username, receiver: user });
+        }
+
+
+        // --- INITIAL SETUP AND AUTH ---
+
+        if (!username) {
+             if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('signup.html')) {
+                 window.location.href = '/login.html'; 
+            }
+            return;
+        }
+        
+        if (welcomeMessageEl) {
+            welcomeMessageEl.textContent = `Welcome, ${username}!`;
+        }
+        
+        if (profileLink) {
+            // Set the profile link URL to show the current user's profile
+            profileLink.href = `/profile.html?user=${username}`;
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // Sidebar Toggles
+        if (sidebarCollapse) {
+            sidebarCollapse.addEventListener('click', toggleSidebar);
+        }
+        if (dismiss) {
+            dismiss.addEventListener('click', toggleSidebar); 
+        }
+
+        // Logout
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('username');
                 window.location.href = '/login.html';
+            });
+        }
+        
+        // File Attachment
+        if(attachFileBtn && fileInput) {
+            attachFileBtn.addEventListener('click', () => {
+                if (currentChatRecipient) {
+                    fileInput.click();
+                } else {
+                     alert("Please select a user to chat with first.");
+                }
+            });
+        }
+
+        // --- SOCKET.IO EVENTS ---
+
+        socket.on('connect', () => {
+            socket.emit('newUser', username); 
+        });
+
+        // Update User List (No AI Bot)
+        socket.on('updateUsers', (users) => {
+            onlineUsersList.innerHTML = ''; // Clear current list
+            
+            // Add Real Users (excluding self)
+            users.filter(u => u !== username).forEach(user => {
+                const li = document.createElement('li');
+                li.className = 'online-user-item';
+                li.id = `user-${user}`;
+                li.innerHTML = `<i class="fas fa-circle" style="font-size: 8px; color: #28a745; margin-right: 10px;"></i> ${user}`;
+                onlineUsersList.appendChild(li);
+
+                // Re-apply active class if user was selected
+                if (currentChatRecipient === user) {
+                    li.classList.add('active');
+                }
+
+                li.addEventListener('click', () => selectUser(user));
+            });
+        });
+
+        // Receive Private Message
+        socket.on('privateMessage', (msg) => {
+            if (msg.sender === currentChatRecipient || (msg.sender === username && msg.receiver === currentChatRecipient)) {
+                const type = (msg.sender === username) ? 'sender' : 'receiver';
+                displayMessage(msg.sender, msg.text, type, msg.fileDir, msg.fileMimeType, msg.originalName);
+            }
+        });
+
+        // Receive Chat History
+        socket.on('chatHistory', loadChatHistory);
+
+        // --- MESSAGE SENDING LOGIC ---
+
+        function handleSendMessage(message, fileData = {}) {
+            if (!currentChatRecipient) {
+                alert("Please select a user to chat with first.");
                 return;
             }
-
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d'); 
-            const currentScoreEl = document.getElementById('currentScore');
-            const highScoreEl = document.getElementById('highScore');
-            const startButton = document.getElementById('startButton');
-            const leaderboardList = document.getElementById('leaderboardList'); // NEW ELEMENT
-
-            const gridSize = 20; 
-            const tileCount = 400 / gridSize; // 20 tiles
             
-            let snake = [];
-            let food = {};
-            let velocity = { x: 1, y: 0 };
-            let gameLoop;
-            let gameSpeed = 150; 
-            let score = 0;
-            let isGameOver = true;
-            let nextDirection = null;
-            
-            // Local high score for initial display
-            let localHighScore = localStorage.getItem('snakeHighScore') || 0;
-            highScoreEl.textContent = localHighScore;
-            
-            // --- Helper Function: Draw a single square (tile) ---
-            function drawSquare(x, y, color, shadowBlur = 0, shadowColor = 'transparent') {
-                ctx.fillStyle = color;
-                ctx.shadowColor = shadowColor;
-                ctx.shadowBlur = shadowBlur;
-                ctx.fillRect(x * gridSize, y * gridSize, gridSize - 1, gridSize - 1);
-                ctx.shadowBlur = 0; 
-            }
-            
-            // --- LEADERBOARD FUNCTIONS (NEW) ---
-
-            async function fetchLeaderboard() {
-                leaderboardList.innerHTML = '<li>Loading Scores...</li>';
-                try {
-                    const response = await fetch('/api/scores?game=snake');
-                    const data = await response.json();
-
-                    if (data.success && data.scores.length > 0) {
-                        leaderboardList.innerHTML = ''; // Clear loading message
-                        data.scores.forEach((item, index) => {
-                            const li = document.createElement('li');
-                            const rank = index + 1;
-                            const isCurrentUser = item.username === username;
-                            
-                            // Highlight the current user
-                            if (isCurrentUser) {
-                                li.style.fontWeight = 'bold';
-                                li.style.backgroundColor = 'rgba(121, 166, 254, 0.1)'; 
-                            }
-
-                            li.innerHTML = `
-                                <span class="rank">${rank}.</span>
-                                <span class="username">${item.username}</span>
-                                <span class="score-value">${item.score}</span>
-                            `;
-                            leaderboardList.appendChild(li);
-                        });
-                        
-                        // Update personal best from the server's data
-                        const personalRecord = data.scores.find(s => s.username === username);
-                        if (personalRecord) {
-                            localHighScore = personalRecord.score;
-                            highScoreEl.textContent = localHighScore;
-                            localStorage.setItem('snakeHighScore', localHighScore);
-                        }
-
-                    } else if (data.success) {
-                        leaderboardList.innerHTML = '<li>No scores submitted yet. Be the first!</li>';
-                    } else {
-                         leaderboardList.innerHTML = '<li>Error loading leaderboard.</li>';
-                    }
-                } catch (error) {
-                    console.error("Leaderboard fetch error:", error);
-                    leaderboardList.innerHTML = '<li>Server error. Could not load scores.</li>';
-                }
-            }
-
-            async function submitScore(finalScore) {
-                if (finalScore <= 0) return; // Don't submit zero scores
-
-                try {
-                    const response = await fetch('/api/scores', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username: username, score: finalScore, game: 'snake' })
-                    });
-                    const data = await response.json();
-
-                    if (data.success) {
-                        console.log("Score submitted successfully:", finalScore);
-                        // If it's a new high score, update local storage/display
-                        if (finalScore > localHighScore) {
-                            localHighScore = finalScore;
-                            highScoreEl.textContent = localHighScore;
-                            localStorage.setItem('snakeHighScore', localHighScore);
-                        }
-                        // Refresh the global leaderboard to show the new score
-                        fetchLeaderboard();
-                    } else {
-                        console.error("Failed to submit score:", data.message);
-                    }
-                } catch (error) {
-                    console.error("Score submission failed:", error);
-                }
-            }
-            
-            // --- Game Functions ---
-            
-            function startGame() {
-                if (gameLoop) clearInterval(gameLoop); 
-                
-                isGameOver = false;
-                score = 0;
-                currentScoreEl.textContent = score;
-                snake = [{ x: 10, y: 10 }]; 
-                velocity = { x: 1, y: 0 };
-                gameSpeed = 150;
-                nextDirection = null;
-                
-                placeFood();
-                draw();
-
-                gameLoop = setInterval(gameTick, gameSpeed);
-                startButton.textContent = "Restart Game";
-            }
-            
-            function placeFood() {
-                let newFood;
-                do {
-                    newFood = {
-                        x: Math.floor(Math.random() * tileCount),
-                        y: Math.floor(Math.random() * tileCount)
-                    };
-                    
-                    let onSnake = false;
-                    for (const segment of snake) {
-                        if (segment.x === newFood.x && segment.y === newFood.y) {
-                            onSnake = true;
-                            break;
-                        }
-                    }
-                    if (!onSnake) {
-                        food = newFood;
-                        break;
-                    }
-                } while (true);
-            }
-            
-            function update() {
-                if (isGameOver) return;
-                
-                if (nextDirection) {
-                    velocity = nextDirection;
-                    nextDirection = null;
-                }
-                
-                const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
-                
-                // --- Collision Check ---
-                if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-                    gameOver();
-                    return;
-                }
-                
-                for (const segment of snake) {
-                    if (segment.x === head.x && segment.y === head.y) {
-                        gameOver();
-                        return;
-                    }
-                }
-                
-                snake.unshift(head);
-                
-                // --- Food Check ---
-                if (head.x === food.x && head.y === food.y) {
-                    score++;
-                    currentScoreEl.textContent = score;
-                    placeFood();
-                    
-                    if (gameSpeed > 50) {
-                        gameSpeed -= 3; 
-                        clearInterval(gameLoop);
-                        gameLoop = setInterval(gameTick, gameSpeed);
-                    }
-                } else {
-                    snake.pop();
-                }
-            }
-            
-            function draw() {
-                // Clear Canvas
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw Food
-                drawSquare(food.x, food.y, 'var(--color-food)', 15, 'var(--color-food)');
-                
-                // Draw Snake 
-                snake.forEach((segment, index) => {
-                    let color = 'var(--color-snake)';
-                    let blur = 0;
-                    
-                    if (index === 0) {
-                        color = '#66BB6A'; 
-                        blur = 10;
-                    }
-                    
-                    drawSquare(segment.x, segment.y, color, blur, color);
-                });
-            }
-            
-            function gameOver() {
-                isGameOver = true;
-                clearInterval(gameLoop);
-
-                // 🚨 NEW: Submit the final score to the server
-                submitScore(score);
-                
-                // Draw Game Over message
-                ctx.fillStyle = 'white';
-                ctx.font = "30px Arial";
-                ctx.textAlign = "center";
-                ctx.fillText("GAME OVER!", canvas.width / 2, canvas.height / 2);
-                ctx.font = "18px Arial";
-                ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 35);
-
-                startButton.textContent = "Play Again";
-            }
-            
-            function gameTick() {
-                update();
-                draw();
-            }
-            
-            // --- Event Listeners (Controls) ---
-            
-            document.addEventListener('keydown', (e) => {
-                // ... (Keyboard controls logic remains the same) ...
-                let newVel = { x: velocity.x, y: velocity.y };
-                
-                switch (e.key) {
-                    case 'ArrowUp': case 'w':
-                        if (velocity.y === 0) newVel = { x: 0, y: -1 }; break;
-                    case 'ArrowDown': case 's':
-                        if (velocity.y === 0) newVel = { x: 0, y: 1 }; break;
-                    case 'ArrowLeft': case 'a':
-                        if (velocity.x === 0) newVel = { x: -1, y: 0 }; break;
-                    case 'ArrowRight': case 'd':
-                        if (velocity.x === 0) newVel = { x: 1, y: 0 }; break;
-                    default: return;
-                }
-
-                if ((velocity.x * -1 !== newVel.x) || (velocity.y * -1 !== newVel.y)) {
-                    nextDirection = newVel;
-                }
+            // Emit message via Socket.IO
+            socket.emit('privateMessage', {
+                sender: username,
+                receiver: currentChatRecipient,
+                text: message,
+                fileDir: fileData.fileDir,
+                fileMimeType: fileData.fileMimeType,
+                originalName: fileData.originalName
             });
-
-            // Mobile Controls
-            document.getElementById('upBtn').addEventListener('click', () => {
-                if (velocity.y === 0) nextDirection = { x: 0, y: -1 };
-            });
-            document.getElementById('downBtn').addEventListener('click', () => {
-                if (velocity.y === 0) nextDirection = { x: 0, y: 1 };
-            });
-            document.getElementById('leftBtn').addEventListener('click', () => {
-                if (velocity.x === 0) nextDirection = { x: -1, y: 0 };
-            });
-            document.getElementById('rightBtn').addEventListener('click', () => {
-                if (velocity.x === 0) nextDirection = { x: 1, y: 0 };
-            });
-
-            startButton.addEventListener('click', startGame);
-            
-            // Initial Draw and Leaderboard Load
-            function drawStartScreen() {
-                snake = [{ x: 10, y: 10 }]; 
-                food = { x: 15, y: 5 }; 
-                draw();
-
-                ctx.fillStyle = 'white';
-                ctx.font = "30px Arial";
-                ctx.textAlign = "center";
-                ctx.fillText("Press Start to Play", canvas.width / 2, canvas.height / 2);
+        }
+        
+        // Text Message Send Handler
+        sendMessageBtn.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                handleSendMessage(message);
+                messageInput.value = '';
             }
-            
-            drawStartScreen();
-            fetchLeaderboard(); // Load scores immediately
         });
-    </script>
+
+        // Press Enter to send
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (message) {
+                    handleSendMessage(message);
+                    messageInput.value = '';
+                }
+            }
+        });
+        
+        // File Input Change Handler
+        fileInput.addEventListener('change', async () => {
+            if (!fileInput.files.length) return;
+
+            const file = fileInput.files[0];
+            
+            displayMessage(username, `Uploading file: ${file.name}...`, 'sender');
+            
+            const formData = new FormData();
+            formData.append('chatFile', file);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                // Remove placeholder message
+                messageDisplayArea.lastChild.remove(); 
+
+                if (data.success) {
+                    // Send the file details as a message
+                    handleSendMessage(`Sent file: ${file.name}`, {
+                        fileDir: data.fileDir,
+                        fileMimeType: data.fileMimeType,
+                        originalName: data.originalName
+                    });
+                } else {
+                    alert(`Upload failed: ${data.message}`);
+                }
+            } catch (error) {
+                console.error("File upload error:", error);
+                messageDisplayArea.lastChild.remove(); 
+                alert("File upload failed due to server error.");
+            }
+            fileInput.value = '';
+        });
+    });
+</script> 
+
 </body>
 </html>
