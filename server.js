@@ -23,18 +23,16 @@ const io = socketIO(server, {
 });
 
 // EXPRESS SETTINGS & MIDDLEWARE
-// Use compression middleware (Required fix from previous log)
 app.use(compression()); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serving static files from the 'public' folder (Correct path)
+// Serving static files from the 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));
 
 
 // MONGODB CONNECTION
-// 🚨 NOTE: Using your hardcoded Atlas URI based on your previous image.
-// FIX: Using the correct URI without requiring process.env
+// 🚨 NOTE: Using your hardcoded Atlas URI as requested.
 const MONGO_URI = 'mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority';
 
 mongoose.connect(MONGO_URI)
@@ -204,7 +202,6 @@ app.get('/api/profile/:username', async (req, res) => {
         });
 
     } catch (error) {
-        // FIX: Added proper error logging and response
         console.error("Error fetching profile:", error);
         res.status(500).json({ success: false, message: "Server error fetching profile." });
     }
@@ -268,7 +265,7 @@ app.post('/api/scores', async (req, res) => {
                 $max: { score: score },
                 $set: { timestamp: Date.now() }
             },
-            { new: true, upsert: true } // Return the updated document and create if not found
+            { new: true, upsert: true }
         );
         
         // 2. FIX: Update the bestSnakeScore field in the User document as well
@@ -277,7 +274,7 @@ app.post('/api/scores', async (req, res) => {
         res.json({ 
             success: true, 
             message: "Score submitted successfully.", 
-            isNewRecord: highscoreEntry.score === score // Simple check for new record
+            isNewRecord: highscoreEntry.score === score
         });
     } catch (error) {
         console.error("Score submission error:", error);
