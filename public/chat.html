@@ -21,28 +21,39 @@
         .container {
             display: flex;
             width: 100%;
+            /* Make container take full viewport height on small screens */
+            height: 100vh; 
             max-width: 1200px;
-            margin: 20px auto;
-            border-radius: 15px;
+            margin: 0 auto; /* Removed top/bottom margin for full screen on mobile */
+            border-radius: 0; /* Removed border-radius for full screen */
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            box-shadow: none; /* Removed box-shadow for full screen */
+        }
+        @media (min-width: 768px) {
+            .container {
+                height: 90vh; /* Restore height for desktop */
+                margin: 20px auto;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            }
         }
 
         /* --- Left Side: Sidebar (User List) --- */
         .sidebar {
-            width: 280px; /* Slightly wider */
+            width: 280px; 
             background-color: #3f51b5; /* Primary Blue */
             color: white;
             display: flex;
             flex-direction: column;
-            padding: 0; /* Remove padding from container, add to sections */
+            padding: 0;
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
         }
 
         .sidebar h2 {
             text-align: center;
             padding: 20px 15px;
             margin: 0;
-            background-color: #303f9f; /* Darker header */
+            background-color: #303f9f; 
             font-weight: 600;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
@@ -72,17 +83,20 @@
             margin-bottom: 5px;
             transition: background-color 0.2s, transform 0.1s;
             font-weight: 500;
+            white-space: nowrap; /* Prevent user names from wrapping */
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         #onlineUsersList li:hover {
-            background-color: #5c6bc0; /* Lighter hover */
+            background-color: #5c6bc0; 
             transform: translateY(-1px);
         }
 
-        /* User Status Icon */
+        /* User Status Icon (Green Dot) */
         #onlineUsersList li::before {
             content: '•';
-            color: #4caf50; /* Green for online */
+            color: #4caf50; 
             font-size: 1.5em;
             line-height: 0;
             margin-right: 10px;
@@ -102,7 +116,7 @@
             transition: color 0.2s;
         }
         .nav-links a:hover {
-            color: #ffc107; /* Yellow hover */
+            color: #ffc107; 
         }
         
         .sidebar .user-info {
@@ -111,7 +125,7 @@
         }
         
         #logoutBtn {
-            background-color: #f44336; /* Red */
+            background-color: #f44336; 
             color: white;
             border: none;
             padding: 12px;
@@ -132,22 +146,25 @@
             display: flex;
             flex-direction: column;
             background-color: white;
+            min-width: 300px; /* Ensure chat area doesn't get too small */
         }
         
         .chat-header {
             padding: 15px 20px;
-            background-color: #4fc3f7; /* Light Blue Header */
+            background-color: #4fc3f7; 
             color: #212121;
             font-size: 1.3em;
             font-weight: 600;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0; /* Prevent header from shrinking */
         }
 
         #messageDisplayArea {
             flex-grow: 1;
             padding: 15px 20px;
             overflow-y: auto;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 50 50"><circle cx="25" cy="25" r="1" fill="%23eceff1" opacity="0.5"/></svg>'); /* Subtle background pattern */
+            /* Subtle background pattern */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 50 50"><circle cx="25" cy="25" r="1" fill="%23eceff1" opacity="0.5"/></svg>'); 
         }
         
         .message-input-area {
@@ -156,6 +173,7 @@
             border-top: 1px solid #e0e0e0;
             background-color: #ffffff;
             align-items: center;
+            flex-shrink: 0; /* Prevent input area from shrinking */
         }
 
         .message-input-area input[type="text"] {
@@ -192,18 +210,23 @@
         #attachFileBtn {
             background-color: #90a4ae; 
             color: white;
+            border-radius: 25px; /* Change to rounded rectangle for better usability */
+            width: auto;
+            height: auto;
+            padding: 12px 15px;
         }
         #attachFileBtn:hover {
             background-color: #78909c;
-            transform: scale(1.05);
+            transform: scale(1.02);
         }
 
         #sendMsgBtn {
-            background-color: #4caf50; /* Green Send Button */
+            background-color: #4caf50; 
             color: white;
             border-radius: 25px;
             padding: 10px 15px;
             width: auto;
+            height: auto;
             font-weight: 600;
         }
 
@@ -213,34 +236,29 @@
         }
 
 
-        /* Message Styling (DP FEATURE CSS - Enhanced) */
+        /* Message Styling */
         
-        /* Align message containers */
         .message-container {
             display: flex;
-            margin-bottom: 15px; /* Increased margin */
+            margin-bottom: 15px; 
             align-items: flex-end; 
         }
 
-        /* Receiver messages (left aligned) */
         .message-container.receiver {
             justify-content: flex-start;
         }
 
-        /* Sender messages (right aligned) */
         .message-container.sender {
             justify-content: flex-end;
-            direction: rtl; /* Flip order for bubble/DP */
+            direction: rtl; 
         }
 
-        /* Ensure content direction is LTR inside the container */
         .message-container.sender > * {
             direction: ltr;
         }
 
-        /* Profile Picture Style */
         .message-profile-pic {
-            width: 40px; /* Slightly larger DP */
+            width: 40px; 
             height: 40px;
             border-radius: 50%;
             object-fit: cover;
@@ -250,43 +268,71 @@
             flex-shrink: 0; 
         }
 
-        /* Message Bubble Styling */
         .message-bubble {
-            max-width: 60%; /* Slightly smaller max width */
-            padding: 10px 15px; /* More padding */
+            max-width: 65%; 
+            padding: 10px 15px; 
             border-radius: 20px;
             word-wrap: break-word;
             position: relative;
         }
 
-        /* Sender Name (only for received messages) */
         .sender-name {
             font-size: 0.75em;
-            color: #757575; /* Darker name color */
+            color: #757575; 
             margin-bottom: 2px;
             font-weight: bold;
-            display: block; /* Make it block level */
+            display: block; 
         }
 
-        /* Receiver Bubbles (Left) */
         .message-container.receiver .message-bubble {
-            background-color: #e0e0e0; /* Light Gray for received */
+            background-color: #e0e0e0; 
             color: #212121;
             border-bottom-left-radius: 6px;
         }
 
-        /* Sender Bubbles (Right) */
         .message-container.sender .message-bubble {
-            background-color: #3f51b5; /* Primary Blue for sent */
+            background-color: #3f51b5; 
             color: white;
             border-bottom-right-radius: 6px;
         }
-        
+
+        /* Fix for mobile/small screen layout */
+        @media (max-width: 767px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px; /* Hide sidebar off-screen */
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease-in-out;
+            }
+            .container.menu-open .sidebar {
+                left: 0; /* Show sidebar when menu is open */
+            }
+            .chat-area {
+                width: 100%;
+            }
+            .chat-header {
+                display: flex;
+                align-items: center;
+            }
+            #menuToggle {
+                display: block;
+                margin-right: 15px;
+                color: #212121;
+                font-size: 1.5em;
+                cursor: pointer;
+            }
+        }
+        #menuToggle { display: none; } /* Hide on desktop */
+
+        /* Additional fix for missing send button text/icon */
+        #sendMsgBtn i { margin-left: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="container" id="mainContainer">
         <div class="sidebar">
             <h2 id="welcomeMessage">Aura Hub Chat</h2>
             
@@ -307,7 +353,7 @@
 
         <div class="chat-area">
             <div class="chat-header">
-                <span id="recipientUsername">Select a user to start chatting</span>
+                <i id="menuToggle" class="fas fa-bars"></i> <span id="recipientUsername">Select a user to start chatting</span>
             </div>
 
             <div id="messageDisplayArea">
@@ -337,18 +383,26 @@
         const messageDisplayArea = document.getElementById('messageDisplayArea');
         const fileInput = document.getElementById('fileInput');
         const attachFileBtn = document.getElementById('attachFileBtn');
+        const menuToggle = document.getElementById('menuToggle');
+        const mainContainer = document.getElementById('mainContainer');
 
         let recipient = null;
 
 
         // --- Initial Setup ---
         if (username) {
-            welcomeMessage.textContent = `Hello, ${username}!`;
+            // FIX: Displaying the username correctly
+            welcomeMessage.textContent = `Hello, ${username}!`; 
             socket.emit('newUser', username);
         } else {
             // Redirect to login if username is not found
             window.location.href = '/login.html'; 
         }
+        
+        // --- Mobile Menu Toggle ---
+        menuToggle.addEventListener('click', () => {
+            mainContainer.classList.toggle('menu-open');
+        });
 
         attachFileBtn.addEventListener('click', () => {
             fileInput.click();
@@ -370,16 +424,12 @@
         // 🔄 displayMessage function (Handles profile pictures and files)
         function displayMessage(msg) {
             const messageDisplayArea = document.getElementById('messageDisplayArea');
-            
-            // Determine if the message is from the current user (sender) or the recipient
             const isSender = msg.sender === username;
-            
             const profilePicUrl = msg.senderPicture || '/uploads/default_avatar.png'; 
 
             const messageContainer = document.createElement('div');
             messageContainer.className = `message-container ${isSender ? 'sender' : 'receiver'}`;
 
-            // Create the profile picture element
             const profilePic = document.createElement('img');
             profilePic.className = 'message-profile-pic';
             profilePic.src = profilePicUrl;
@@ -388,7 +438,6 @@
             const messageBubble = document.createElement('div');
             messageBubble.className = 'message-bubble';
 
-            // Add sender name for received messages
             if (!isSender) {
                 const senderName = document.createElement('span');
                 senderName.className = 'sender-name';
@@ -396,16 +445,14 @@
                 messageBubble.appendChild(senderName);
             }
             
-            // Add text or file content
             if (msg.text) {
                 const messageText = document.createElement('p');
-                messageText.style.margin = '0'; // Remove default paragraph margin
+                messageText.style.margin = '0'; 
                 messageText.textContent = msg.text;
                 messageBubble.appendChild(messageText);
             } 
             
             if (msg.fileDir) {
-                // Handle Image Preview
                 if (msg.fileMimeType && msg.fileMimeType.startsWith('image')) {
                      const fileImage = document.createElement('img');
                      fileImage.src = msg.fileDir;
@@ -417,7 +464,6 @@
                      messageBubble.appendChild(fileImage);
                 }
                 
-                // Handle Download Link (for all files)
                 const fileLink = document.createElement('a');
                 fileLink.href = msg.fileDir;
                 fileLink.target = '_blank';
@@ -430,7 +476,6 @@
                 messageBubble.appendChild(fileLink);
             }
 
-            // Append picture and bubble to container
             messageContainer.appendChild(profilePic);
             messageContainer.appendChild(messageBubble);
 
@@ -441,11 +486,10 @@
 
         // --- Event Handlers ---
 
-        function selectUser(user) {
+        function selectUser(user, event) {
             recipient = user;
             recipientElement.textContent = `Chatting with: ${user}`;
             clearChatArea();
-            // Server now sends senderPicture along with chatHistory
             socket.emit('loadChat', { sender: username, receiver: recipient });
             
             // Highlight the selected user
@@ -454,6 +498,11 @@
                 li.style.color = 'white';
             });
             event.currentTarget.style.backgroundColor = '#5c6bc0';
+
+            // Close sidebar on mobile after selecting a user
+            if (window.innerWidth < 768) {
+                mainContainer.classList.remove('menu-open');
+            }
         }
 
         function updateUsers(users) {
@@ -461,7 +510,8 @@
             users.filter(user => user !== username).forEach(user => {
                 const li = document.createElement('li');
                 li.textContent = user;
-                li.onclick = (event) => selectUser(user, event); // Pass event here
+                // Bind the selectUser function with user and event arguments
+                li.onclick = (event) => selectUser(user, event); 
                 onlineUsersList.appendChild(li);
             });
         }
@@ -484,7 +534,7 @@
             if (file) {
                 const formData = new FormData();
                 formData.append('chatFile', file);
-                formData.append('isProfilePic', 'false'); // Not a profile pic
+                formData.append('isProfilePic', 'false');
 
                 try {
                     const response = await fetch('/upload', {
@@ -520,7 +570,7 @@
             socket.emit('privateMessage', message);
 
             messageInput.value = '';
-            fileInput.value = ''; // Clear file input
+            fileInput.value = ''; 
         }
 
         sendMsgBtn.addEventListener('click', handleSendMessage);
@@ -536,7 +586,6 @@
             chats.forEach(displayMessage);
         });
         socket.on('privateMessage', (msg) => {
-            // Only display if the message is for the current active chat or from the current user
             if (msg.sender === recipient || msg.receiver === recipient) {
                 displayMessage(msg);
             }
@@ -549,5 +598,4 @@
         });
     </script>
 </body>
-    </html>
-    
+</html>
