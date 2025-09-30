@@ -212,6 +212,20 @@
     </div>
 
     <script>
+
+        function loadProfile() {
+    const username = localStorage.getItem('username');
+
+    // *** FINAL CHECK: Redirect if username is bad ***
+    if (!username || username === "undefined" || username.trim() === "") {
+        console.log("Profile: Invalid username. Redirecting to login.");
+        window.location.href = '/login.html';
+        return;
+    }
+    
+    // ... (rest of your profile logic)
+        }
+        
         const username = localStorage.getItem('username');
         
         // FIX: Check for the username immediately. If not found or is 'undefined' string, redirect to login.
