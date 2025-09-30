@@ -10,7 +10,7 @@ const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const dotenv = require('dotenv');
 
-dotenv.config(); 
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -24,16 +24,17 @@ const io = socketIO(server, {
 });
 
 // EXPRESS SETTINGS & MIDDLEWARE
-app.use(compression());
+// We use 'compression' here, which required the fix in package.json
+app.use(compression()); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serving static files from the 'public' folder (Correct path for root server.js)
+// Serving static files from the 'public' folder (Correct path)
 app.use(express.static(path.join(__dirname, 'public')));
 
 
 // MONGODB CONNECTION
-// 🚨 NOTE: Using your hardcoded Atlas URI.
+// 🚨 NOTE: Using your hardcoded Atlas URI based on uploaded image.
 const MONGO_URI = 'mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority';
 
 mongoose.connect(MONGO_URI)
@@ -78,11 +79,14 @@ const storage = multer.diskStorage({
     cb(null, path.join(__dirname, 'public/uploads'));
   },
   filename: (req, file, cb) => {
+    // Prefix for profile pictures
     const prefix = req.body.isProfilePic ? 'profile-' : 'chat-';
+    // Replacing spaces with underscores for safer URLs
     cb(null, prefix + Date.now() + '-' + file.originalname.replace(/ /g, '_')); 
   }
 });
 
+// The middleware is named 'uploadMiddleware' to be used in the POST /upload route
 const uploadMiddleware = multer({ 
     storage: storage,
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
@@ -128,8 +132,8 @@ app.post('/login', async (req, res) => {
 });
 
 
+// Route to handle file uploads
 app.post('/upload', (req, res) => {
-    // ⚠️ FIX: Ensure multer middleware is used correctly here
     uploadMiddleware(req, res, async (err) => {
         if (err) {
             console.error("Upload Error:", err);
@@ -149,11 +153,10 @@ app.post('/upload', (req, res) => {
     });
 });
 
-
+// Route to fetch profile data
 app.get('/api/profile/:username', async (req, res) => {
     try {
         const username = req.params.username;
-        // Also fetch high score here
         const user = await User.findOne({ username }).select('username bio profilePicture'); 
         const bestScore = await HighScore.findOne({ username }).sort({ score: -1 }).select('score');
 
@@ -177,8 +180,9 @@ app.get('/api/profile/:username', async (req, res) => {
     }
 });
 
-
+// Route to update profile (Bio and Picture)
 app.post('/api/profile/update', async (req, res) => {
+    // 🚨 FIX: This is the code block that had the previous SyntaxError.
     const { username, bio, profilePicture } = req.body;
     
     if (!username) {
@@ -188,7 +192,6 @@ app.post('/api/profile/update', async (req, res) => {
     try {
         const updateFields = {};
         if (bio !== undefined) {
-            // Trim bio to max length (160) for safety
             updateFields.bio = bio ? bio.substring(0, 160) : ''; 
         }
         if (profilePicture !== undefined) {
@@ -205,7 +208,6 @@ app.post('/api/profile/update', async (req, res) => {
             return res.status(404).json({ success: false, message: "User not found." });
         }
 
-        // Fetch the updated best score as well
         const bestScore = await HighScore.findOne({ username }).sort({ score: -1 }).select('score');
 
         res.json({ 
@@ -225,7 +227,7 @@ app.post('/api/profile/update', async (req, res) => {
     }
 });
 
-// High Score API (Remains unchanged)
+// High Score API
 app.post('/api/scores', async (req, res) => {
     const { username, score, game = 'snake' } = req.body;
     if (!username || typeof score !== 'number' || score < 0) {
@@ -265,7 +267,7 @@ app.get('/api/scores', async (req, res) => {
 });
 
 
-// --- ROUTE TO SERVE HTML PAGES (Remains unchanged) ---
+// --- ROUTE TO SERVE HTML PAGES ---
 app.get('/:fileName', (req, res) => {
     const fileName = req.params.fileName;
     if (fileName.includes('..') || !fileName.endsWith('.html')) {
@@ -369,4 +371,4 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-         
+  
