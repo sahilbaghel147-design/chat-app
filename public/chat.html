@@ -9,11 +9,11 @@
     <link rel="stylesheet" href="style.css"> 
 
     <style>
-        /* Base Reset and Layout */
+        /* BASE & LAYOUT */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', sans-serif; /* A professional-looking font */
             margin: 0;
-            background-color: #e8eaf6; /* Light Lavender Background */
+            background-color: #f0f2f5; /* Light, modern background */
             display: flex;
             min-height: 100vh;
         }
@@ -21,55 +21,58 @@
         .container {
             display: flex;
             width: 100%;
-            /* Make container take full viewport height on small screens */
-            height: 100vh; 
-            max-width: 1200px;
-            margin: 0 auto; /* Removed top/bottom margin for full screen on mobile */
-            border-radius: 0; /* Removed border-radius for full screen */
+            height: 100vh; /* Full viewport height for a pro feel */
+            max-width: 1300px;
+            margin: 0 auto;
+            border-radius: 0; 
             overflow: hidden;
-            box-shadow: none; /* Removed box-shadow for full screen */
+            box-shadow: none; 
         }
         @media (min-width: 768px) {
             .container {
-                height: 90vh; /* Restore height for desktop */
-                margin: 20px auto;
-                border-radius: 15px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+                height: 95vh; 
+                margin: 15px auto;
+                border-radius: 10px;
+                box-shadow: 0 5px 30px rgba(0, 0, 0, 0.1);
             }
         }
 
-        /* --- Left Side: Sidebar (User List) --- */
+        /* --- SIDEBAR (Users and Nav) --- */
         .sidebar {
-            width: 280px; 
-            background-color: #3f51b5; /* Primary Blue */
-            color: white;
+            width: 300px; /* Slightly wider for better user list */
+            background-color: #ffffff; /* Clean White Sidebar */
+            color: #333;
             display: flex;
             flex-direction: column;
-            padding: 0;
-            flex-shrink: 0; /* Prevent sidebar from shrinking */
+            border-right: 1px solid #e0e0e0;
+            transition: transform 0.3s ease-in-out;
         }
 
-        .sidebar h2 {
-            text-align: center;
+        .sidebar-header {
             padding: 20px 15px;
             margin: 0;
-            background-color: #303f9f; 
+            background-color: #4CAF50; /* Green Header */
+            color: white;
+            font-size: 1.2em;
             font-weight: 600;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .sidebar h3 {
             padding: 15px;
             margin: 0;
-            font-size: 1em;
+            font-size: 0.9em;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #c5cae9;
+            color: #757575;
+            border-bottom: 1px solid #eee;
         }
         
         #onlineUsersList {
             list-style: none;
-            padding: 0 10px;
+            padding: 10px 0;
             flex-grow: 1;
             overflow-y: auto;
         }
@@ -77,277 +80,246 @@
         #onlineUsersList li {
             display: flex;
             align-items: center;
-            padding: 12px 10px;
+            padding: 12px 15px;
             cursor: pointer;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            transition: background-color 0.2s, transform 0.1s;
+            border-radius: 0; /* Full width button */
+            margin-bottom: 0;
+            transition: background-color 0.2s;
             font-weight: 500;
-            white-space: nowrap; /* Prevent user names from wrapping */
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
         
         #onlineUsersList li:hover {
-            background-color: #5c6bc0; 
-            transform: translateY(-1px);
+            background-color: #f5f5f5;
         }
-
-        /* User Status Icon (Green Dot) */
-        #onlineUsersList li::before {
-            content: '•';
-            color: #4caf50; 
-            font-size: 1.5em;
-            line-height: 0;
-            margin-right: 10px;
-        }
-
-        /* Navigation and Footer */
+        
+        /* Navigation Links (Moved to be integrated better) */
         .nav-links {
-            padding: 15px;
-            border-top: 1px solid #5c6bc0;
-            text-align: center;
+            padding: 10px 15px;
+            border-top: 1px solid #e0e0e0;
         }
         .nav-links a {
-            color: #e8eaf6;
+            display: block;
+            padding: 10px 0;
+            color: #3F51B5; /* Blue links */
             text-decoration: none;
-            margin: 0 12px;
             font-weight: 500;
             transition: color 0.2s;
         }
         .nav-links a:hover {
-            color: #ffc107; 
+            color: #FF9800; /* Orange hover */
         }
         
+        /* Logout */
         .sidebar .user-info {
             padding: 15px;
-            border-top: 1px solid #5c6bc0;
+            border-top: 1px solid #e0e0e0;
         }
         
         #logoutBtn {
-            background-color: #f44336; 
+            background-color: #F44336; 
             color: white;
             border: none;
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
             width: 100%;
-            transition: background-color 0.2s;
             font-weight: 600;
         }
         
-        #logoutBtn:hover {
-            background-color: #d32f2f;
-        }
-        
-        /* --- Right Side: Chat Area --- */
+        /* --- CHAT AREA --- */
         .chat-area {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            background-color: white;
-            min-width: 300px; /* Ensure chat area doesn't get too small */
+            background-color: #ffffff;
+            min-width: 400px;
         }
         
         .chat-header {
             padding: 15px 20px;
-            background-color: #4fc3f7; 
-            color: #212121;
-            font-size: 1.3em;
+            background-color: #E8EAF6; /* Light Blue Header */
+            color: #333;
+            font-size: 1.2em;
             font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            flex-shrink: 0; /* Prevent header from shrinking */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
         }
 
         #messageDisplayArea {
             flex-grow: 1;
-            padding: 15px 20px;
+            padding: 20px;
             overflow-y: auto;
-            /* Subtle background pattern */
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 50 50"><circle cx="25" cy="25" r="1" fill="%23eceff1" opacity="0.5"/></svg>'); 
+            background-color: #f9f9f9; /* Off-white chat background */
         }
         
+        /* Message Input Area (Smooth look) */
         .message-input-area {
             display: flex;
             padding: 10px 15px;
             border-top: 1px solid #e0e0e0;
             background-color: #ffffff;
             align-items: center;
-            flex-shrink: 0; /* Prevent input area from shrinking */
+            flex-shrink: 0;
         }
 
         .message-input-area input[type="text"] {
             flex-grow: 1;
             padding: 12px 18px;
-            border: 1px solid #bdbdbd;
+            border: 1px solid #cfd8dc;
             border-radius: 25px;
             margin-right: 10px;
             font-size: 1em;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            transition: border-color 0.3s;
         }
 
         .message-input-area input[type="text"]:focus {
-            border-color: #4fc3f7;
-            box-shadow: 0 0 5px rgba(79, 195, 247, 0.5);
+            border-color: #3F51B5;
             outline: none;
         }
         
         .message-input-area button {
             border: none;
-            padding: 12px;
-            border-radius: 50%;
+            padding: 12px 15px;
+            border-radius: 25px;
             cursor: pointer;
             margin-left: 5px;
-            font-size: 1.1em;
-            transition: background-color 0.2s, transform 0.1s;
+            font-size: 1em;
+            font-weight: 500;
+            transition: opacity 0.2s;
             height: 45px;
-            width: 45px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
         
         #attachFileBtn {
-            background-color: #90a4ae; 
+            background-color: #B0BEC5; 
             color: white;
-            border-radius: 25px; /* Change to rounded rectangle for better usability */
-            width: auto;
-            height: auto;
             padding: 12px 15px;
         }
         #attachFileBtn:hover {
-            background-color: #78909c;
-            transform: scale(1.02);
+            background-color: #90A4AE;
         }
 
         #sendMsgBtn {
-            background-color: #4caf50; 
+            background-color: #3F51B5; /* Blue Send Button */
             color: white;
-            border-radius: 25px;
-            padding: 10px 15px;
-            width: auto;
-            height: auto;
-            font-weight: 600;
         }
 
         #sendMsgBtn:hover {
-            background-color: #43a047;
-            transform: scale(1.02);
+            background-color: #303F9F;
         }
-
-
-        /* Message Styling */
         
+        /* Message Styling (DP, Bubbles) */
         .message-container {
             display: flex;
             margin-bottom: 15px; 
             align-items: flex-end; 
         }
 
-        .message-container.receiver {
-            justify-content: flex-start;
-        }
-
-        .message-container.sender {
-            justify-content: flex-end;
-            direction: rtl; 
-        }
-
-        .message-container.sender > * {
-            direction: ltr;
-        }
+        .message-container.receiver { justify-content: flex-start; }
+        .message-container.sender { justify-content: flex-end; direction: rtl; }
+        .message-container.sender > * { direction: ltr; }
 
         .message-profile-pic {
-            width: 40px; 
-            height: 40px;
+            width: 35px; 
+            height: 35px;
             border-radius: 50%;
             object-fit: cover;
             margin: 0 8px; 
-            border: 2px solid #fff; 
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
             flex-shrink: 0; 
         }
 
         .message-bubble {
-            max-width: 65%; 
+            max-width: 60%; 
             padding: 10px 15px; 
-            border-radius: 20px;
+            border-radius: 18px;
             word-wrap: break-word;
-            position: relative;
         }
 
         .sender-name {
-            font-size: 0.75em;
-            color: #757575; 
+            font-size: 0.7em;
+            color: #3F51B5; 
             margin-bottom: 2px;
-            font-weight: bold;
+            font-weight: 600;
             display: block; 
         }
 
         .message-container.receiver .message-bubble {
-            background-color: #e0e0e0; 
-            color: #212121;
+            background-color: #ffffff; 
+            color: #333;
+            border: 1px solid #eceff1;
             border-bottom-left-radius: 6px;
         }
 
         .message-container.sender .message-bubble {
-            background-color: #3f51b5; 
+            background-color: #4CAF50; /* Green for sent messages */
             color: white;
             border-bottom-right-radius: 6px;
         }
-
-        /* Fix for mobile/small screen layout */
+        
+        /* Mobile Hamburger Menu Logic */
+        #menuToggle {
+            display: none; 
+            color: #333; 
+            font-size: 1.4em;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
         @media (max-width: 767px) {
             .sidebar {
                 position: fixed;
                 top: 0;
-                left: -280px; /* Hide sidebar off-screen */
+                left: 0;
                 height: 100vh;
+                transform: translateX(-100%); /* Hide off-screen initially */
                 z-index: 1000;
-                transition: left 0.3s ease-in-out;
+                box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
             }
             .container.menu-open .sidebar {
-                left: 0; /* Show sidebar when menu is open */
+                transform: translateX(0); /* Slide in when open */
             }
             .chat-area {
                 width: 100%;
             }
             .chat-header {
-                display: flex;
-                align-items: center;
+                padding: 10px 15px;
             }
             #menuToggle {
                 display: block;
                 margin-right: 15px;
-                color: #212121;
-                font-size: 1.5em;
-                cursor: pointer;
+            }
+            .sidebar-header {
+                justify-content: flex-start;
+                background-color: #3F51B5; /* Change sidebar header on mobile */
+                color: white;
             }
         }
-        #menuToggle { display: none; } /* Hide on desktop */
-
-        /* Additional fix for missing send button text/icon */
-        #sendMsgBtn i { margin-left: 5px; }
     </style>
 </head>
 <body>
 
     <div class="container" id="mainContainer">
         <div class="sidebar">
-            <h2 id="welcomeMessage">Aura Hub Chat</h2>
+            <div class="sidebar-header">
+                <span id="welcomeMessage">Hello!</span>
+            </div>
             
             <h3>Online Users</h3>
             <ul id="onlineUsersList">
                 </ul>
             
             <div class="nav-links">
-                <a href="/profile.html">Profile</a>
-                <a href="/games.html">Games</a>
-                <a href="/videos.html">Videos</a>
+                <a href="/profile.html"><i class="fas fa-user-circle"></i> Profile</a>
+                <a href="/games.html"><i class="fas fa-gamepad"></i> Games</a>
+                <a href="/videos.html"><i class="fas fa-video"></i> Videos</a>
             </div>
 
             <div class="user-info">
-                <button id="logoutBtn">Logout</button>
+                <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </div>
 
@@ -404,13 +376,26 @@
             mainContainer.classList.toggle('menu-open');
         });
 
+        // Click outside sidebar to close it on mobile
+        messageDisplayArea.addEventListener('click', () => {
+             if (window.innerWidth < 768 && mainContainer.classList.contains('menu-open')) {
+                mainContainer.classList.remove('menu-open');
+            }
+        });
+
+
         attachFileBtn.addEventListener('click', () => {
             fileInput.click();
         });
 
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
+                // Show a brief indication of the selected file
+                messageInput.placeholder = `File: ${fileInput.files[0].name}. Ready to send...`;
+                // Alert for better user feedback
                 alert(`File selected: ${fileInput.files[0].name}. Click Send to upload and share.`);
+            } else {
+                 messageInput.placeholder = `Type your message...`;
             }
         });
 
@@ -470,7 +455,7 @@
                 fileLink.textContent = `🔗 ${msg.originalName || 'Download File'}`;
                 fileLink.style.display = 'block';
                 fileLink.style.marginTop = (msg.text || (msg.fileMimeType && msg.fileMimeType.startsWith('image'))) ? '8px' : '0';
-                fileLink.style.color = isSender ? '#ffc107' : '#3f51b5'; 
+                fileLink.style.color = isSender ? '#FFEB3B' : '#3F51B5'; 
                 fileLink.style.fontWeight = 'bold';
                 
                 messageBubble.appendChild(fileLink);
@@ -495,10 +480,9 @@
             // Highlight the selected user
             document.querySelectorAll('#onlineUsersList li').forEach(li => {
                 li.style.backgroundColor = '';
-                li.style.color = 'white';
             });
-            event.currentTarget.style.backgroundColor = '#5c6bc0';
-
+            event.currentTarget.style.backgroundColor = '#E8EAF6'; // Light highlight
+            
             // Close sidebar on mobile after selecting a user
             if (window.innerWidth < 768) {
                 mainContainer.classList.remove('menu-open');
@@ -510,7 +494,6 @@
             users.filter(user => user !== username).forEach(user => {
                 const li = document.createElement('li');
                 li.textContent = user;
-                // Bind the selectUser function with user and event arguments
                 li.onclick = (event) => selectUser(user, event); 
                 onlineUsersList.appendChild(li);
             });
@@ -532,6 +515,9 @@
             let fileData = {}; 
 
             if (file) {
+                sendMsgBtn.disabled = true;
+                messageInput.placeholder = "Uploading file... Please wait.";
+                
                 const formData = new FormData();
                 formData.append('chatFile', file);
                 formData.append('isProfilePic', 'false');
@@ -557,6 +543,9 @@
                     console.error("Upload error:", error);
                     alert("File upload error.");
                     return;
+                } finally {
+                    sendMsgBtn.disabled = false;
+                    messageInput.placeholder = "Type your message...";
                 }
             }
 
@@ -571,6 +560,7 @@
 
             messageInput.value = '';
             fileInput.value = ''; 
+            messageInput.placeholder = "Type your message...";
         }
 
         sendMsgBtn.addEventListener('click', handleSendMessage);
@@ -598,4 +588,5 @@
         });
     </script>
 </body>
-</html>
+    </html>
+    
