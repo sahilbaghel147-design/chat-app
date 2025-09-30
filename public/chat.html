@@ -493,6 +493,33 @@
     </div>
 
     <script>
+// Get username from local storage
+let username = localStorage.getItem('username');
+
+// *** FINAL FIX FOR 'undefined' ***
+// This checks if the value is null, empty string, OR the literal string "undefined"
+if (!username || username === "undefined" || username.trim() === "") {
+    // If invalid, clear everything and redirect
+    console.log("Invalid username found in localStorage. Redirecting to login.");
+    localStorage.clear(); 
+    window.location.href = "/login.html";
+} else {
+    // Trim and use the valid username
+    username = username.trim(); 
+    
+    // Update the UI element (e.g., the welcome message in the sidebar)
+    // आपको यह line बदलनी होगी, यह आपके HTML structure पर निर्भर करती है
+    const sidebarWelcomeElement = document.getElementById('sidebar-welcome') || document.querySelector('.welcome-message'); 
+    if (sidebarWelcomeElement) {
+        sidebarWelcomeElement.textContent = `Hello, ${username}!`; 
+    }
+
+    // Connect to Socket.IO and register the user
+    // ... (बाकी chat setup code)
+    socket.emit('register', username); 
+}
+        
+        
         // --- INITIALIZATION ---
         // FIX: Ensure username is set to null/undefined if it's the string 'undefined'
         let username = localStorage.getItem('username');
