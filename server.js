@@ -201,25 +201,7 @@ app.post('/api/profile/update', async (req, res) => {
 });
 
 
-app.post('/api/scores', async (req, res) => {
-    const { username, score, game = 'snake' } = req.body;
-    if (!username || typeof score !== 'number' || score < 0) {
-        return res.status(400).json({ success: false, message: "Invalid score or username." });
-    }
-    try {
-        const newScore = new HighScore({ username, game, score });
-        await newScore.save();
-        const personalBest = await HighScore.findOne({ username, game }).sort({ score: -1 });
-        res.json({ 
-            success: true, 
-            message: "Score submitted successfully.", 
-            isNewRecord: personalBest ? (score >= personalBest.score) : true
-        });
-    } catch (error) {
-        console.error("Score submission error:", error);
-        res.status(500).json({ success: false, message: "Failed to save score." });
-    }
-});
+
 
 app.get('/api/scores', async (req, res) => {
     const game = req.query.game || 'snake';
@@ -232,7 +214,33 @@ app.get('/api/scores', async (req, res) => {
             { $limit: 10 },
             { $project: { _id: 0, username: "$_id", score: "$maxScore" } }
         ]);
-        res.json({ success: true, scores: topScores });
+        res.json({ suc// server.js (partially updated)
+
+app.post('/api/profile/update', async (req, res) => {
+    const { username, bio, profilePicture } = req.body; // <-- (A) Data received
+    
+    // ... (omitted checks)
+
+    try {
+        const updateFields = {};
+        if (bio !== undefined) {
+            updateFields.bio = bio.substring(0, 160); 
+        }
+        if (profilePicture !== undefined) { // <-- (B) Check for profilePicture
+            updateFields.profilePicture = profilePicture; // <-- (C) Update path
+        }
+
+        const user = await User.findOneAndUpdate(
+            { username: username }, 
+            { $set: updateFields },
+            { new: true, runValidators: true }
+        ).select('username bio profilePicture');
+
+        // ... (omitted response)
+    } 
+    // ...
+});
+cess: true, scores: topScores });
     } catch (error) {
         console.error("Error fetching high scores:", error);
         res.status(500).json({ success: false, message: "Failed to fetch scores." });
@@ -345,3 +353,4 @@ server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
     
+
