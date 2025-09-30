@@ -4,589 +4,624 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Hub - Chat</title>
+    <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
-    <link rel="stylesheet" href="style.css"> 
-
     <style>
-        /* BASE & LAYOUT */
+        :root {
+            --primary-color: #3F51B5; /* Indigo */
+            --secondary-color: #4CAF50; /* Green */
+            --background-color: #f0f2f5;
+            --chat-bg: #E8EAF6; /* Light Indigo */
+            --drawer-bg: #2C3E50; /* Dark Blue-Gray */
+            --text-color: #333;
+            --online-dot: #4CAF50;
+        }
+
+        /* General Reset and Font */
         body {
-            font-family: 'Poppins', sans-serif; /* A professional-looking font */
+            font-family: 'Poppins', sans-serif;
             margin: 0;
-            background-color: #f0f2f5; /* Light, modern background */
+            padding: 0;
+            background-color: var(--background-color);
             display: flex;
-            min-height: 100vh;
-        }
-
-        .container {
-            display: flex;
-            width: 100%;
-            height: 100vh; /* Full viewport height for a pro feel */
-            max-width: 1300px;
-            margin: 0 auto;
-            border-radius: 0; 
+            height: 100vh;
             overflow: hidden;
-            box-shadow: none; 
-        }
-        @media (min-width: 768px) {
-            .container {
-                height: 95vh; 
-                margin: 15px auto;
-                border-radius: 10px;
-                box-shadow: 0 5px 30px rgba(0, 0, 0, 0.1);
-            }
+            color: var(--text-color);
         }
 
-        /* --- SIDEBAR (Users and Nav) --- */
-        .sidebar {
-            width: 300px; /* Slightly wider for better user list */
-            background-color: #ffffff; /* Clean White Sidebar */
-            color: #333;
+        /* Drawer (Left Panel) Styling */
+        .drawer {
+            width: 280px;
+            background-color: var(--drawer-bg);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: 100%;
+            left: -280px; /* Initially hidden */
+            transition: left 0.3s ease;
+            z-index: 100;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #e0e0e0;
-            transition: transform 0.3s ease-in-out;
         }
 
-        .sidebar-header {
-            padding: 20px 15px;
+        .drawer.open {
+            left: 0;
+        }
+
+        .drawer-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .drawer-header h2 {
             margin: 0;
-            background-color: #4CAF50; /* Green Header */
+            font-size: 1.5em;
+            color: var(--secondary-color);
+        }
+
+        .drawer-nav ul {
+            list-style: none;
+            padding: 0 20px;
+            margin: 0 0 20px 0;
+        }
+
+        .drawer-nav li {
+            margin-bottom: 5px;
+        }
+
+        .drawer-nav a {
+            display: block;
+            padding: 10px 15px;
+            text-decoration: none;
             color: white;
-            font-size: 1.2em;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            font-weight: 500;
+        }
+
+        .drawer-nav a:hover, .drawer-nav a.active {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .drawer-nav i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Online Users Section */
+        .online-users-container {
+            flex-grow: 1;
+            padding: 0 20px;
+            overflow-y: auto;
         }
         
-        .sidebar h3 {
-            padding: 15px;
-            margin: 0;
-            font-size: 0.9em;
+        .online-users-container h3 {
+            font-size: 1em;
+            color: #ccc;
+            margin: 0 0 10px 0;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #757575;
-            border-bottom: 1px solid #eee;
         }
         
         #onlineUsersList {
             list-style: none;
-            padding: 10px 0;
-            flex-grow: 1;
-            overflow-y: auto;
+            padding: 0;
         }
-        
+
         #onlineUsersList li {
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            background-color: rgba(255, 255, 255, 0.05);
+            transition: background-color 0.2s;
             display: flex;
             align-items: center;
-            padding: 12px 15px;
-            cursor: pointer;
-            border-radius: 0; /* Full width button */
-            margin-bottom: 0;
-            transition: background-color 0.2s;
-            font-weight: 500;
+            position: relative;
         }
-        
+
         #onlineUsersList li:hover {
-            background-color: #f5f5f5;
+            background-color: rgba(255, 255, 255, 0.15);
         }
         
-        /* Navigation Links (Moved to be integrated better) */
-        .nav-links {
-            padding: 10px 15px;
-            border-top: 1px solid #e0e0e0;
-        }
-        .nav-links a {
-            display: block;
-            padding: 10px 0;
-            color: #3F51B5; /* Blue links */
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        .nav-links a:hover {
-            color: #FF9800; /* Orange hover */
-        }
-        
-        /* Logout */
-        .sidebar .user-info {
-            padding: 15px;
-            border-top: 1px solid #e0e0e0;
-        }
-        
-        #logoutBtn {
-            background-color: #F44336; 
+        #onlineUsersList li.active-chat {
+            background-color: var(--primary-color);
             color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
             font-weight: 600;
         }
-        
-        /* --- CHAT AREA --- */
-        .chat-area {
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--online-dot);
+            border-radius: 50%;
+            margin-right: 8px;
+            display: inline-block;
+        }
+
+        .user-pic-small {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Main Chat Area */
+        .main-content {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            background-color: #ffffff;
-            min-width: 400px;
+            transition: margin-left 0.3s ease;
+            margin-left: 0; /* Adjust for drawer open state */
+            padding-top: 60px; /* Space for fixed header */
         }
         
+        /* Fixed Top Header */
         .chat-header {
-            padding: 15px 20px;
-            background-color: #E8EAF6; /* Light Blue Header */
-            color: #333;
-            font-size: 1.2em;
-            font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            flex-shrink: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: var(--primary-color);
+            color: white;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 50;
         }
 
-        #messageDisplayArea {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background-color: #f9f9f9; /* Off-white chat background */
-        }
-        
-        /* Message Input Area (Smooth look) */
-        .message-input-area {
-            display: flex;
-            padding: 10px 15px;
-            border-top: 1px solid #e0e0e0;
-            background-color: #ffffff;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .message-input-area input[type="text"] {
-            flex-grow: 1;
-            padding: 12px 18px;
-            border: 1px solid #cfd8dc;
-            border-radius: 25px;
-            margin-right: 10px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-        }
-
-        .message-input-area input[type="text"]:focus {
-            border-color: #3F51B5;
-            outline: none;
-        }
-        
-        .message-input-area button {
-            border: none;
-            padding: 12px 15px;
-            border-radius: 25px;
-            cursor: pointer;
-            margin-left: 5px;
-            font-size: 1em;
-            font-weight: 500;
-            transition: opacity 0.2s;
-            height: 45px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        #attachFileBtn {
-            background-color: #B0BEC5; 
-            color: white;
-            padding: 12px 15px;
-        }
-        #attachFileBtn:hover {
-            background-color: #90A4AE;
-        }
-
-        #sendMsgBtn {
-            background-color: #3F51B5; /* Blue Send Button */
-            color: white;
-        }
-
-        #sendMsgBtn:hover {
-            background-color: #303F9F;
-        }
-        
-        /* Message Styling (DP, Bubbles) */
-        .message-container {
-            display: flex;
-            margin-bottom: 15px; 
-            align-items: flex-end; 
-        }
-
-        .message-container.receiver { justify-content: flex-start; }
-        .message-container.sender { justify-content: flex-end; direction: rtl; }
-        .message-container.sender > * { direction: ltr; }
-
-        .message-profile-pic {
-            width: 35px; 
-            height: 35px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 0 8px; 
-            flex-shrink: 0; 
-        }
-
-        .message-bubble {
-            max-width: 60%; 
-            padding: 10px 15px; 
-            border-radius: 18px;
-            word-wrap: break-word;
-        }
-
-        .sender-name {
-            font-size: 0.7em;
-            color: #3F51B5; 
-            margin-bottom: 2px;
-            font-weight: 600;
-            display: block; 
-        }
-
-        .message-container.receiver .message-bubble {
-            background-color: #ffffff; 
-            color: #333;
-            border: 1px solid #eceff1;
-            border-bottom-left-radius: 6px;
-        }
-
-        .message-container.sender .message-bubble {
-            background-color: #4CAF50; /* Green for sent messages */
-            color: white;
-            border-bottom-right-radius: 6px;
-        }
-        
-        /* Mobile Hamburger Menu Logic */
         #menuToggle {
-            display: none; 
-            color: #333; 
-            font-size: 1.4em;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
             cursor: pointer;
             padding: 5px;
         }
         
+        .chat-title {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            margin-left: 20px;
+        }
+        
+        .chat-title h2 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        
+        .chat-title img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+            border: 2px solid white;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-actions button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-left: 15px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .header-actions button:hover {
+             opacity: 1;
+        }
+        
+        /* Message Display Area */
+        #messageDisplayArea {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: var(--chat-bg);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .empty-chat-message {
+            margin: auto;
+            font-size: 1.5em;
+            color: #607D8B; /* Blue Grey */
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Single Message Styling */
+        .message {
+            max-width: 60%;
+            margin: 5px 0;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.4;
+            position: relative;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message-sender {
+            margin-left: auto;
+            background-color: var(--primary-color);
+            color: white;
+            border-top-right-radius: 0;
+            flex-direction: row-reverse;
+        }
+
+        .message-receiver {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-top-left-radius: 0;
+        }
+        
+        .message-content {
+            flex-grow: 1;
+            padding: 0 5px;
+        }
+
+        .message-sender .message-content {
+            text-align: right;
+            padding-right: 0;
+            padding-left: 5px;
+        }
+
+        .message-timestamp {
+            display: block;
+            font-size: 0.7em;
+            margin-top: 5px;
+            opacity: 0.6;
+            text-align: right;
+        }
+
+        /* Chat DP in Messages */
+        .message-dp {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            margin: 0 8px 0 0;
+        }
+        .message-sender .message-dp {
+            margin: 0 0 0 8px;
+        }
+        
+        /* File Message Styling */
+        .file-attachment {
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: var(--primary-color);
+            padding: 8px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 5px;
+            font-weight: 500;
+            border: 1px solid #ccc;
+        }
+        
+        .message-sender .file-attachment {
+            background-color: #E0E7FF;
+            color: var(--primary-color);
+        }
+        
+        .file-attachment i {
+            margin-right: 8px;
+            font-size: 1.2em;
+        }
+        
+        /* Input Area */
+        .chat-input-area {
+            display: flex;
+            padding: 15px 20px;
+            background-color: white;
+            border-top: 1px solid #ddd;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
+
+        #messageInput {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-size: 1em;
+            margin-right: 10px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-actions {
+            display: flex;
+            align-items: center;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+
+        #attachFileBtn, #sendMessageBtn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        #attachFileBtn {
+            background-color: #FF9800; /* Orange for attachment */
+        }
+        
+        #sendMessageBtn:hover {
+            background-color: #388E3C;
+        }
+
+        #attachFileBtn:hover {
+            background-color: #F57C00;
+        }
+        
+        /* File upload status display */
+        #fileStatus {
+            margin-left: 10px;
+            color: #FF9800;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        /* Responsive Adjustments */
+        @media (min-width: 768px) {
+            .drawer {
+                position: relative;
+                left: 0 !important; /* Always visible on large screens */
+                height: 100%;
+            }
+
+            .main-content {
+                margin-left: 0; 
+                padding-top: 0;
+            }
+            
+            .chat-header {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                box-shadow: none;
+                z-index: 1;
+                margin-bottom: 0;
+            }
+            
+            #menuToggle {
+                display: none; /* Hide menu button on desktop */
+            }
+        }
+        
         @media (max-width: 767px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100vh;
-                transform: translateX(-100%); /* Hide off-screen initially */
-                z-index: 1000;
-                box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-            }
-            .container.menu-open .sidebar {
-                transform: translateX(0); /* Slide in when open */
-            }
-            .chat-area {
+            .main-content {
                 width: 100%;
             }
-            .chat-header {
-                padding: 10px 15px;
-            }
-            #menuToggle {
-                display: block;
-                margin-right: 15px;
-            }
-            .sidebar-header {
-                justify-content: flex-start;
-                background-color: #3F51B5; /* Change sidebar header on mobile */
-                color: white;
+            .drawer {
+                width: 70%;
             }
         }
     </style>
 </head>
 <body>
 
-    <div class="container" id="mainContainer">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <span id="welcomeMessage">Hello!</span>
-            </div>
-            
-            <h3>Online Users</h3>
+    <div class="drawer" id="chatDrawer">
+        <div class="drawer-header">
+            <h2 id="welcomeMessage">Hello, user!</h2>
+            <p style="font-size: 0.8em; color: #aaa;">Aura Hub Chat</p>
+        </div>
+        
+        <nav class="drawer-nav">
+            <ul>
+                <li><a href="/index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/chat.html" class="active"><i class="fas fa-comment"></i> Chat</a></li>
+                <li><a href="/snake.html"><i class="fas fa-gamepad"></i> Games</a></li>
+                <li><a href="/profile.html"><i class="fas fa-user-circle"></i> Profile</a></li>
+                </ul>
+        </nav>
+
+        <div class="online-users-container">
+            <h3>ONLINE USERS</h3>
             <ul id="onlineUsersList">
                 </ul>
-            
-            <div class="nav-links">
-                <a href="/profile.html"><i class="fas fa-user-circle"></i> Profile</a>
-                <a href="/games.html"><i class="fas fa-gamepad"></i> Games</a>
-                <a href="/videos.html"><i class="fas fa-video"></i> Videos</a>
-            </div>
+        </div>
+        
+        <div style="padding: 20px;">
+            <button onclick="logout()" style="background-color: #E74C3C; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: 600;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
 
-            <div class="user-info">
-                <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    <div class="main-content">
+        
+        <div class="chat-header">
+            <button id="menuToggle"><i class="fas fa-bars"></i></button>
+            <div class="chat-title">
+                <img id="recipientPicHeader" src="/uploads/default_avatar.png" alt="DP">
+                <h2 id="recipientNameHeader">Select a user to start chatting</h2>
+            </div>
+            <div class="header-actions">
+                <button onclick="logout()" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+                <button onclick="window.location.href='/profile.html'" title="Profile"><i class="fas fa-user-circle"></i></button>
             </div>
         </div>
 
-        <div class="chat-area">
-            <div class="chat-header">
-                <i id="menuToggle" class="fas fa-bars"></i> <span id="recipientUsername">Select a user to start chatting</span>
-            </div>
+        <div id="messageDisplayArea">
+             <p class="empty-chat-message">← Select a user from the side menu to begin conversation.</p>
+        </div>
 
-            <div id="messageDisplayArea">
-                </div>
-
-            <div class="message-input-area">
-                <input type="text" id="messageInput" placeholder="Type your message...">
-                
-                <input type="file" id="fileInput" style="display: none;">
-                <button id="attachFileBtn" title="Attach File"><i class="fas fa-paperclip"></i></button>
-
-                <button id="sendMsgBtn">Send <i class="fas fa-paper-plane"></i></button>
+        <div class="chat-input-area">
+            <input type="text" id="messageInput" placeholder="Type a message..." disabled>
+            
+            <input type="file" id="fileInput" name="chatFile">
+            
+            <div class="input-actions">
+                 <span id="fileStatus"></span>
+                <button id="attachFileBtn" title="Attach File" disabled><i class="fas fa-paperclip"></i></button>
+                <button id="sendMessageBtn" disabled><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    
     <script>
-        const socket = io();
-        const username = localStorage.getItem('username');
-        const recipientElement = document.getElementById('recipientUsername');
-        const welcomeMessage = document.getElementById('welcomeMessage');
-        const onlineUsersList = document.getElementById('onlineUsersList');
-        const messageInput = document.getElementById('messageInput');
-        const sendMsgBtn = document.getElementById('sendMsgBtn');
-        const messageDisplayArea = document.getElementById('messageDisplayArea');
-        const fileInput = document.getElementById('fileInput');
-        const attachFileBtn = document.getElementById('attachFileBtn');
-        const menuToggle = document.getElementById('menuToggle');
-        const mainContainer = document.getElementById('mainContainer');
+        // --- INITIALIZATION ---
+        // FIX: Ensure username is set to null/undefined if it's the string 'undefined'
+        let username = localStorage.getItem('username');
 
-        let recipient = null;
-
-
-        // --- Initial Setup ---
-        if (username) {
-            // FIX: Displaying the username correctly
-            welcomeMessage.textContent = `Hello, ${username}!`; 
-            socket.emit('newUser', username);
-        } else {
-            // Redirect to login if username is not found
-            window.location.href = '/login.html'; 
+        // FIX: If the username is a placeholder 'undefined' string, treat it as not logged in
+        if (username === 'undefined' || !username) {
+            console.log("Username not found or is 'undefined', clearing storage and redirecting.");
+            localStorage.removeItem('username'); // Clear bad data
+            window.location.href = '/login.html';
+            // return; // We keep running to set up elements, but the chat will be mostly disabled
         }
         
-        // --- Mobile Menu Toggle ---
-        menuToggle.addEventListener('click', () => {
-            mainContainer.classList.toggle('menu-open');
-        });
+        // --- DOM Elements ---
+        const menuToggle = document.getElementById('menuToggle');
+        const chatDrawer = document.getElementById('chatDrawer');
+        const welcomeMessageEl = document.getElementById('welcomeMessage');
+        const onlineUsersList = document.getElementById('onlineUsersList');
+        const messageInput = document.getElementById('messageInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const messageDisplayArea = document.getElementById('messageDisplayArea');
+        const attachFileBtn = document.getElementById('attachFileBtn');
+        const fileInput = document.getElementById('fileInput');
+        const fileStatus = document.getElementById('fileStatus');
+        const recipientNameHeader = document.getElementById('recipientNameHeader');
+        const recipientPicHeader = document.getElementById('recipientPicHeader');
+        
+        // --- State Variables ---
+        let socket = null;
+        let currentRecipient = null;
+        let fileToUpload = null;
+        let onlineUsersMap = {}; // To store usernames and their profile pictures
 
-        // Click outside sidebar to close it on mobile
-        messageDisplayArea.addEventListener('click', () => {
-             if (window.innerWidth < 768 && mainContainer.classList.contains('menu-open')) {
-                mainContainer.classList.remove('menu-open');
-            }
-        });
-
-
-        attachFileBtn.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                // Show a brief indication of the selected file
-                messageInput.placeholder = `File: ${fileInput.files[0].name}. Ready to send...`;
-                // Alert for better user feedback
-                alert(`File selected: ${fileInput.files[0].name}. Click Send to upload and share.`);
-            } else {
-                 messageInput.placeholder = `Type your message...`;
-            }
-        });
-
-
-        // --- Core Functions ---
-
-        function clearChatArea() {
-            messageDisplayArea.innerHTML = '';
+        // --- Utility Functions ---
+        function formatTimestamp(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
-
-        // 🔄 displayMessage function (Handles profile pictures and files)
-        function displayMessage(msg) {
-            const messageDisplayArea = document.getElementById('messageDisplayArea');
-            const isSender = msg.sender === username;
-            const profilePicUrl = msg.senderPicture || '/uploads/default_avatar.png'; 
-
-            const messageContainer = document.createElement('div');
-            messageContainer.className = `message-container ${isSender ? 'sender' : 'receiver'}`;
-
-            const profilePic = document.createElement('img');
-            profilePic.className = 'message-profile-pic';
-            profilePic.src = profilePicUrl;
-            profilePic.alt = `${msg.sender}'s profile picture`;
-
-            const messageBubble = document.createElement('div');
-            messageBubble.className = 'message-bubble';
-
-            if (!isSender) {
-                const senderName = document.createElement('span');
-                senderName.className = 'sender-name';
-                senderName.textContent = msg.sender;
-                messageBubble.appendChild(senderName);
-            }
-            
-            if (msg.text) {
-                const messageText = document.createElement('p');
-                messageText.style.margin = '0'; 
-                messageText.textContent = msg.text;
-                messageBubble.appendChild(messageText);
-            } 
-            
-            if (msg.fileDir) {
-                if (msg.fileMimeType && msg.fileMimeType.startsWith('image')) {
-                     const fileImage = document.createElement('img');
-                     fileImage.src = msg.fileDir;
-                     fileImage.alt = 'Attached Image';
-                     fileImage.style.maxWidth = '100%';
-                     fileImage.style.maxHeight = '200px';
-                     fileImage.style.borderRadius = '8px';
-                     fileImage.style.marginTop = msg.text ? '8px' : '0';
-                     messageBubble.appendChild(fileImage);
-                }
-                
-                const fileLink = document.createElement('a');
-                fileLink.href = msg.fileDir;
-                fileLink.target = '_blank';
-                fileLink.textContent = `🔗 ${msg.originalName || 'Download File'}`;
-                fileLink.style.display = 'block';
-                fileLink.style.marginTop = (msg.text || (msg.fileMimeType && msg.fileMimeType.startsWith('image'))) ? '8px' : '0';
-                fileLink.style.color = isSender ? '#FFEB3B' : '#3F51B5'; 
-                fileLink.style.fontWeight = 'bold';
-                
-                messageBubble.appendChild(fileLink);
-            }
-
-            messageContainer.appendChild(profilePic);
-            messageContainer.appendChild(messageBubble);
-
-            messageDisplayArea.appendChild(messageContainer);
+        
+        function scrollChatToBottom() {
             messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
         }
 
-
-        // --- Event Handlers ---
-
-        function selectUser(user, event) {
-            recipient = user;
-            recipientElement.textContent = `Chatting with: ${user}`;
-            clearChatArea();
-            socket.emit('loadChat', { sender: username, receiver: recipient });
+        // --- Chat UI Rendering ---
+        function appendMessage(msg, isSender, senderPicture) {
+            const messageEl = document.createElement('div');
+            messageEl.classList.add('message');
+            messageEl.classList.add(isSender ? 'message-sender' : 'message-receiver');
             
-            // Highlight the selected user
+            // Profile Picture
+            const dpEl = document.createElement('img');
+            dpEl.classList.add('message-dp');
+            dpEl.src = senderPicture || '/uploads/default_avatar.png';
+            dpEl.alt = 'DP';
+            
+            // Content container
+            const contentEl = document.createElement('div');
+            contentEl.classList.add('message-content');
+
+            if (msg.text) {
+                contentEl.innerHTML += `<p style="margin: 0;">${msg.text}</p>`;
+            }
+
+            if (msg.fileDir && msg.originalName) {
+                const fileLink = document.createElement('a');
+                fileLink.classList.add('file-attachment');
+                fileLink.href = msg.fileDir;
+                fileLink.target = '_blank';
+                fileLink.download = msg.originalName;
+                fileLink.innerHTML = `<i class="${getFileIcon(msg.fileMimeType)}"></i> ${msg.originalName}`;
+                contentEl.appendChild(fileLink);
+            }
+
+            // Timestamp
+            contentEl.innerHTML += `<span class="message-timestamp">${formatTimestamp(msg.timestamp)}</span>`;
+
+            // Append elements based on sender/receiver layout
+            if (isSender) {
+                messageEl.appendChild(contentEl);
+                messageEl.appendChild(dpEl);
+            } else {
+                messageEl.appendChild(dpEl);
+                messageEl.appendChild(contentEl);
+            }
+
+            // Remove 'Select user' message if it exists
+            const emptyMsg = messageDisplayArea.querySelector('.empty-chat-message');
+            if (emptyMsg) emptyMsg.remove();
+
+            messageDisplayArea.appendChild(messageEl);
+            scrollChatToBottom();
+        }
+
+        function getFileIcon(mimeType) {
+            if (mimeType.startsWith('image')) return 'fas fa-image';
+            if (mimeType.startsWith('video')) return 'fas fa-video';
+            if (mimeType.startsWith('audio')) return 'fas fa-music';
+            if (mimeType.includes('pdf')) return 'fas fa-file-pdf';
+            if (mimeType.includes('zip') || mimeType.includes('rar')) return 'fas fa-file-archive';
+            return 'fas fa-file';
+        }
+
+        // --- Chat Core Logic ---
+        function startChat(recipient) {
+            if (recipient === username || !username) return;
+
+            // Update UI state
+            currentRecipient = recipient;
+            recipientNameHeader.textContent = recipient;
+            
+            // Set recipient's DP in the header (if available in map)
+            recipientPicHeader.src = onlineUsersMap[recipient] || '/uploads/default_avatar.png';
+            
+            // Highlight selected user in the list
             document.querySelectorAll('#onlineUsersList li').forEach(li => {
-                li.style.backgroundColor = '';
-            });
-            event.currentTarget.style.backgroundColor = '#E8EAF6'; // Light highlight
-            
-            // Close sidebar on mobile after selecting a user
-            if (window.innerWidth < 768) {
-                mainContainer.classList.remove('menu-open');
-            }
-        }
-
-        function updateUsers(users) {
-            onlineUsersList.innerHTML = '';
-            users.filter(user => user !== username).forEach(user => {
-                const li = document.createElement('li');
-                li.textContent = user;
-                li.onclick = (event) => selectUser(user, event); 
-                onlineUsersList.appendChild(li);
-            });
-        }
-
-        async function handleSendMessage() {
-            const text = messageInput.value.trim();
-            const file = fileInput.files[0];
-
-            if (!recipient) {
-                alert("Please select a user to chat with.");
-                return;
-            }
-
-            if (!text && !file) {
-                return; 
-            }
-
-            let fileData = {}; 
-
-            if (file) {
-                sendMsgBtn.disabled = true;
-                messageInput.placeholder = "Uploading file... Please wait.";
-                
-                const formData = new FormData();
-                formData.append('chatFile', file);
-                formData.append('isProfilePic', 'false');
-
-                try {
-                    const response = await fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const result = await response.json();
-
-                    if (result.success) {
-                        fileData = {
-                            fileDir: result.fileDir,
-                            fileMimeType: result.fileMimeType,
-                            originalName: result.originalName
-                        };
-                    } else {
-                        alert("File upload failed: " + result.message);
-                        return;
-                    }
-                } catch (error) {
-                    console.error("Upload error:", error);
-                    alert("File upload error.");
-                    return;
-                } finally {
-                    sendMsgBtn.disabled = false;
-                    messageInput.placeholder = "Type your message...";
+                li.classList.remove('active-chat');
+                if (li.dataset.username === recipient) {
+                    li.classList.add('active-chat');
                 }
-            }
+            });
 
-            const message = {
-                sender: username,
-                receiver: recipient,
-                text: text,
-                ...fileData 
-            };
-
-            socket.emit('privateMessage', message);
-
-            messageInput.value = '';
-            fileInput.value = ''; 
-            messageInput.placeholder = "Type your message...";
+            // Enable input and buttons
+            messageInput.disabled = false;
+            sendMessageBtn.disabled = false;
+            attachFileBtn.disabled = false;
+            messageInput.focus();
+            
+            // Clear message area and load history
+            messageDisplayArea.innerHTML = '';
+            messageDisplayArea.innerHTML = `<p class="empty-chat-message">Loading chat with ${recipient}...</p>`;
+            socket.emit('loadChat', { sender: username, receiver: recipient });
         }
-
-        sendMsgBtn.addEventListener('click', handleSendMessage);
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleSendMessage();
-            }
-        });
-
-        // --- Socket Listeners ---
-        socket.on('updateUsers', updateUsers);
-        socket.on('chatHistory', (chats) => {
-            chats.forEach(displayMessage);
-        });
-        socket.on('privateMessage', (msg) => {
-            if (msg.sender === recipient || msg.receiver === recipient) {
-                displayMessage(msg);
-            }
-        });
-
-        // --- Logout ---
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('username');
-            window.location.href = '/login.html'; 
-        });
-    </script>
-</body>
-    </html>
-    
+ 
