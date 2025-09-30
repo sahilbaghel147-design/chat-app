@@ -214,10 +214,12 @@
     <script>
         const username = localStorage.getItem('username');
         
-        // FIX: Check for the username immediately. If not found, redirect to login.
+        // FIX: Check for the username immediately. If not found or is 'undefined' string, redirect to login.
         if (!username || username === 'undefined') {
             console.error("Username not found in localStorage, redirecting to login.");
-            // Wait briefly before redirecting to avoid a quick flash, but still redirect
+            // Clear the bad data just in case
+            localStorage.removeItem('username'); 
+            // Wait briefly before redirecting
             setTimeout(() => {
                 window.location.href = '/login.html';
             }, 50); 
@@ -299,7 +301,6 @@
                 if (data.success) {
                     setStatus('Profile saved successfully!', true);
                 } else {
-                    // This is likely where 'User not found' comes from if the username is undefined
                     setStatus(`Update failed: ${data.message}`, false); 
                 }
             } catch (error) {
