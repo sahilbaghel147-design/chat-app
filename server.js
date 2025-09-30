@@ -1,5 +1,4 @@
-// server.js - FINAL Code (Profile Update Fix, Chat DP, and all existing features)
-
+// --- REQUIRES & SETUP ---
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
@@ -24,7 +23,7 @@ const io = socketIO(server, {
 });
 
 // EXPRESS SETTINGS & MIDDLEWARE
-// We use 'compression' here, which required the fix in package.json
+// Use compression middleware (Required fix from previous log)
 app.use(compression()); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -34,7 +33,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 // MONGODB CONNECTION
-// 🚨 NOTE: Using your hardcoded Atlas URI based on uploaded image.
+// 🚨 NOTE: Using your hardcoded Atlas URI based on your previous image.
+// FIX: Using the correct URI without requiring process.env
 const MONGO_URI = 'mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority';
 
 mongoose.connect(MONGO_URI)
@@ -46,7 +46,9 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   bio: { type: String, default: "Hey there! I'm new to Aura Hub.", maxlength: 160 },
-  profilePicture: { type: String, default: '/uploads/default_avatar.png' } 
+  profilePicture: { type: String, default: '/uploads/default_avatar.png' },
+  // FIX: Added bestSnakeScore field to UserSchema for quick retrieval on profile
+  bestSnakeScore: { type: Number, default: 0 } 
 });
 
 const MessageSchema = new mongoose.Schema({
@@ -73,16 +75,25 @@ const HighScore = mongoose.model('HighScore', HighScoreSchema);
 
 
 // MULTER FILE UPLOAD CONFIGURATION (Used for chat attachments and profile pics)
+const UPLOADS_DIR = path.join(__dirname, 'public/uploads');
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Make sure the 'public/uploads' directory exists in your GitHub repo
-    cb(null, path.join(__dirname, 'public/uploads'));
+    cb(null, UPLOADS_DIR);
   },
   filename: (req, file, cb) => {
-    // Prefix for profile pictures
-    const prefix = req.body.isProfilePic ? 'profile-' : 'chat-';
-    // Replacing spaces with underscores for safer URLs
-    cb(null, prefix + Date.now() + '-' + file.originalname.replace(/ /g, '_')); 
+    const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+
+    let filename;
+    if (req.body.isProfilePic === 'true' && req.body.username) {
+        // Filename for profile picture: username_profile.ext (overwrites previous)
+        filename = `${req.body.username}_profile${ext}`; 
+    } else {
+        // Filename for chat attachment
+        filename = `${uniquePrefix}_${file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+    }
+    cb(null, filename);
   }
 });
 
@@ -144,21 +155,39 @@ app.post('/upload', (req, res) => {
              return res.status(400).json({ success: false, message: "No file selected for upload." });
         }
         
+        const fileDir = '/uploads/' + req.file.filename;
+
+        // FIX: Handle profile picture update in this route
+        if (req.body.isProfilePic === 'true' && req.body.username) {
+            try {
+                await User.updateOne({ username: req.body.username }, { $set: { profilePicture: fileDir } });
+                return res.json({ 
+                    success: true, 
+                    message: "Profile picture updated.", 
+                    fileDir: fileDir 
+                });
+            } catch (dbErr) {
+                console.error("DB update error:", dbErr);
+                return res.status(500).json({ success: false, message: "Database error during DP update." });
+            }
+        }
+        
+        // Response for chat file upload
         res.json({ 
             success: true, 
-            fileDir: '/uploads/' + req.file.filename, // Path for frontend
+            fileDir: fileDir, // Path for frontend
             fileMimeType: req.file.mimetype,
             originalName: req.file.originalname 
         });
     });
 });
 
-// Route to fetch profile data
+// Route to fetch profile data (FIXED error handling and fetching best score from UserSchema)
 app.get('/api/profile/:username', async (req, res) => {
     try {
         const username = req.params.username;
-        const user = await User.findOne({ username }).select('username bio profilePicture'); 
-        const bestScore = await HighScore.findOne({ username }).sort({ score: -1 }).select('score');
+        // Fetch score directly from UserSchema (updated via High Score API)
+        const user = await User.findOne({ username }).select('username bio profilePicture bestSnakeScore'); 
 
         if (!user) {
             return res.status(404).json({ success: false, message: "User profile not found." });
@@ -170,11 +199,12 @@ app.get('/api/profile/:username', async (req, res) => {
                 username: user.username,
                 bio: user.bio,
                 profilePicture: user.profilePicture,
-                bestSnakeScore: bestScore ? bestScore.score : 0 
+                bestSnakeScore: user.bestSnakeScore || 0 
             }
         });
 
     } catch (error) {
+        // FIX: Added proper error logging and response
         console.error("Error fetching profile:", error);
         res.status(500).json({ success: false, message: "Server error fetching profile." });
     }
@@ -182,7 +212,6 @@ app.get('/api/profile/:username', async (req, res) => {
 
 // Route to update profile (Bio and Picture)
 app.post('/api/profile/update', async (req, res) => {
-    // 🚨 FIX: This is the code block that had the previous SyntaxError.
     const { username, bio, profilePicture } = req.body;
     
     if (!username) {
@@ -202,13 +231,11 @@ app.post('/api/profile/update', async (req, res) => {
             { username: username }, 
             { $set: updateFields },
             { new: true, runValidators: true }
-        ).select('username bio profilePicture');
+        ).select('username bio profilePicture bestSnakeScore'); // Select score to return
 
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found." });
         }
-
-        const bestScore = await HighScore.findOne({ username }).sort({ score: -1 }).select('score');
 
         res.json({ 
             success: true, 
@@ -217,7 +244,7 @@ app.post('/api/profile/update', async (req, res) => {
                 username: user.username,
                 bio: user.bio,
                 profilePicture: user.profilePicture,
-                bestSnakeScore: bestScore ? bestScore.score : 0 
+                bestSnakeScore: user.bestSnakeScore || 0 
             }
         });
         
@@ -234,13 +261,23 @@ app.post('/api/scores', async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid score or username." });
     }
     try {
-        const newScore = new HighScore({ username, game, score });
-        await newScore.save();
-        const personalBest = await HighScore.findOne({ username, game }).sort({ score: -1 });
+        // 1. Update/Insert into HighScore collection
+        const highscoreEntry = await HighScore.findOneAndUpdate(
+            { username, game },
+            { 
+                $max: { score: score },
+                $set: { timestamp: Date.now() }
+            },
+            { new: true, upsert: true } // Return the updated document and create if not found
+        );
+        
+        // 2. FIX: Update the bestSnakeScore field in the User document as well
+        await User.updateOne({ username }, { $max: { bestSnakeScore: score } });
+
         res.json({ 
             success: true, 
             message: "Score submitted successfully.", 
-            isNewRecord: personalBest ? (score >= personalBest.score) : true
+            isNewRecord: highscoreEntry.score === score // Simple check for new record
         });
     } catch (error) {
         console.error("Score submission error:", error);
@@ -371,4 +408,4 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-  
+         
