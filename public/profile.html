@@ -213,8 +213,14 @@
 
     <script>
         const username = localStorage.getItem('username');
-        if (!username) {
-            window.location.href = '/login.html';
+        
+        // FIX: Check for the username immediately. If not found, redirect to login.
+        if (!username || username === 'undefined') {
+            console.error("Username not found in localStorage, redirecting to login.");
+            // Wait briefly before redirecting to avoid a quick flash, but still redirect
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 50); 
         }
 
         const profileUsernameEl = document.getElementById('profileUsername');
@@ -238,7 +244,10 @@
 
         // --- 1. Load Profile Data ---
         async function loadProfile() {
-            profileUsernameEl.textContent = `Loading ${username}'s profile...`;
+            // Only try to load if username is valid
+            if (!username || username === 'undefined') return; 
+            
+            profileUsernameEl.textContent = `Loading @${username}'s profile...`;
             try {
                 const response = await fetch(`/api/profile/${username}`);
                 const data = await response.json();
@@ -263,6 +272,11 @@
 
         // --- 2. Update Bio Handler ---
         saveBioBtn.addEventListener('click', async () => {
+            if (!username || username === 'undefined') {
+                setStatus('Login first to update profile.', false);
+                return;
+            }
+
             saveBioBtn.disabled = true;
             setStatus('Saving profile...');
 
@@ -285,7 +299,8 @@
                 if (data.success) {
                     setStatus('Profile saved successfully!', true);
                 } else {
-                    setStatus(`Update failed: ${data.message}`, false);
+                    // This is likely where 'User not found' comes from if the username is undefined
+                    setStatus(`Update failed: ${data.message}`, false); 
                 }
             } catch (error) {
                 console.error("Bio update error:", error);
@@ -297,6 +312,10 @@
 
         // --- 3. Profile Picture Upload Handlers ---
         editPicBtn.addEventListener('click', () => {
+            if (!username || username === 'undefined') {
+                setStatus('Login first to change picture.', false);
+                return;
+            }
             fileInput.click();
         });
 
@@ -307,7 +326,6 @@
             const formData = new FormData();
             
             formData.append('chatFile', file);
-            // These fields are crucial for the server to recognize this as a DP upload
             formData.append('isProfilePic', 'true'); 
             formData.append('username', username);
 
@@ -322,7 +340,6 @@
                 const result = await response.json();
 
                 if (result.success && result.fileDir) {
-                    // Update the image source immediately
                     profilePicEl.src = result.fileDir + '?' + new Date().getTime(); // Cache busting
                     setStatus('Profile picture updated!', true);
                 } else {
