@@ -4,17 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Hub - Chat</title>
-    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
+    <link rel="stylesheet" href="style.css"> 
+
     <style>
-        /* CSS for the new DP feature is included in the style.css section of the previous response.
-           Make sure to add that CSS to your public/style.css file! */
-           
+        /* Base Reset and Layout */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            background-color: #f4f4f4;
+            background-color: #e8eaf6; /* Light Lavender Background */
             display: flex;
             min-height: 100vh;
         }
@@ -22,61 +21,109 @@
         .container {
             display: flex;
             width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
         }
 
-        /* --- Left Side: Sidebar --- */
+        /* --- Left Side: Sidebar (User List) --- */
         .sidebar {
-            width: 250px;
-            background-color: #2c3e50; /* Dark blue */
+            width: 280px; /* Slightly wider */
+            background-color: #3f51b5; /* Primary Blue */
             color: white;
-            padding: 15px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
+            padding: 0; /* Remove padding from container, add to sections */
         }
 
         .sidebar h2 {
             text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #4a637a;
-            padding-bottom: 10px;
-        }
-        
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
+            padding: 20px 15px;
             margin: 0;
+            background-color: #303f9f; /* Darker header */
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
         
-        .sidebar ul li {
-            padding: 10px;
+        .sidebar h3 {
+            padding: 15px;
+            margin: 0;
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #c5cae9;
+        }
+        
+        #onlineUsersList {
+            list-style: none;
+            padding: 0 10px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        
+        #onlineUsersList li {
+            display: flex;
+            align-items: center;
+            padding: 12px 10px;
             cursor: pointer;
-            border-radius: 5px;
+            border-radius: 8px;
             margin-bottom: 5px;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.1s;
+            font-weight: 500;
         }
         
-        .sidebar ul li:hover {
-            background-color: #34495e;
+        #onlineUsersList li:hover {
+            background-color: #5c6bc0; /* Lighter hover */
+            transform: translateY(-1px);
+        }
+
+        /* User Status Icon */
+        #onlineUsersList li::before {
+            content: '•';
+            color: #4caf50; /* Green for online */
+            font-size: 1.5em;
+            line-height: 0;
+            margin-right: 10px;
+        }
+
+        /* Navigation and Footer */
+        .nav-links {
+            padding: 15px;
+            border-top: 1px solid #5c6bc0;
+            text-align: center;
+        }
+        .nav-links a {
+            color: #e8eaf6;
+            text-decoration: none;
+            margin: 0 12px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: #ffc107; /* Yellow hover */
         }
         
         .sidebar .user-info {
-            margin-top: auto; /* Push to the bottom */
-            padding-top: 15px;
-            border-top: 1px solid #4a637a;
-            text-align: center;
+            padding: 15px;
+            border-top: 1px solid #5c6bc0;
         }
         
-        .sidebar button {
-            background-color: #e74c3c; /* Red for logout */
+        #logoutBtn {
+            background-color: #f44336; /* Red */
             color: white;
             border: none;
-            padding: 10px;
-            border-radius: 5px;
+            padding: 12px;
+            border-radius: 8px;
             cursor: pointer;
-            margin-top: 10px;
             width: 100%;
+            transition: background-color 0.2s;
+            font-weight: 600;
+        }
+        
+        #logoutBtn:hover {
+            background-color: #d32f2f;
         }
         
         /* --- Right Side: Chat Area --- */
@@ -88,72 +135,90 @@
         }
         
         .chat-header {
-            padding: 15px;
-            background-color: #3498db; /* Blue */
-            color: white;
-            font-size: 1.2em;
+            padding: 15px 20px;
+            background-color: #4fc3f7; /* Light Blue Header */
+            color: #212121;
+            font-size: 1.3em;
+            font-weight: 600;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         #messageDisplayArea {
             flex-grow: 1;
-            padding: 20px;
+            padding: 15px 20px;
             overflow-y: auto;
-            /* Placeholder styles for messages - detailed styles are in style.css */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 50 50"><circle cx="25" cy="25" r="1" fill="%23eceff1" opacity="0.5"/></svg>'); /* Subtle background pattern */
         }
         
         .message-input-area {
             display: flex;
-            padding: 10px;
-            border-top: 1px solid #ddd;
-            background-color: #f9f9f9;
+            padding: 10px 15px;
+            border-top: 1px solid #e0e0e0;
+            background-color: #ffffff;
+            align-items: center;
         }
 
         .message-input-area input[type="text"] {
             flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
+            padding: 12px 18px;
+            border: 1px solid #bdbdbd;
+            border-radius: 25px;
             margin-right: 10px;
             font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .message-input-area input[type="text"]:focus {
+            border-color: #4fc3f7;
+            box-shadow: 0 0 5px rgba(79, 195, 247, 0.5);
+            outline: none;
         }
         
         .message-input-area button {
-            background-color: #2ecc71; /* Green */
-            color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 20px;
+            padding: 12px;
+            border-radius: 50%;
             cursor: pointer;
             margin-left: 5px;
-        }
-
-        .message-input-area button:hover {
-            opacity: 0.9;
-        }
-
-        /* Nav links at the bottom */
-        .nav-links {
-            padding: 15px;
-            border-top: 1px solid #4a637a;
-            text-align: center;
-        }
-        .nav-links a {
-            color: #ecf0f1;
-            text-decoration: none;
-            margin: 0 10px;
-            font-weight: bold;
+            font-size: 1.1em;
+            transition: background-color 0.2s, transform 0.1s;
+            height: 45px;
+            width: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
-        /* Message Styling (DP FEATURE CSS) */
+        #attachFileBtn {
+            background-color: #90a4ae; 
+            color: white;
+        }
+        #attachFileBtn:hover {
+            background-color: #78909c;
+            transform: scale(1.05);
+        }
+
+        #sendMsgBtn {
+            background-color: #4caf50; /* Green Send Button */
+            color: white;
+            border-radius: 25px;
+            padding: 10px 15px;
+            width: auto;
+            font-weight: 600;
+        }
+
+        #sendMsgBtn:hover {
+            background-color: #43a047;
+            transform: scale(1.02);
+        }
+
+
+        /* Message Styling (DP FEATURE CSS - Enhanced) */
         
         /* Align message containers */
         .message-container {
             display: flex;
-            margin-bottom: 10px;
+            margin-bottom: 15px; /* Increased margin */
             align-items: flex-end; 
         }
 
@@ -165,7 +230,7 @@
         /* Sender messages (right aligned) */
         .message-container.sender {
             justify-content: flex-end;
-            direction: rtl; 
+            direction: rtl; /* Flip order for bubble/DP */
         }
 
         /* Ensure content direction is LTR inside the container */
@@ -175,48 +240,55 @@
 
         /* Profile Picture Style */
         .message-profile-pic {
-            width: 35px;
-            height: 35px;
+            width: 40px; /* Slightly larger DP */
+            height: 40px;
             border-radius: 50%;
             object-fit: cover;
             margin: 0 8px; 
-            border: 2px solid #555; 
+            border: 2px solid #fff; 
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
             flex-shrink: 0; 
         }
 
         /* Message Bubble Styling */
         .message-bubble {
-            max-width: 65%;
-            padding: 8px 12px;
-            border-radius: 18px;
+            max-width: 60%; /* Slightly smaller max width */
+            padding: 10px 15px; /* More padding */
+            border-radius: 20px;
             word-wrap: break-word;
+            position: relative;
         }
 
-        .message-container.receiver .message-bubble {
-            background-color: #2c3e50; 
-            color: #ecf0f1;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message-container.sender .message-bubble {
-            background-color: #3498db; 
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-        
+        /* Sender Name (only for received messages) */
         .sender-name {
-            font-size: 0.8em;
-            color: #bdc3c7;
+            font-size: 0.75em;
+            color: #757575; /* Darker name color */
             margin-bottom: 2px;
             font-weight: bold;
+            display: block; /* Make it block level */
         }
+
+        /* Receiver Bubbles (Left) */
+        .message-container.receiver .message-bubble {
+            background-color: #e0e0e0; /* Light Gray for received */
+            color: #212121;
+            border-bottom-left-radius: 6px;
+        }
+
+        /* Sender Bubbles (Right) */
+        .message-container.sender .message-bubble {
+            background-color: #3f51b5; /* Primary Blue for sent */
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+        
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="sidebar">
-            <h2 id="welcomeMessage">Welcome!</h2>
+            <h2 id="welcomeMessage">Aura Hub Chat</h2>
             
             <h3>Online Users</h3>
             <ul id="onlineUsersList">
@@ -235,7 +307,7 @@
 
         <div class="chat-area">
             <div class="chat-header">
-                <span id="recipientUsername">Select a user to chat</span>
+                <span id="recipientUsername">Select a user to start chatting</span>
             </div>
 
             <div id="messageDisplayArea">
@@ -247,7 +319,7 @@
                 <input type="file" id="fileInput" style="display: none;">
                 <button id="attachFileBtn" title="Attach File"><i class="fas fa-paperclip"></i></button>
 
-                <button id="sendMsgBtn"><i class="fas fa-paper-plane"></i> Send</button>
+                <button id="sendMsgBtn">Send <i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
@@ -271,7 +343,7 @@
 
         // --- Initial Setup ---
         if (username) {
-            welcomeMessage.textContent = `Welcome, ${username}! Start chatting.`;
+            welcomeMessage.textContent = `Hello, ${username}!`;
             socket.emit('newUser', username);
         } else {
             // Redirect to login if username is not found
@@ -295,15 +367,13 @@
             messageDisplayArea.innerHTML = '';
         }
 
-        // 🔄 UPDATED: displayMessage function (Now handles profile pictures)
+        // 🔄 displayMessage function (Handles profile pictures and files)
         function displayMessage(msg) {
             const messageDisplayArea = document.getElementById('messageDisplayArea');
             
             // Determine if the message is from the current user (sender) or the recipient
             const isSender = msg.sender === username;
             
-            // Use the senderPicture property provided by the server
-            // Note: Server now ensures 'senderPicture' is always present, but fallback is good.
             const profilePicUrl = msg.senderPicture || '/uploads/default_avatar.png'; 
 
             const messageContainer = document.createElement('div');
@@ -320,7 +390,7 @@
 
             // Add sender name for received messages
             if (!isSender) {
-                const senderName = document.createElement('div');
+                const senderName = document.createElement('span');
                 senderName.className = 'sender-name';
                 senderName.textContent = msg.sender;
                 messageBubble.appendChild(senderName);
@@ -329,27 +399,35 @@
             // Add text or file content
             if (msg.text) {
                 const messageText = document.createElement('p');
+                messageText.style.margin = '0'; // Remove default paragraph margin
                 messageText.textContent = msg.text;
                 messageBubble.appendChild(messageText);
             } 
             
             if (msg.fileDir) {
-                const fileLink = document.createElement('a');
-                fileLink.href = msg.fileDir;
-                fileLink.target = '_blank';
-                fileLink.textContent = `Attached File: ${msg.originalName || 'Download'}`;
-                
-                // Basic image preview
+                // Handle Image Preview
                 if (msg.fileMimeType && msg.fileMimeType.startsWith('image')) {
                      const fileImage = document.createElement('img');
                      fileImage.src = msg.fileDir;
                      fileImage.alt = 'Attached Image';
                      fileImage.style.maxWidth = '100%';
                      fileImage.style.maxHeight = '200px';
+                     fileImage.style.borderRadius = '8px';
+                     fileImage.style.marginTop = msg.text ? '8px' : '0';
                      messageBubble.appendChild(fileImage);
-                } else {
-                     messageBubble.appendChild(fileLink);
                 }
+                
+                // Handle Download Link (for all files)
+                const fileLink = document.createElement('a');
+                fileLink.href = msg.fileDir;
+                fileLink.target = '_blank';
+                fileLink.textContent = `🔗 ${msg.originalName || 'Download File'}`;
+                fileLink.style.display = 'block';
+                fileLink.style.marginTop = (msg.text || (msg.fileMimeType && msg.fileMimeType.startsWith('image'))) ? '8px' : '0';
+                fileLink.style.color = isSender ? '#ffc107' : '#3f51b5'; 
+                fileLink.style.fontWeight = 'bold';
+                
+                messageBubble.appendChild(fileLink);
             }
 
             // Append picture and bubble to container
@@ -369,6 +447,13 @@
             clearChatArea();
             // Server now sends senderPicture along with chatHistory
             socket.emit('loadChat', { sender: username, receiver: recipient });
+            
+            // Highlight the selected user
+            document.querySelectorAll('#onlineUsersList li').forEach(li => {
+                li.style.backgroundColor = '';
+                li.style.color = 'white';
+            });
+            event.currentTarget.style.backgroundColor = '#5c6bc0';
         }
 
         function updateUsers(users) {
@@ -376,7 +461,7 @@
             users.filter(user => user !== username).forEach(user => {
                 const li = document.createElement('li');
                 li.textContent = user;
-                li.onclick = () => selectUser(user);
+                li.onclick = (event) => selectUser(user, event); // Pass event here
                 onlineUsersList.appendChild(li);
             });
         }
@@ -399,6 +484,7 @@
             if (file) {
                 const formData = new FormData();
                 formData.append('chatFile', file);
+                formData.append('isProfilePic', 'false'); // Not a profile pic
 
                 try {
                     const response = await fetch('/upload', {
@@ -454,15 +540,14 @@
             if (msg.sender === recipient || msg.receiver === recipient) {
                 displayMessage(msg);
             }
-            // Add notification logic here if needed for non-selected chats
         });
 
         // --- Logout ---
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('username');
-            // Remove any other stored login info if necessary
             window.location.href = '/login.html'; 
         });
     </script>
 </body>
-</html>
+    </html>
+    
