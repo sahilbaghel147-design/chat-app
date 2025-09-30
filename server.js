@@ -1,4 +1,4 @@
-// server.js - FINAL Code with Profile Picture in Chat Feature
+// server.js - FINAL Code (Profile Update Fix, Chat DP, and all existing features)
 
 const express = require("express");
 const http = require("http");
@@ -74,21 +74,22 @@ const HighScore = mongoose.model('HighScore', HighScoreSchema);
 // MULTER FILE UPLOAD CONFIGURATION (Used for chat attachments and profile pics)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Make sure the 'public/uploads' directory exists in your GitHub repo
     cb(null, path.join(__dirname, 'public/uploads'));
   },
   filename: (req, file, cb) => {
-    const prefix = req.body.isProfilePic ? 'profile-' : '';
+    const prefix = req.body.isProfilePic ? 'profile-' : 'chat-';
     cb(null, prefix + Date.now() + '-' + file.originalname.replace(/ /g, '_')); 
   }
 });
 
-const upload = multer({ 
+const uploadMiddleware = multer({ 
     storage: storage,
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 }).single('chatFile'); 
 
 
-// --- AUTHENTICATION CONTROLS (Login/Signup/Upload/Profile APIs remain unchanged) ---
+// --- AUTHENTICATION AND API CONTROLS ---
 
 app.post('/signup', async (req, res) => {
     try {
@@ -128,7 +129,8 @@ app.post('/login', async (req, res) => {
 
 
 app.post('/upload', (req, res) => {
-    upload(req, res, async (err) => {
+    // ⚠️ FIX: Ensure multer middleware is used correctly here
+    uploadMiddleware(req, res, async (err) => {
         if (err) {
             console.error("Upload Error:", err);
             return res.status(500).json({ success: false, message: "File upload failed", error: err.message });
@@ -140,7 +142,7 @@ app.post('/upload', (req, res) => {
         
         res.json({ 
             success: true, 
-            fileDir: '/uploads/' + req.file.filename,
+            fileDir: '/uploads/' + req.file.filename, // Path for frontend
             fileMimeType: req.file.mimetype,
             originalName: req.file.originalname 
         });
@@ -151,13 +153,23 @@ app.post('/upload', (req, res) => {
 app.get('/api/profile/:username', async (req, res) => {
     try {
         const username = req.params.username;
+        // Also fetch high score here
         const user = await User.findOne({ username }).select('username bio profilePicture'); 
+        const bestScore = await HighScore.findOne({ username }).sort({ score: -1 }).select('score');
 
         if (!user) {
             return res.status(404).json({ success: false, message: "User profile not found." });
         }
         
-        res.json({ success: true, profile: user });
+        res.json({ 
+            success: true, 
+            profile: {
+                username: user.username,
+                bio: user.bio,
+                profilePicture: user.profilePicture,
+                bestSnakeScore: bestScore ? bestScore.score : 0 
+            }
+        });
 
     } catch (error) {
         console.error("Error fetching profile:", error);
@@ -176,7 +188,8 @@ app.post('/api/profile/update', async (req, res) => {
     try {
         const updateFields = {};
         if (bio !== undefined) {
-            updateFields.bio = bio.substring(0, 160); 
+            // Trim bio to max length (160) for safety
+            updateFields.bio = bio ? bio.substring(0, 160) : ''; 
         }
         if (profilePicture !== undefined) {
             updateFields.profilePicture = profilePicture;
@@ -192,7 +205,19 @@ app.post('/api/profile/update', async (req, res) => {
             return res.status(404).json({ success: false, message: "User not found." });
         }
 
-        res.json({ success: true, message: "Profile updated successfully.", profile: user });
+        // Fetch the updated best score as well
+        const bestScore = await HighScore.findOne({ username }).sort({ score: -1 }).select('score');
+
+        res.json({ 
+            success: true, 
+            message: "Profile updated successfully.", 
+            profile: {
+                username: user.username,
+                bio: user.bio,
+                profilePicture: user.profilePicture,
+                bestSnakeScore: bestScore ? bestScore.score : 0 
+            }
+        });
         
     } catch (error) {
         console.error("Error updating profile:", error);
@@ -200,8 +225,26 @@ app.post('/api/profile/update', async (req, res) => {
     }
 });
 
-
-
+// High Score API (Remains unchanged)
+app.post('/api/scores', async (req, res) => {
+    const { username, score, game = 'snake' } = req.body;
+    if (!username || typeof score !== 'number' || score < 0) {
+        return res.status(400).json({ success: false, message: "Invalid score or username." });
+    }
+    try {
+        const newScore = new HighScore({ username, game, score });
+        await newScore.save();
+        const personalBest = await HighScore.findOne({ username, game }).sort({ score: -1 });
+        res.json({ 
+            success: true, 
+            message: "Score submitted successfully.", 
+            isNewRecord: personalBest ? (score >= personalBest.score) : true
+        });
+    } catch (error) {
+        console.error("Score submission error:", error);
+        res.status(500).json({ success: false, message: "Failed to save score." });
+    }
+});
 
 app.get('/api/scores', async (req, res) => {
     const game = req.query.game || 'snake';
@@ -214,33 +257,7 @@ app.get('/api/scores', async (req, res) => {
             { $limit: 10 },
             { $project: { _id: 0, username: "$_id", score: "$maxScore" } }
         ]);
-        res.json({ suc// server.js (partially updated)
-
-app.post('/api/profile/update', async (req, res) => {
-    const { username, bio, profilePicture } = req.body; // <-- (A) Data received
-    
-    // ... (omitted checks)
-
-    try {
-        const updateFields = {};
-        if (bio !== undefined) {
-            updateFields.bio = bio.substring(0, 160); 
-        }
-        if (profilePicture !== undefined) { // <-- (B) Check for profilePicture
-            updateFields.profilePicture = profilePicture; // <-- (C) Update path
-        }
-
-        const user = await User.findOneAndUpdate(
-            { username: username }, 
-            { $set: updateFields },
-            { new: true, runValidators: true }
-        ).select('username bio profilePicture');
-
-        // ... (omitted response)
-    } 
-    // ...
-});
-cess: true, scores: topScores });
+        res.json({ success: true, scores: topScores });
     } catch (error) {
         console.error("Error fetching high scores:", error);
         res.status(500).json({ success: false, message: "Failed to fetch scores." });
@@ -276,7 +293,7 @@ io.on('connection', (socket) => {
         io.emit('updateUsers', Object.values(onlineUsers));
     });
 
-    // 🔄 UPDATED: loadChat - Fetches profile pictures for all messages
+    // Fetches chat history and attaches profile pictures
     socket.on('loadChat', async ({ sender, receiver }) => {
         try {
             const chats = await Message.find({
@@ -306,7 +323,7 @@ io.on('connection', (socket) => {
         } catch (err) { console.error("Error loading chat:", err); }
     });
 
-    // 🔄 UPDATED: privateMessage - Fetches the sender's profile picture for the new message
+    // Sends new private message and attaches sender's profile picture
     socket.on('privateMessage', async (msg) => {
         try {
             // 1. Save the new message
@@ -352,5 +369,4 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-    
-
+         
