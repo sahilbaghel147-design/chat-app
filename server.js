@@ -18,16 +18,21 @@ const io = socketio(server);
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
+// Path to static files (HTML, CSS, JS)
+app.use(express.static("public")); 
 
-// --- MONGO DB CONNECTION ---
+// --- MONGO DB CONNECTION (FIXED with your provided URL) ---
+const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp"; 
+
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/chatapp", {
+  .connect(MONGO_URI, { // FIX: Directly using the Atlas URL
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
   .then(() => console.log("MongoDB Connected Successfully!"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
+// Note: If you have already set MONGO_URI on Render, you should use process.env.MONGO_URI instead of hardcoding.
+// Since you asked for the full code with the URL, I've placed it here.
 
 // --- MONGOOSE SCHEMAS ---
 
@@ -40,12 +45,12 @@ const UserSchema = new mongoose.Schema({
   bestSnakeScore: { type: Number, default: 0 },
 });
 
-// Message Schema
+// Message Schema (Fixed structure from previous errors)
 const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   receiver: { type: String, required: true },
   text: { type: String },
-  fileData: { type: String }, // Stored file path
+  fileData: { type: String }, 
   fileMimeType: { type: String },
   originalName: { type: String }, 
   timestamp: { type: Date, default: Date.now },
@@ -63,10 +68,10 @@ const User = mongoose.model("User", UserSchema);
 const Message = mongoose.model("Message", MessageSchema);
 const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
-// --- MULTER FILE UPLOAD CONFIGURATION (FIXED PATH) ---
+// --- MULTER FILE UPLOAD CONFIGURATION (Fixed Path for Render) ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // FIX: Uses relative path from server.js (src folder) to public/uploads
+    // FIX: Correct path relative to src/server.js
     cb(null, path.join(__dirname, "../public/uploads"));
   },
   filename: (req, file, cb) => {
@@ -76,7 +81,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// 10MB limit
 const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, 
@@ -154,7 +158,6 @@ app.post("/api/profile/update", async (req, res) => {
 app.post("/api/profile/upload", (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
-      // FIX: Improved error message for ENOENT
       console.error("Upload Error:", err);
       return res.status(500).json({ success: false, message: `Upload Error: ${err.message}. Check if 'public/uploads' folder exists on GitHub.` });
     }
@@ -164,7 +167,6 @@ app.post("/api/profile/upload", (req, res) => {
       return res.status(400).json({ success: false, message: "Username is missing." });
     }
 
-    // FIX: Ensures the public path is correctly stripped for URL access
     const filePath = req.file.path.replace(/\\/g, "/").split("public/")[1];
 
     try {
