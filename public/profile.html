@@ -6,7 +6,8 @@
     <title>User Profile</title>
     <link rel="stylesheet" href="/style.css">
     <style>
-        /* ... (Keep your CSS styles here) ... */
+        /* Add your profile specific styles here */
+        /* ... (Keep your profile CSS styles here) ... */
     </style>
 </head>
 <body>
@@ -55,7 +56,7 @@
     async function loadProfile() {
         const username = localStorage.getItem('username');
 
-        // FIX: Prevents 'Loading undefined's profile...' error
+        // FIX: Strong check. If username is bad, clear it and redirect to login.
         if (!username || username === "undefined" || username.trim() === "") {
             console.log("Profile: Invalid username. Clearing data and redirecting to login.");
             localStorage.clear();
@@ -76,18 +77,78 @@
                 const user = data.user;
                 document.getElementById('bio-input').value = user.bio || '';
                 document.getElementById('best-snake-score').textContent = user.bestSnakeScore || 0;
+                // FIX: Ensure the profile picture path is correct
                 document.getElementById('profile-img').src = user.profilePicture ? `/${user.profilePicture}` : '/uploads/default_avatar.jpg';
             } else {
                 displayStatus(`Failed to load profile data: ${data.message}`, false);
-                alert('Failed to load profile data.'); // Show alert for failed data load
+                alert('Failed to load profile data.'); 
             }
         } catch (error) {
             console.error("Error loading profile:", error);
+            // This is the common error when the backend is crashing
             displayStatus('Error connecting to server. Please try again.', false);
         }
     }
 
-    // ... (rest of the updateProfile and profile-file-input event listener functions) ...
+    // --- PROFILE UPDATE LOGIC ---
+    async function updateProfile() {
+        const bio = document.getElementById('bio-input').value;
+        const bestSnakeScore = document.getElementById('best-snake-score').textContent;
+
+        displayStatus('Updating...', false);
+
+        try {
+            const response = await fetch('/api/profile/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: currentUsername,
+                    bio: bio,
+                    bestSnakeScore: parseInt(bestSnakeScore, 10) 
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                displayStatus('Profile updated successfully!', true);
+            } else {
+                displayStatus(`Update failed: ${data.message}`, false);
+            }
+        } catch (error) {
+            displayStatus('Error updating profile.', false);
+            console.error("Update error:", error);
+        }
+    }
+
+    // --- PICTURE UPLOAD LOGIC ---
+    document.getElementById('profile-file-input').addEventListener('change', async function() {
+        if (!this.files.length) return;
+
+        displayStatus('Uploading image...', false);
+        const file = this.files[0];
+        const formData = new FormData();
+        
+        formData.append('chatfile', file);
+        formData.append('username', currentUsername); 
+
+        try {
+            const response = await fetch('/api/profile/upload', {
+                method: 'POST',
+                body: formData 
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('profile-img').src = `/${data.profilePicture}`;
+                displayStatus('Profile picture updated successfully!', true);
+            } else {
+                displayStatus(`Upload failed: ${data.message}`, false);
+            }
+        } catch (error) {
+            displayStatus('Error uploading picture.', false);
+            console.error("Upload error:", error);
+        }
+    });
 
     // Load profile on page load
     loadProfile();
