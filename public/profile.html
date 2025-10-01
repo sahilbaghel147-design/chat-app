@@ -3,374 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Hub - Profile</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
+    <title>User Profile</title>
+    <link rel="stylesheet" href="/style.css">
     <style>
-        /* Base Styling and Layout */
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-
+        /* Add your profile specific styles here */
         .profile-container {
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            width: 100%;
             max-width: 600px;
+            margin: 50px auto;
             padding: 30px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
             text-align: center;
         }
-
-        /* Header and Navigation */
-        .profile-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 15px;
+        .profile-picture-upload {
+            margin-bottom: 20px;
         }
-
-        .profile-header h1 {
-            color: #3F51B5;
-            font-size: 1.8em;
-            margin: 0;
-            font-weight: 700;
-        }
-
-        .profile-header a {
-            color: #4CAF50;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 8px 15px;
-            border-radius: 6px;
-            border: 1px solid #4CAF50;
-            transition: background-color 0.2s, color 0.2s;
-        }
-
-        .profile-header a:hover {
-            background-color: #4CAF50;
-            color: white;
-        }
-        
-        /* Profile Picture Section */
-        .profile-picture-section {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 25px;
-        }
-
-        #profilePic {
+        .profile-picture-upload img {
             width: 150px;
             height: 150px;
             border-radius: 50%;
             object-fit: cover;
-            border: 5px solid #E8EAF6;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 4px solid #3498db;
         }
-
-        #editPicBtn {
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
-            background-color: #FF9800; /* Orange for accent */
-            color: white;
-            border: 3px solid white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .profile-picture-upload label {
             cursor: pointer;
-            transition: background-color 0.2s;
+            color: #3498db;
+            display: block;
+            margin-top: 10px;
         }
-
-        #editPicBtn:hover {
-            background-color: #F57C00;
+        .profile-picture-upload input[type="file"] {
+            display: none;
         }
-
-        #fileInput {
-            display: none; /* Hide the default file input */
-        }
-        
-        /* Username and Stats */
-        #profileUsername {
-            font-size: 2em;
-            color: #333;
-            margin: 10px 0 5px 0;
-            font-weight: 700;
-        }
-
-        .stats-box {
-            background-color: #E8EAF6;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            color: #3F51B5;
-            font-weight: 600;
-        }
-
-        /* Bio and Form Section */
-        .bio-section h2 {
-            font-size: 1.2em;
-            color: #555;
+        .form-group {
             margin-bottom: 15px;
-            border-left: 5px solid #3F51B5;
-            padding-left: 10px;
+            text-align: left;
         }
-
-        #bioTextarea {
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
-            border-radius: 6px;
-            resize: vertical;
-            min-height: 80px;
+            border-radius: 4px;
             box-sizing: border-box;
-            font-family: inherit;
         }
-
-        #saveBioBtn {
-            background-color: #3F51B5;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background-color 0.2s;
-            font-weight: 600;
-            width: 100%;
-        }
-
-        #saveBioBtn:hover {
-            background-color: #303F9F;
-        }
-        
-        /* Status/Message Display */
-        #statusMessage {
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #F44336; /* Default error color */
-        }
-        
-        .success { color: #4CAF50 !important; }
-        .error { color: #F44336 !important; }
-
-        /* Responsive adjustments */
-        @media (max-width: 600px) {
-            .profile-container {
-                margin: 20px;
-                padding: 20px;
-            }
-            .profile-header h1 {
-                font-size: 1.5em;
-            }
-            #profileUsername {
-                font-size: 1.5em;
-            }
+        .score-box {
+            background-color: #eaf6ff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2980b9;
         }
     </style>
 </head>
 <body>
 
     <div class="profile-container">
+        <a href="/chat.html" style="float: left; text-decoration: none;">&larr; Back to Chat</a>
+        <h1 id="profile-header">User Profile: <span id="username-display">Loading...</span></h1>
         
-        <div class="profile-header">
-            <h1>User Profile</h1>
-            <a href="/chat.html"><i class="fas fa-arrow-left"></i> Back to Chat</a>
-        </div>
-        
-        <div class="profile-picture-section">
-            <img id="profilePic" src="/uploads/default_avatar.png" alt="Profile Picture">
-            <input type="file" id="fileInput" accept="image/*">
-            <button id="editPicBtn" title="Change Profile Picture"><i class="fas fa-camera"></i></button>
+        <div class="profile-picture-upload">
+            <img id="profile-img" src="uploads/default_avatar.jpg" alt="Profile Picture">
+            <label for="profile-file-input">
+                Click to change Picture
+            </label>
+            <input type="file" id="profile-file-input" accept="image/*">
         </div>
 
-        <h2 id="profileUsername">Loading...</h2>
-        
-        <div class="stats-box">
-            <i class="fas fa-trophy"></i> Best Snake Score: <span id="snakeScore">0</span>
+        <div class="score-box">
+            🏆 Best Snake Score: <span id="best-snake-score">0</span>
         </div>
-        
-        <div class="bio-section">
-            <h2>Your Bio (Max 160 Chars)</h2>
-            <textarea id="bioTextarea" maxlength="160" placeholder="Tell us about yourself..."></textarea>
-            <button id="saveBioBtn"><i class="fas fa-save"></i> Save Profile</button>
+
+        <div class="form-group">
+            <label>Username:</label>
+            <input type="text" id="username-input" disabled>
         </div>
-        
-        <p id="statusMessage"></p>
-        
+
+        <div class="form-group">
+            <label for="bio-input">Your Bio (Max 160 Chars)</label>
+            <textarea id="bio-input" maxlength="160" placeholder="Tell us about yourself..."></textarea>
+        </div>
+
+        <button id="update-profile-btn" onclick="updateProfile()">Update Profile</button>
+        <p id="message-status" style="margin-top: 10px;"></p>
     </div>
 
-    <script>
+<script>
+    // --- UTILITIES & AUTHENTICATION ---
+    let currentUsername = null;
 
-        function loadProfile() {
-    const username = localStorage.getItem('username');
-
-    // *** FINAL CHECK: Redirect if username is bad ***
-    if (!username || username === "undefined" || username.trim() === "") {
-        console.log("Profile: Invalid username. Redirecting to login.");
-        window.location.href = '/login.html';
-        return;
+    function displayStatus(message, isSuccess = true) {
+        const statusElement = document.getElementById('message-status');
+        statusElement.textContent = message;
+        statusElement.style.color = isSuccess ? 'green' : 'red';
     }
-    
-    // ... (rest of your profile logic)
-        }
-        
+
+    // --- PROFILE LOAD LOGIC (FIXED) ---
+    async function loadProfile() {
         const username = localStorage.getItem('username');
+
+        // FIX: Strong check for null, empty string, or the literal string "undefined"
+        if (!username || username === "undefined" || username.trim() === "") {
+            console.log("Profile: Invalid username. Redirecting to login.");
+            // If the user lands here with bad data, clear it and redirect
+            localStorage.clear();
+            window.location.href = '/login.html';
+            return;
+        }
+
+        currentUsername = username.trim();
+        document.getElementById('username-display').textContent = currentUsername;
+        document.getElementById('username-input').value = currentUsername;
+        document.getElementById('profile-header').textContent = `User Profile: ${currentUsername}`;
+
+        try {
+            const response = await fetch(`/api/profile/${currentUsername}`);
+            const data = await response.json();
+
+            if (data.success) {
+                const user = data.user;
+                document.getElementById('bio-input').value = user.bio || '';
+                document.getElementById('best-snake-score').textContent = user.bestSnakeScore || 0;
+                document.getElementById('profile-img').src = user.profilePicture ? `/${user.profilePicture}` : '/uploads/default_avatar.jpg';
+            } else {
+                displayStatus(`Failed to load profile data: ${data.message}`, false);
+                alert('Failed to load profile data.');
+            }
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            displayStatus('Error connecting to server.', false);
+        }
+    }
+
+    // --- PROFILE UPDATE LOGIC ---
+    async function updateProfile() {
+        const bio = document.getElementById('bio-input').value;
+        const bestSnakeScore = document.getElementById('best-snake-score').textContent;
+
+        displayStatus('Updating...', false);
+
+        try {
+            const response = await fetch('/api/profile/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: currentUsername,
+                    bio: bio,
+                    bestSnakeScore: parseInt(bestSnakeScore, 10) // Ensure score is a number
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                displayStatus('Profile updated successfully!', true);
+            } else {
+                displayStatus(`Update failed: ${data.message}`, false);
+            }
+        } catch (error) {
+            displayStatus('Error updating profile.', false);
+            console.error("Update error:", error);
+        }
+    }
+
+    // --- PICTURE UPLOAD LOGIC ---
+    document.getElementById('profile-file-input').addEventListener('change', async function() {
+        if (!this.files.length) return;
+
+        displayStatus('Uploading image...', false);
+        const file = this.files[0];
+        const formData = new FormData();
         
-        // FIX: Check for the username immediately. If not found or is 'undefined' string, redirect to login.
-        if (!username || username === 'undefined') {
-            console.error("Username not found in localStorage, redirecting to login.");
-            // Clear the bad data just in case
-            localStorage.removeItem('username'); 
-            // Wait briefly before redirecting
-            setTimeout(() => {
-                window.location.href = '/login.html';
-            }, 50); 
+        formData.append('chatfile', file);
+        formData.append('username', currentUsername); // Send username for identification
+
+        try {
+            const response = await fetch('/api/profile/upload', {
+                method: 'POST',
+                body: formData 
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('profile-img').src = `/${data.profilePicture}`;
+                displayStatus('Profile picture updated successfully!', true);
+            } else {
+                displayStatus(`Upload failed: ${data.message}`, false);
+            }
+        } catch (error) {
+            displayStatus('Error uploading picture.', false);
+            console.error("Upload error:", error);
         }
+    });
 
-        const profileUsernameEl = document.getElementById('profileUsername');
-        const profilePicEl = document.getElementById('profilePic');
-        const snakeScoreEl = document.getElementById('snakeScore');
-        const bioTextarea = document.getElementById('bioTextarea');
-        const saveBioBtn = document.getElementById('saveBioBtn');
-        const fileInput = document.getElementById('fileInput');
-        const editPicBtn = document.getElementById('editPicBtn');
-        const statusMessage = document.getElementById('statusMessage');
-
-        // --- Helper Function for Status Messages ---
-        function setStatus(message, isSuccess = true) {
-            statusMessage.textContent = message;
-            statusMessage.className = isSuccess ? 'success' : 'error';
-            setTimeout(() => {
-                statusMessage.textContent = '';
-                statusMessage.className = '';
-            }, 3000);
-        }
-
-        // --- 1. Load Profile Data ---
-        async function loadProfile() {
-            // Only try to load if username is valid
-            if (!username || username === 'undefined') return; 
-            
-            profileUsernameEl.textContent = `Loading @${username}'s profile...`;
-            try {
-                const response = await fetch(`/api/profile/${username}`);
-                const data = await response.json();
-
-                if (data.success && data.profile) {
-                    const profile = data.profile;
-                    
-                    profileUsernameEl.textContent = `@${profile.username}`;
-                    bioTextarea.value = profile.bio || '';
-                    snakeScoreEl.textContent = profile.bestSnakeScore || 0;
-                    
-                    // Check if the profilePicture path is valid, if not, use default
-                    profilePicEl.src = profile.profilePicture || '/uploads/default_avatar.png';
-                } else {
-                    setStatus(`Error loading profile: ${data.message || 'Unknown error'}`, false);
-                }
-            } catch (error) {
-                console.error("Fetch profile error:", error);
-                setStatus('Failed to connect to server. Try again later.', false);
-            }
-        }
-
-        // --- 2. Update Bio Handler ---
-        saveBioBtn.addEventListener('click', async () => {
-            if (!username || username === 'undefined') {
-                setStatus('Login first to update profile.', false);
-                return;
-            }
-
-            saveBioBtn.disabled = true;
-            setStatus('Saving profile...');
-
-            const newBio = bioTextarea.value.trim();
-            if (newBio.length > 160) {
-                 setStatus('Bio is too long (Max 160 characters).', false);
-                 saveBioBtn.disabled = false;
-                 return;
-            }
-
-            try {
-                const response = await fetch('/api/profile/update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: username, bio: newBio })
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    setStatus('Profile saved successfully!', true);
-                } else {
-                    setStatus(`Update failed: ${data.message}`, false); 
-                }
-            } catch (error) {
-                console.error("Bio update error:", error);
-                setStatus('Server error during profile update.', false);
-            } finally {
-                saveBioBtn.disabled = false;
-            }
-        });
-
-        // --- 3. Profile Picture Upload Handlers ---
-        editPicBtn.addEventListener('click', () => {
-            if (!username || username === 'undefined') {
-                setStatus('Login first to change picture.', false);
-                return;
-            }
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', async () => {
-            if (fileInput.files.length === 0) return;
-            
-            const file = fileInput.files[0];
-            const formData = new FormData();
-            
-            formData.append('chatFile', file);
-            formData.append('isProfilePic', 'true'); 
-            formData.append('username', username);
-
-            setStatus('Uploading new profile picture...');
-            editPicBtn.disabled = true;
-
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-
-                if (result.success && result.fileDir) {
-                    profilePicEl.src = result.fileDir + '?' + new Date().getTime(); // Cache busting
-                    setStatus('Profile picture updated!', true);
-                } else {
-                    setStatus(`DP Upload failed: ${result.message}`, false);
-                }
-            } catch (error) {
-                console.error("DP upload error:", error);
-                setStatus('Server error during DP upload.', false);
-            } finally {
-                editPicBtn.disabled = false;
-                fileInput.value = ''; // Clear file input
-            }
-        });
-
-        // Load profile data on page load
-        loadProfile();
-    </script>
+    // Load profile on page load
+    loadProfile();
+</script>
 </body>
 </html>
