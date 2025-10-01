@@ -7,12 +7,13 @@
     <link rel="stylesheet" href="/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        /* CSS is important for functionality; ensure these selectors exist in your HTML */
         .sidebar {
             width: 250px;
             height: 100%;
             position: fixed;
             top: 0;
-            left: -250px; 
+            left: -250px; /* Initially hidden */
             background-color: #2c3e50;
             padding-top: 60px;
             transition: 0.3s;
@@ -21,6 +22,13 @@
         }
         .sidebar.open {
             left: 0;
+        }
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #ecf0f1;
+            display: block;
         }
         /* ... (Add other necessary CSS styles) ... */
     </style>
@@ -79,7 +87,7 @@
     // FIX: Strong validation against null, empty string, or the literal string "undefined"
     if (!username || username === "undefined" || username.trim() === "") {
         console.log("Invalid username found. Clearing data and redirecting to login.");
-        localStorage.clear(); 
+        localStorage.clear(); // Clear any bad data
         window.location.href = "/login.html";
     } else {
         username = username.trim(); 
@@ -92,15 +100,90 @@
 
         const sidebarWelcome = document.getElementById('sidebar-welcome-text'); 
         if (sidebarWelcome) {
-            // Fixes 'Hello, undefined!'
             sidebarWelcome.textContent = `Hello, ${username}!`; 
         }
         
         // Register user with Socket.IO
         socket.emit('register', username); 
     }
-
+    
     // ... (rest of the Socket.IO and Chat Logic functions) ...
+
+    let receiver = null;
+
+    socket.on('user_online', (users) => {
+        const ul = document.getElementById('online-users');
+        ul.innerHTML = '';
+        users.forEach(user => {
+            if (user !== username) { 
+                const li = document.createElement('li');
+                li.textContent = user;
+                li.onclick = () => startChat(user);
+                ul.appendChild(li);
+            }
+        });
+    });
+
+    socket.on('new_private_message', (msg) => {
+        if (msg.sender === receiver || msg.sender === username) {
+            displayMessage(msg);
+        }
+    });
+
+    function startChat(selectedUser) {
+        receiver = selectedUser;
+        document.getElementById('receiver-name').textContent = receiver;
+        document.getElementById('chat-box').style.display = 'block';
+        document.getElementById('messages').innerHTML = ''; 
+        
+        fetchHistory();
+    }
+
+    async function fetchHistory() {
+        if (!username || !receiver) return;
+        
+        try {
+            const response = await fetch(`/api/messages/${username}/${receiver}`);
+            const data = await response.json();
+
+            if(data.success) {
+                data.messages.forEach(msg => displayMessage(msg));
+            } else {
+                console.error("Failed to load chat history:", data.message);
+            }
+        } catch (error) {
+            console.error("Error fetching chat history:", error);
+        }
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('message-input');
+        const text = input.value.trim();
+
+        if (text === '' || !receiver) return;
+
+        const msg = {
+            sender: username,
+            receiver: receiver,
+            text: text,
+            timestamp: new Date().toISOString()
+        };
+
+        socket.emit('private_message', msg);
+        input.value = '';
+    }
+
+    function displayMessage(msg) {
+        const messagesDiv = document.getElementById('messages');
+        const p = document.createElement('p');
+        const sender = msg.sender === username ? 'You' : msg.sender;
+        p.textContent = `${sender}: ${msg.text}`;
+        
+        p.style.textAlign = msg.sender === username ? 'right' : 'left';
+        
+        messagesDiv.appendChild(p);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight; 
+    }
 
 </script>
 </body>
