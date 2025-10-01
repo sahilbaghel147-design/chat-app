@@ -18,21 +18,18 @@ const io = socketio(server);
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Path to static files (HTML, CSS, JS)
 app.use(express.static("public")); 
 
 // --- MONGO DB CONNECTION (FIXED with your provided URL) ---
 const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp"; 
 
 mongoose
-  .connect(MONGO_URI, { // FIX: Directly using the Atlas URL
+  .connect(MONGO_URI, { 
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
   .then(() => console.log("MongoDB Connected Successfully!"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
-// Note: If you have already set MONGO_URI on Render, you should use process.env.MONGO_URI instead of hardcoding.
-// Since you asked for the full code with the URL, I've placed it here.
 
 // --- MONGOOSE SCHEMAS ---
 
@@ -45,7 +42,7 @@ const UserSchema = new mongoose.Schema({
   bestSnakeScore: { type: Number, default: 0 },
 });
 
-// Message Schema (Fixed structure from previous errors)
+// Message Schema
 const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   receiver: { type: String, required: true },
@@ -68,7 +65,7 @@ const User = mongoose.model("User", UserSchema);
 const Message = mongoose.model("Message", MessageSchema);
 const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
-// --- MULTER FILE UPLOAD CONFIGURATION (Fixed Path for Render) ---
+// --- MULTER FILE UPLOAD CONFIGURATION ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // FIX: Correct path relative to src/server.js
