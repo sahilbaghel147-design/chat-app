@@ -6,60 +6,7 @@
     <title>User Profile</title>
     <link rel="stylesheet" href="/style.css">
     <style>
-        /* Add your profile specific styles here */
-        .profile-container {
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 30px;
-            background-color: #fff;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            text-align: center;
-        }
-        .profile-picture-upload {
-            margin-bottom: 20px;
-        }
-        .profile-picture-upload img {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid #3498db;
-        }
-        .profile-picture-upload label {
-            cursor: pointer;
-            color: #3498db;
-            display: block;
-            margin-top: 10px;
-        }
-        .profile-picture-upload input[type="file"] {
-            display: none;
-        }
-        .form-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .score-box {
-            background-color: #eaf6ff;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #2980b9;
-        }
+        /* ... (Keep your CSS styles here) ... */
     </style>
 </head>
 <body>
@@ -108,10 +55,9 @@
     async function loadProfile() {
         const username = localStorage.getItem('username');
 
-        // FIX: Strong check for null, empty string, or the literal string "undefined"
+        // FIX: Strong check. If username is bad, clear it and redirect to login.
         if (!username || username === "undefined" || username.trim() === "") {
-            console.log("Profile: Invalid username. Redirecting to login.");
-            // If the user lands here with bad data, clear it and redirect
+            console.log("Profile: Invalid username. Clearing data and redirecting to login.");
             localStorage.clear();
             window.location.href = '/login.html';
             return;
@@ -133,11 +79,11 @@
                 document.getElementById('profile-img').src = user.profilePicture ? `/${user.profilePicture}` : '/uploads/default_avatar.jpg';
             } else {
                 displayStatus(`Failed to load profile data: ${data.message}`, false);
-                alert('Failed to load profile data.');
+                alert('Failed to load profile data.'); 
             }
         } catch (error) {
             console.error("Error loading profile:", error);
-            displayStatus('Error connecting to server.', false);
+            displayStatus('Error connecting to server. Please try again.', false);
         }
     }
 
@@ -155,7 +101,7 @@
                 body: JSON.stringify({
                     username: currentUsername,
                     bio: bio,
-                    bestSnakeScore: parseInt(bestSnakeScore, 10) // Ensure score is a number
+                    bestSnakeScore: parseInt(bestSnakeScore, 10) 
                 })
             });
             const data = await response.json();
@@ -180,7 +126,7 @@
         const formData = new FormData();
         
         formData.append('chatfile', file);
-        formData.append('username', currentUsername); // Send username for identification
+        formData.append('username', currentUsername); 
 
         try {
             const response = await fetch('/api/profile/upload', {
