@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
-const compression = require("compression"); // <-- compression added
+const compression = require("compression");
 
 dotenv.config();
 
@@ -15,7 +15,7 @@ const server = http.createServer(app);
 const io = socketio(server);
 
 // --- SETTINGS & MIDDLEWARE ---
-app.use(compression()); // <-- compression used
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
@@ -45,10 +45,9 @@ const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   receiver: { type: String, required: true },
   text: { type: String },
-  // File fields for uploads
   fileData: { type: String }, // Stored file path
   fileMimeType: { type: String },
-  originalName: { type: String }, // Fix: No unnecessary nested type here
+  originalName: { type: String }, 
   timestamp: { type: Date, default: Date.now },
 });
 
@@ -64,23 +63,23 @@ const User = mongoose.model("User", UserSchema);
 const Message = mongoose.model("Message", MessageSchema);
 const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
-// --- MULTER FILE UPLOAD CONFIGURATION ---
+// --- MULTER FILE UPLOAD CONFIGURATION (FIXED PATH) ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Correct Path: Files will be stored in the public/uploads folder
+    // FIX: Uses relative path from server.js (src folder) to public/uploads
     cb(null, path.join(__dirname, "../public/uploads"));
   },
   filename: (req, file, cb) => {
-    // Correct Filename generation
     const ext = path.extname(file.originalname);
     const filename = Date.now() + "-" + file.originalname.replace(/ /g, "_");
     cb(null, filename);
   },
 });
 
+// 10MB limit
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, 
 }).single("chatfile");
 
 // --- API AND AUTHENTICATION ROUTES ---
@@ -109,7 +108,6 @@ app.post("/api/login", async (req, res) => {
     return res.json({ success: false, message: "Invalid username or password." });
   }
 
-  // Login successful
   res.json({ success: true, message: "Login successful.", username: user.username });
 });
 
@@ -156,18 +154,17 @@ app.post("/api/profile/update", async (req, res) => {
 app.post("/api/profile/upload", (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
-      return res.status(500).json({ success: false, message: err.message });
+      // FIX: Improved error message for ENOENT
+      console.error("Upload Error:", err);
+      return res.status(500).json({ success: false, message: `Upload Error: ${err.message}. Check if 'public/uploads' folder exists on GitHub.` });
     }
 
     const username = req.body.username;
     if (!username) {
-      // If username is missing, delete the uploaded file
-      if (req.file) {
-        // You should add file deletion logic here if needed
-      }
       return res.status(400).json({ success: false, message: "Username is missing." });
     }
 
+    // FIX: Ensures the public path is correctly stripped for URL access
     const filePath = req.file.path.replace(/\\/g, "/").split("public/")[1];
 
     try {
