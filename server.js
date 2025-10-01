@@ -18,9 +18,11 @@ const io = socketio(server);
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Path to static files (HTML, CSS, JS)
 app.use(express.static("public")); 
 
-// --- MONGO DB CONNECTION (FIXED with your provided URL) ---
+// --- MONGO DB CONNECTION (आपका URL यहाँ है) ---
+// Note: This URL is hardcoded based on your previous input.
 const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp"; 
 
 mongoose
@@ -65,10 +67,10 @@ const User = mongoose.model("User", UserSchema);
 const Message = mongoose.model("Message", MessageSchema);
 const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
-// --- MULTER FILE UPLOAD CONFIGURATION ---
+// --- MULTER FILE UPLOAD CONFIGURATION (Fixed Path for Render) ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // FIX: Correct path relative to src/server.js
+    // FIX: Correct path relative to src/server.js and ensures '/public/uploads' is used
     cb(null, path.join(__dirname, "../public/uploads"));
   },
   filename: (req, file, cb) => {
@@ -88,7 +90,8 @@ const upload = multer({
 // Signup
 app.post("/api/signup", async (req, res) => {
   const { username, password } = req.body;
-  if (await User.findOne({ username })) {
+  const existingUser = await User.findOne({ username });
+  if (existingUser) {
     return res.json({ success: false, message: "User already exists!" });
   }
 
@@ -121,11 +124,12 @@ app.get("/api/profile/:username", async (req, res) => {
     }
     res.json({ success: true, user });
   } catch (error) {
+    console.error("Error fetching profile:", error);
     res.status(500).json({ success: false, message: "Error fetching profile." });
   }
 });
 
-// Update Profile
+// Update Profile (Fixed Syntax Issue)
 app.post("/api/profile/update", async (req, res) => {
   const { username, bio, bestSnakeScore } = req.body;
 
@@ -156,7 +160,8 @@ app.post("/api/profile/upload", (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
       console.error("Upload Error:", err);
-      return res.status(500).json({ success: false, message: `Upload Error: ${err.message}. Check if 'public/uploads' folder exists on GitHub.` });
+      // This error helps diagnose the ENOENT issue
+      return res.status(500).json({ success: false, message: `Upload Error: ${err.message}. Please confirm 'public/uploads' folder exists in GitHub.` });
     }
 
     const username = req.body.username;
@@ -164,6 +169,7 @@ app.post("/api/profile/upload", (req, res) => {
       return res.status(400).json({ success: false, message: "Username is missing." });
     }
 
+    // Get the relative path for the frontend (e.g., uploads/filename.jpg)
     const filePath = req.file.path.replace(/\\/g, "/").split("public/")[1];
 
     try {
@@ -222,7 +228,6 @@ io.on("connection", (socket) => {
     console.log(`${username} registered with ID ${socket.id}`);
   });
 
-  // Handle private message and file upload
   socket.on("private_message", async (msg) => {
     try {
       // Save message to database
