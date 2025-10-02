@@ -1,4 +1,4 @@
-// src/server.js - FINAL WORKING CODE (All Features Integrated)
+// src/server.js - FINAL CLEAN + WORKING CODE
 
 const path = require("path");
 const express = require("express");
@@ -16,30 +16,36 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
-// --- SERVER SETTINGS & MIDDLEWARE ---
+// --- MIDDLEWARE ---
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// FIX: Serving static files from the 'public' folder (Relative Path)
-app.use(express.static(path.join(__dirname, '../public'))); 
+// Serve static files from public/
+app.use(express.static(path.join(__dirname, "../public")));
 
-// --- MONGO DB CONNECTION ---
-// 🚨 NOTE: Using your hardcoded Atlas URI.
-const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority";
+// --- DATABASE CONNECTION ---
+const MONGO_URI =
+  process.env.MONGO_URI ||
+  "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority";
 
-mongoose.connect(MONGO_URI, { 
+mongoose
+  .connect(MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => console.log("MongoDB Connected Successfully!"))
-  .catch((err) => console.error("MongoDB Connection Error:", err));
+  .then(() => console.log("✅ MongoDB Connected Successfully!"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// --- MONGOOSE SCHEMAS ---
+// --- SCHEMAS ---
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
   password: { type: String, required: true },
-  bio: { type: String, default: "Hey there! I'm new to Aura Hub.", maxlength: 160 },
+  bio: {
+    type: String,
+    default: "Hey there! I'm new to Aura Hub.",
+    maxlength: 160,
+  },
   profilePicture: { type: String, default: "uploads/default_avatar.jpg" },
   bestSnakeScore: { type: Number, default: 0 },
 });
@@ -48,9 +54,9 @@ const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   receiver: { type: String, required: true },
   text: { type: String },
-  fileData: { type: String }, 
+  fileData: { type: String },
   fileMimeType: { type: String },
-  originalName: { type: String }, 
+  originalName: { type: String },
   timestamp: { type: Date, default: Date.now },
 });
 
@@ -65,10 +71,9 @@ const User = mongoose.model("User", UserSchema);
 const Message = mongoose.model("Message", MessageSchema);
 const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
-// --- MULTER FILE UPLOAD CONFIGURATION ---
+// --- FILE UPLOAD (Multer) ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Correct path relative to src folder
     cb(null, path.join(__dirname, "../public/uploads"));
   },
   filename: (req, file, cb) => {
@@ -79,39 +84,73 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, 
+  limits: { fileSize: 10 * 1024 * 1024 },
 }).single("chatfile");
 
-// --- API AND AUTHENTICATION ROUTES ---
+// --- ROUTES ---
 
-// Login API (This is the route failing on connection error)
+// Login
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.json({ success: false, message: "Invalid username or password." });
+    if (!user) {
+      return res.json({ success: false, message: "User not found." });
     }
 
-    res.json({ success: true, message: "Login successful.", username: user.username });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.json({ success: false, message: "Invalid credentials." });
+    }
+
+    res.json({
+      success: true,
+      message: "Login successful.",
+      username: user.username,
+    });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ success: false, message: "Server login error. Check logs." });
+    res.status(500).json({ success: false, message: "Server login error." });
   }
 });
 
-// Update Profile Picture
+// Signup
+app.post("/api/signup", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const existing = await User.findOne({ username });
+    if (existing) {
+      return res.json({ success: false, message: "Username already exists." });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const newUser = new User({ username, password: hashed });
+    await newUser.save();
+
+    res.json({ success: true, message: "Signup successful." });
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ success: false, message: "Server signup error." });
+  }
+});
+
+// Profile Picture Upload
 app.post("/api/profile/upload", (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
       console.error("Upload Error:", err);
-      return res.status(500).json({ success: false, message: `Upload Error: ${err.message}` });
+      return res
+        .status(500)
+        .json({ success: false, message: `Upload Error: ${err.message}` });
     }
 
     const username = req.body.username;
     if (!username) {
-      return res.status(400).json({ success: false, message: "Username is missing." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Username is missing." });
     }
 
     const filePath = req.file.path.replace(/\\/g, "/").split("public/")[1];
@@ -123,32 +162,50 @@ app.post("/api/profile/upload", (req, res) => {
         { new: true }
       );
 
-      res.json({ success: true, message: "Profile picture updated.", profilePicture: filePath });
+      res.json({
+        success: true,
+        message: "Profile picture updated.",
+        profilePicture: filePath,
+      });
     } catch (error) {
-      res.status(500).json({ success: false, message: "Error saving profile picture." });
+      res
+        .status(500)
+        .json({ success: false, message: "Error saving profile picture." });
     }
   });
 });
 
-// --- ROUTING ---
+// Static pages
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public", "login.html"));
 });
 
-app.get('/:file.html', (req, res) => {
-    const fileName = req.params.file + '.html';
-    const filePath = path.join(__dirname, '../public', fileName);
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            res.status(404).sendFile(path.join(__dirname, '../public/404.html'));
-        }
-    });
+app.get("/:file.html", (req, res) => {
+  const fileName = req.params.file + ".html";
+  const filePath = path.join(__dirname, "../public", fileName);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      res.status(404).send("404 Not Found");
+    }
+  });
 });
 
-// ... (Other API and Socket logic are here) ...
+// --- SOCKET.IO (basic example) ---
+io.on("connection", (socket) => {
+  console.log("New client connected");
 
-// --- SERVER STARTUP ---
+  socket.on("chatMessage", async (msg) => {
+    console.log("Message received:", msg);
+    io.emit("message", msg);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
+});
+
+// --- START SERVER ---
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
