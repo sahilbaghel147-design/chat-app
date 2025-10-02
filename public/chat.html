@@ -4,14 +4,32 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Aura Hub - Chat</title>
+  
   <script src="/socket.io/socket.io.js"></script>
+  
   <style>
-    body {
+    /* 🌍 Global Reset */
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    :root {
+      /* Define Color Variables */
+      --color-primary: #5e6bfe;
+      --color-dark-bg: #181828;
+      --color-chat-bg: #181828;
+      --color-sidebar-bg: #1c1c2c;
+      --color-component-bg: #2a2a3d;
+      --color-text: #f0f0f0;
+      --color-error: #ef4444;
+    }
+
+    body {
       font-family: "Segoe UI", sans-serif;
-      background: #0f0f1a;
-      color: white;
-      height: 100vh;
+      background: var(--color-dark-bg);
+      color: var(--color-text);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
@@ -25,6 +43,7 @@
       padding: 12px 0;
       font-weight: bold;
       box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+      flex-shrink: 0; /* Navbar should not shrink */
     }
     nav a {
       color: white;
@@ -44,31 +63,40 @@
     .chat-container {
       flex: 1;
       display: flex;
-      height: 100%;
+      /* FIX: Ensure container takes up remaining vertical space */
+      height: calc(100vh - 50px); /* Assuming nav height is ~50px */
+      overflow: hidden;
     }
 
     /* Sidebar (Online Users) */
     .sidebar {
       width: 220px;
-      background: #1c1c2c;
+      background: var(--color-sidebar-bg);
       border-right: 1px solid #333;
       padding: 10px;
       display: flex;
       flex-direction: column;
+      flex-shrink: 0; /* Sidebar should not shrink */
+      overflow-y: auto;
     }
     .sidebar h3 {
       margin: 0 0 10px;
       font-size: 1.1em;
       border-bottom: 1px solid #444;
       padding-bottom: 6px;
-      color: #5e6bfe;
+      color: var(--color-primary);
     }
     .user {
       padding: 8px;
-      background: #2a2a3d;
+      background: var(--color-component-bg);
       margin: 4px 0;
       border-radius: 8px;
       font-size: 0.9em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .user:hover {
+        background: #3a3a5a;
     }
 
     /* Chat Area */
@@ -76,12 +104,15 @@
       flex: 1;
       display: flex;
       flex-direction: column;
+      background: var(--color-chat-bg);
+      padding: 0; /* Padding is inside chatBox */
+      overflow: hidden;
     }
     #chatBox {
       flex: 1;
       padding: 15px;
       overflow-y: auto;
-      background: #181828;
+      background: var(--color-chat-bg);
       display: flex;
       flex-direction: column;
     }
@@ -98,14 +129,14 @@
       line-height: 1.4;
     }
     .me {
-      background: #5e6bfe;
+      background: var(--color-primary);
       color: white;
       margin-left: auto;
       border-bottom-right-radius: 3px;
     }
     .other {
-      background: #2c2c3e;
-      color: #eee;
+      background: var(--color-component-bg);
+      color: var(--color-text);
       margin-right: auto;
       border-bottom-left-radius: 3px;
     }
@@ -119,8 +150,9 @@
     #inputArea {
       display: flex;
       padding: 10px;
-      background: #1c1c2c;
+      background: var(--color-sidebar-bg);
       border-top: 1px solid #333;
+      flex-shrink: 0; /* Input area must not shrink */
     }
     #messageInput {
       flex: 1;
@@ -128,12 +160,12 @@
       border-radius: 20px;
       border: none;
       outline: none;
-      background: #2a2a3d;
+      background: var(--color-component-bg);
       color: white;
       font-size: 1em;
     }
     #sendButton {
-      background: #5e6bfe;
+      background: var(--color-primary);
       border: none;
       border-radius: 50%;
       width: 45px;
@@ -149,9 +181,8 @@
       transform: scale(1.05);
     }
   </style>
-</head>
+  </head>
 <body>
-  <!-- Navbar -->
   <nav>
     <a href="/index.html">Home</a>
     <a href="/chat.html" class="active">Chat</a>
@@ -160,15 +191,12 @@
     <a href="/about.html">About</a>
   </nav>
 
-  <!-- Main Chat Layout -->
   <div class="chat-container">
-    <!-- Sidebar (Online Users) -->
     <div class="sidebar">
       <h3>🟢 Online Users</h3>
       <div id="usersList"></div>
     </div>
 
-    <!-- Chat Area -->
     <div class="chat-area">
       <div id="chatBox"></div>
       <div id="inputArea">
@@ -187,6 +215,11 @@
     const sendButton = document.getElementById("sendButton");
     const usersList = document.getElementById("usersList");
 
+    // FIX: Auth check - If not logged in, redirect
+    if (username === "Guest") {
+        window.location.href = "/login.html";
+    }
+
     sendButton.addEventListener("click", sendMessage);
     messageInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") sendMessage();
@@ -195,7 +228,9 @@
     function sendMessage() {
       const text = messageInput.value.trim();
       if (!text) return;
-      socket.emit("chatMessage", { sender: username, text });
+      
+      // FIX: Assuming your backend expects 'chatMessage'
+      socket.emit("chatMessage", { sender: username, text }); 
       messageInput.value = "";
     }
 
@@ -220,7 +255,8 @@
     });
 
     // Online users update
-    socket.emit("join", username);
+    // FIX: Using 'register' event if that's what server.js uses
+    socket.emit("register", username); 
     socket.on("updateUsers", (users) => {
       usersList.innerHTML = "";
       users.forEach(u => {
