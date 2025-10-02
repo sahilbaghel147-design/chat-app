@@ -6,27 +6,28 @@
   <title>Aura Hub - Chat</title>
   
   <script src="/socket.io/socket.io.js"></script>
-  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
   <style>
-    /* 🌍 Global Reset */
+    /* 🌍 Global Reset and Variables */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
     }
     :root {
-      /* Define Color Variables */
       --color-primary: #5e6bfe;
       --color-dark-bg: #181828;
-      --color-chat-bg: #181828;
+      --color-chat-bg: #f5f5f5; /* Light background for chat area */
       --color-sidebar-bg: #1c1c2c;
       --color-component-bg: #2a2a3d;
       --color-text: #f0f0f0;
       --color-error: #ef4444;
+      --color-online: #4CAF50;
     }
 
     body {
-      font-family: "Segoe UI", sans-serif;
       background: var(--color-dark-bg);
       color: var(--color-text);
       min-height: 100vh;
@@ -34,49 +35,37 @@
       flex-direction: column;
     }
 
-    /* Navbar */
+    /* Navbar (Top Header) */
     nav {
       background: linear-gradient(135deg, #5e6bfe, #4a59e6);
       display: flex;
-      justify-content: space-around;
+      justify-content: space-between;
       align-items: center;
-      padding: 12px 0;
+      padding: 12px 20px;
       font-weight: bold;
       box-shadow: 0 3px 8px rgba(0,0,0,0.4);
-      flex-shrink: 0; /* Navbar should not shrink */
+      flex-shrink: 0;
     }
-    nav a {
-      color: white;
-      text-decoration: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      transition: 0.3s;
-    }
-    nav a:hover {
-      background: rgba(255,255,255,0.2);
-    }
-    nav a.active {
-      background: rgba(255,255,255,0.3);
-    }
+    nav .brand { color: white; text-decoration: none; font-size: 1.5em; }
+    nav .logout-btn { background: var(--color-error); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
 
     /* Main Layout */
     .chat-container {
       flex: 1;
       display: flex;
-      /* FIX: Ensure container takes up remaining vertical space */
-      height: calc(100vh - 50px); /* Assuming nav height is ~50px */
+      height: calc(100vh - 50px); /* Height minus header */
       overflow: hidden;
     }
 
     /* Sidebar (Online Users) */
     .sidebar {
-      width: 220px;
+      width: 250px; /* Slightly wider */
       background: var(--color-sidebar-bg);
       border-right: 1px solid #333;
-      padding: 10px;
+      padding: 15px;
       display: flex;
       flex-direction: column;
-      flex-shrink: 0; /* Sidebar should not shrink */
+      flex-shrink: 0;
       overflow-y: auto;
     }
     .sidebar h3 {
@@ -86,6 +75,22 @@
       padding-bottom: 6px;
       color: var(--color-primary);
     }
+    .sidebar .nav-links a {
+        display: block;
+        padding: 10px 0;
+        color: var(--color-text);
+        text-decoration: none;
+        transition: 0.2s;
+    }
+    .sidebar .nav-links a:hover {
+        color: var(--color-primary);
+    }
+    
+    /* Online Users List */
+    #usersList {
+        list-style: none;
+        padding: 0;
+    }
     .user {
       padding: 8px;
       background: var(--color-component-bg);
@@ -94,6 +99,9 @@
       font-size: 0.9em;
       cursor: pointer;
       transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .user:hover {
         background: #3a3a5a;
@@ -105,7 +113,6 @@
       display: flex;
       flex-direction: column;
       background: var(--color-chat-bg);
-      padding: 0; /* Padding is inside chatBox */
       overflow: hidden;
     }
     #chatBox {
@@ -116,43 +123,35 @@
       display: flex;
       flex-direction: column;
     }
+    
+    /* Message Bubbles (Simplified for this file) */
     .msg-row {
       display: flex;
       margin: 6px 0;
-      align-items: flex-end;
     }
     .msg {
       padding: 10px 14px;
       border-radius: 15px;
       max-width: 70%;
-      font-size: 0.95em;
-      line-height: 1.4;
     }
     .me {
       background: var(--color-primary);
       color: white;
       margin-left: auto;
-      border-bottom-right-radius: 3px;
     }
     .other {
       background: var(--color-component-bg);
       color: var(--color-text);
       margin-right: auto;
-      border-bottom-left-radius: 3px;
-    }
-    .username {
-      font-size: 0.75em;
-      opacity: 0.7;
-      margin-bottom: 3px;
     }
 
     /* Input Area */
     #inputArea {
       display: flex;
-      padding: 10px;
+      padding: 10px 20px;
       background: var(--color-sidebar-bg);
       border-top: 1px solid #333;
-      flex-shrink: 0; /* Input area must not shrink */
+      flex-shrink: 0;
     }
     #messageInput {
       flex: 1;
@@ -174,11 +173,6 @@
       color: white;
       font-size: 1.2em;
       cursor: pointer;
-      transition: 0.2s;
-    }
-    #sendButton:hover {
-      background: #4a59e6;
-      transform: scale(1.05);
     }
   </style>
   </head>
@@ -189,15 +183,26 @@
     <a href="/profile.html">Profile</a>
     <a href="/games.html">Games</a>
     <a href="/about.html">About</a>
+    <button class="logout-btn">Logout</button>
   </nav>
 
   <div class="chat-container">
     <div class="sidebar">
+      <div class="nav-links">
+        <a href="/index.html">Home</a>
+        <a href="/chat.html" class="active">Chat</a>
+        <a href="/profile.html">Profile</a>
+        <a href="/games.html">Games</a>
+        <a href="/videos.html">Videos</a>
+        <a href="/about.html">About</a>
+      </div>
+
       <h3>🟢 Online Users</h3>
       <div id="usersList"></div>
     </div>
 
     <div class="chat-area">
+        <h2 style="padding: 15px; border-bottom: 1px solid #333; color: var(--color-text);">Select a User to Chat</h2>
       <div id="chatBox"></div>
       <div id="inputArea">
         <input type="text" id="messageInput" placeholder="Type your message..."/>
@@ -208,29 +213,36 @@
 
   <script>
     const socket = io();
-    const username = localStorage.getItem("username") || "Guest";
+    let username = localStorage.getItem("username");
+    
+    // FIX: Auth check and redirection
+    if (!username || username === "undefined") {
+        window.location.href = "/login.html";
+        username = "Guest"; // Fallback for script execution
+    }
 
     const chatBox = document.getElementById("chatBox");
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("sendButton");
     const usersList = document.getElementById("usersList");
 
-    // FIX: Auth check - If not logged in, redirect
-    if (username === "Guest") {
-        window.location.href = "/login.html";
-    }
-
+    // Event Listeners
     sendButton.addEventListener("click", sendMessage);
     messageInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") sendMessage();
     });
+    document.querySelector('.logout-btn').addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = "/login.html";
+    });
+
 
     function sendMessage() {
       const text = messageInput.value.trim();
       if (!text) return;
       
-      // FIX: Assuming your backend expects 'chatMessage'
-      socket.emit("chatMessage", { sender: username, text }); 
+      // FIX: Your backend expects 'chatMessage' or 'privateMessage'. Assuming 'privateMessage' structure.
+      socket.emit("privateMessage", { sender: username, receiver: 'All', text: text }); 
       messageInput.value = "";
     }
 
@@ -243,10 +255,10 @@
 
       if (msg.sender === username) {
         bubble.classList.add("me");
-        bubble.innerHTML = `<div class="username">You</div>${msg.text}`;
+        bubble.innerHTML = `<div>You</div>${msg.text}`;
       } else {
         bubble.classList.add("other");
-        bubble.innerHTML = `<div class="username">${msg.sender}</div>${msg.text}`;
+        bubble.innerHTML = `<div>${msg.sender}</div>${msg.text}`;
       }
 
       row.appendChild(bubble);
@@ -254,16 +266,20 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     });
 
-    // Online users update
-    // FIX: Using 'register' event if that's what server.js uses
-    socket.emit("register", username); 
-    socket.on("updateUsers", (users) => {
+    // FIX: User List Logic
+    socket.emit("newUser", username); // Assuming backend uses 'newUser'
+
+    socket.on("updateUsers", (users) => { // Assuming backend sends 'updateUsers' with an array of names
       usersList.innerHTML = "";
       users.forEach(u => {
-        const div = document.createElement("div");
-        div.classList.add("user");
-        div.textContent = u;
-        usersList.appendChild(div);
+        if (u !== username) {
+            const div = document.createElement("div");
+            div.classList.add("user");
+            div.textContent = u;
+            // FIX: Add click handler to select recipient here
+            div.onclick = () => console.log('Starting chat with:', u); 
+            usersList.appendChild(div);
+        }
       });
     });
   </script>
