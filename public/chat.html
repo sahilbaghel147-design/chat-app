@@ -8,32 +8,75 @@
   <style>
     body {
       margin: 0;
-      font-family: "Segoe UI", Tahoma, sans-serif;
+      font-family: "Segoe UI", sans-serif;
       background: #0f0f1a;
+      color: white;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
     }
 
-    /* Header */
-    header {
+    /* Navbar */
+    nav {
       background: linear-gradient(135deg, #5e6bfe, #4a59e6);
-      padding: 15px;
       display: flex;
+      justify-content: space-around;
       align-items: center;
-      gap: 10px;
-      color: white;
+      padding: 12px 0;
       font-weight: bold;
-      font-size: 1.2em;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
     }
-    header img {
-      width: 35px; height: 35px;
-      border-radius: 50%;
-      border: 2px solid white;
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: 0.3s;
+    }
+    nav a:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    nav a.active {
+      background: rgba(255,255,255,0.3);
     }
 
-    /* Chat area */
+    /* Main Layout */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      height: 100%;
+    }
+
+    /* Sidebar (Online Users) */
+    .sidebar {
+      width: 220px;
+      background: #1c1c2c;
+      border-right: 1px solid #333;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar h3 {
+      margin: 0 0 10px;
+      font-size: 1.1em;
+      border-bottom: 1px solid #444;
+      padding-bottom: 6px;
+      color: #5e6bfe;
+    }
+    .user {
+      padding: 8px;
+      background: #2a2a3d;
+      margin: 4px 0;
+      border-radius: 8px;
+      font-size: 0.9em;
+    }
+
+    /* Chat Area */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
     #chatBox {
       flex: 1;
       padding: 15px;
@@ -42,7 +85,6 @@
       display: flex;
       flex-direction: column;
     }
-
     .msg-row {
       display: flex;
       margin: 6px 0;
@@ -73,7 +115,7 @@
       margin-bottom: 3px;
     }
 
-    /* Input area */
+    /* Input Area */
     #inputArea {
       display: flex;
       padding: 10px;
@@ -109,16 +151,31 @@
   </style>
 </head>
 <body>
-  <header>
-    <img src="https://i.pravatar.cc/100?u=me" alt="User Avatar"/>
-    Aura Hub - Chat
-  </header>
+  <!-- Navbar -->
+  <nav>
+    <a href="/index.html">Home</a>
+    <a href="/chat.html" class="active">Chat</a>
+    <a href="/profile.html">Profile</a>
+    <a href="/games.html">Games</a>
+    <a href="/about.html">About</a>
+  </nav>
 
-  <div id="chatBox"></div>
+  <!-- Main Chat Layout -->
+  <div class="chat-container">
+    <!-- Sidebar (Online Users) -->
+    <div class="sidebar">
+      <h3>🟢 Online Users</h3>
+      <div id="usersList"></div>
+    </div>
 
-  <div id="inputArea">
-    <input type="text" id="messageInput" placeholder="Type your message..."/>
-    <button id="sendButton">➤</button>
+    <!-- Chat Area -->
+    <div class="chat-area">
+      <div id="chatBox"></div>
+      <div id="inputArea">
+        <input type="text" id="messageInput" placeholder="Type your message..."/>
+        <button id="sendButton">➤</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -128,6 +185,7 @@
     const chatBox = document.getElementById("chatBox");
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("sendButton");
+    const usersList = document.getElementById("usersList");
 
     sendButton.addEventListener("click", sendMessage);
     messageInput.addEventListener("keypress", (e) => {
@@ -159,6 +217,18 @@
       row.appendChild(bubble);
       chatBox.appendChild(row);
       chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // Online users update
+    socket.emit("join", username);
+    socket.on("updateUsers", (users) => {
+      usersList.innerHTML = "";
+      users.forEach(u => {
+        const div = document.createElement("div");
+        div.classList.add("user");
+        div.textContent = u;
+        usersList.appendChild(div);
+      });
     });
   </script>
 </body>
