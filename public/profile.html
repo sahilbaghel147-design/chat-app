@@ -1,216 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Aura Hub - Profile</title>
+  <title>My Profile - Aura Hub</title>
   <style>
     body {
-      margin: 0;
-      font-family: "Segoe UI", sans-serif;
-      background: #0f0f1a;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    /* Navbar */
-    nav {
-      background: linear-gradient(135deg, #5e6bfe, #4a59e6);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding: 12px 0;
-      font-weight: bold;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
-    }
-    nav a {
-      color: white;
-      text-decoration: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      transition: 0.3s;
-    }
-    nav a:hover {
-      background: rgba(255,255,255,0.2);
-    }
-    nav a.active {
-      background: rgba(255,255,255,0.3);
-    }
-
-    /* Profile Container */
-    .container {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .profile-card {
-      background: #1c1c2c;
-      padding: 30px;
-      border-radius: 15px;
-      width: 350px;
+      background: #1e1e2f;
+      color: #fff;
+      font-family: Arial, sans-serif;
       text-align: center;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      padding: 20px;
     }
-    .profile-card h2 {
-      margin-bottom: 20px;
+    .container {
+      max-width: 400px;
+      margin: 0 auto;
+      background: #2c2c3e;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    }
+    h2 {
       color: #5e6bfe;
     }
-    .avatar {
+    img {
+      border-radius: 50%;
       width: 120px;
       height: 120px;
-      border-radius: 50%;
       object-fit: cover;
+      margin: 15px auto;
+      display: block;
       border: 3px solid #5e6bfe;
-      margin-bottom: 15px;
     }
-    input[type="file"] {
-      margin: 10px 0;
-    }
-    textarea {
+    input, textarea {
       width: 100%;
-      height: 70px;
-      border-radius: 10px;
+      padding: 12px;
+      margin: 10px 0;
       border: none;
-      padding: 10px;
-      background: #2a2a3d;
-      color: white;
-      resize: none;
-      margin-top: 10px;
+      border-radius: 8px;
     }
     button {
+      width: 100%;
+      padding: 12px;
       background: #5e6bfe;
       border: none;
-      padding: 12px 20px;
-      border-radius: 8px;
       color: white;
-      font-weight: bold;
-      margin-top: 15px;
+      font-size: 1em;
+      border-radius: 8px;
       cursor: pointer;
-      transition: 0.3s;
+      margin-top: 10px;
     }
     button:hover {
       background: #4a59e6;
     }
-    #statusMessage {
-      margin-top: 12px;
-      font-size: 0.9em;
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+      color: yellow;
+    }
+    nav {
+      background: #3c3c55;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    nav a {
+      color: white;
+      margin: 0 10px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    nav a:hover {
+      color: #5e6bfe;
     }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
   <nav>
     <a href="/index.html">Home</a>
     <a href="/chat.html">Chat</a>
-    <a href="/profile.html" class="active">Profile</a>
+    <a href="/profile.html">Profile</a>
     <a href="/games.html">Games</a>
+    <a href="/videos.html">Videos</a>
     <a href="/about.html">About</a>
   </nav>
 
-  <!-- Profile Section -->
   <div class="container">
-    <div class="profile-card">
-      <h2>My Profile</h2>
-      <img id="profilePic" src="/uploads/default_avatar.jpg" alt="Avatar" class="avatar"/>
-      
-      <form id="uploadForm">
-        <input type="file" id="fileInput" name="chatfile" accept="image/*"/>
-        <button type="submit">Upload Picture</button>
-      </form>
+    <h2>My Profile</h2>
+    <img id="avatarPreview" src="https://res.cloudinary.com/demo/image/upload/sample.jpg" alt="Avatar"/>
+    
+    <input type="file" id="fileInput" accept="image/*"/>
+    <button onclick="uploadProfile()">Upload Picture</button>
 
-      <textarea id="bioInput" placeholder="Write your bio..."></textarea>
-      <button id="saveBioBtn">Save Bio</button>
-      
-      <div id="statusMessage"></div>
-    </div>
+    <textarea id="bioInput" placeholder="Write your bio..."></textarea>
+    <button onclick="saveBio()">Save Bio</button>
+
+    <div id="status"></div>
   </div>
 
   <script>
-    const username = localStorage.getItem("username") || "Guest";
-    const profilePic = document.getElementById("profilePic");
-    const bioInput = document.getElementById("bioInput");
-    const uploadForm = document.getElementById("uploadForm");
-    const statusMessage = document.getElementById("statusMessage");
-    const saveBioBtn = document.getElementById("saveBioBtn");
+    const username = localStorage.getItem("username");
 
-    // ✅ Load Profile Data from Server
-    async function loadProfile() {
-      try {
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password: "dummy" }) // password is dummy here
-        });
-        // 🚨 But actually safer is to store profile data in localStorage at login
-        // Here we just load from localStorage if available
-        const pic = localStorage.getItem("profilePicture");
-        const bio = localStorage.getItem("bio");
-
-        if (pic) profilePic.src = pic;
-        if (bio) bioInput.value = bio;
-      } catch (err) {
-        console.error("Profile load error:", err);
+    // Load saved avatar from localStorage
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedPic = localStorage.getItem("profilePicture");
+      if (savedPic) {
+        document.getElementById("avatarPreview").src = savedPic;
       }
-    }
+    });
 
-    loadProfile();
-
-    // ✅ Upload Profile Picture
-    uploadForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    async function uploadProfile() {
       const file = document.getElementById("fileInput").files[0];
       if (!file) {
-        statusMessage.style.color = "red";
-        statusMessage.textContent = "Please select a file!";
+        alert("Please select a file");
         return;
       }
+
       const formData = new FormData();
       formData.append("chatfile", file);
       formData.append("username", username);
 
+      document.getElementById("status").textContent = "Uploading...";
+
       try {
         const res = await fetch("/api/profile/upload", {
           method: "POST",
-          body: formData
+          body: formData,
         });
+
         const data = await res.json();
         if (data.success) {
-          profilePic.src = data.profilePicture + "?t=" + Date.now(); // force refresh
+          document.getElementById("status").style.color = "lightgreen";
+          document.getElementById("status").textContent = "Profile updated!";
+          document.getElementById("avatarPreview").src = data.profilePicture;
           localStorage.setItem("profilePicture", data.profilePicture);
-          statusMessage.style.color = "lightgreen";
-          statusMessage.textContent = "Profile picture updated!";
         } else {
-          statusMessage.style.color = "red";
-          statusMessage.textContent = data.message;
+          document.getElementById("status").style.color = "red";
+          document.getElementById("status").textContent = data.message;
         }
       } catch (err) {
-        statusMessage.style.color = "red";
-        statusMessage.textContent = "Upload failed!";
+        console.error(err);
+        document.getElementById("status").style.color = "red";
+        document.getElementById("status").textContent = "Upload failed!";
       }
-    });
+    }
 
-    // ✅ Save Bio
-    saveBioBtn.addEventListener("click", async () => {
-      const bio = bioInput.value.trim();
-      if (!bio) {
-        statusMessage.style.color = "red";
-        statusMessage.textContent = "Bio cannot be empty.";
-        return;
-      }
+    async function saveBio() {
+      const bio = document.getElementById("bioInput").value;
+      document.getElementById("status").textContent = "Saving bio...";
 
       try {
-        // 🚨 For now just save to localStorage (API bana denge agar chaho)
-        localStorage.setItem("bio", bio);
-        statusMessage.style.color = "lightgreen";
-        statusMessage.textContent = "Bio saved successfully!";
+        const res = await fetch("/api/profile/bio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, bio }),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById("status").style.color = "lightgreen";
+          document.getElementById("status").textContent = "Bio saved!";
+        } else {
+          document.getElementById("status").style.color = "red";
+          document.getElementById("status").textContent = data.message;
+        }
       } catch (err) {
-        statusMessage.style.color = "red";
-        statusMessage.textContent = "Error saving bio.";
+        console.error(err);
+        document.getElementById("status").style.color = "red";
+        document.getElementById("status").textContent = "Failed to save bio!";
       }
-    });
+    }
   </script>
 </body>
 </html>
