@@ -71,6 +71,11 @@
       height: 30px;
       border-radius: 50%;
       margin-right: 10px;
+      object-fit: cover;
+    }
+    .user span {
+      font-size: 0.9em;
+      color: #ddd;
     }
 
     .chat-window {
@@ -93,12 +98,8 @@
       align-items: flex-end;
       margin-bottom: 12px;
     }
-    .message-container.sent {
-      justify-content: flex-end;
-    }
-    .message-container.received {
-      justify-content: flex-start;
-    }
+    .message-container.sent { justify-content: flex-end; }
+    .message-container.received { justify-content: flex-start; }
 
     .message-avatar {
       width: 35px;
@@ -197,10 +198,10 @@
     const sendBtn = document.getElementById("sendBtn");
     const onlineUsersDiv = document.getElementById("onlineUsers");
 
-    // Join chat
-    socket.emit("join", username);
+    // ✅ Join with username + avatar
+    socket.emit("join", { username, avatar });
 
-    // Receive message
+    // ✅ Receive message
     socket.on("message", (msg) => {
       const container = document.createElement("div");
       container.classList.add("message-container");
@@ -226,7 +227,7 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
-    // Update online users
+    // ✅ Update online users with avatar
     socket.on("updateUsers", (users) => {
       onlineUsersDiv.innerHTML = "";
       users.forEach((u) => {
@@ -234,11 +235,11 @@
         userDiv.classList.add("user");
 
         const img = document.createElement("img");
-        img.src = localStorage.getItem("profilePicture") || "/uploads/default_avatar.jpg";
-        img.alt = u;
+        img.src = u.avatar || "/uploads/default_avatar.jpg";
+        img.alt = u.username;
 
         const span = document.createElement("span");
-        span.textContent = u;
+        span.textContent = u.username;
 
         userDiv.appendChild(img);
         userDiv.appendChild(span);
@@ -246,7 +247,7 @@
       });
     });
 
-    // Send message
+    // ✅ Send message
     sendBtn.addEventListener("click", sendMessage);
     input.addEventListener("keypress", (e) => {
       if (e.key === "Enter") sendMessage();
