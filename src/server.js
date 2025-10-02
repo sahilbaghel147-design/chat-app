@@ -1,3 +1,18 @@
+// src/server.js के शुरुआत में
+// ... (Your existing code)
+
+// Serving static files (HTML, CSS, JS)
+// FIX: Using '../public' to go up one directory level
+app.use(express.static(path.join(__dirname, '../public'))); 
+
+// Multer Uploads Path
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // FIX: Using '../public/uploads' 
+    cb(null, path.join(__dirname, '../public/uploads')); 
+  },
+  // ... (rest of the file remains the same)
+
 // src/server.js - FINAL WORKING CODE
 
 const path = require("path");
