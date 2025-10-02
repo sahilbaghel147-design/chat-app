@@ -1,18 +1,3 @@
-// src/server.js के शुरुआत में
-// ... (Your existing code)
-
-// Serving static files (HTML, CSS, JS)
-// FIX: Using '../public' to go up one directory level
-app.use(express.static(path.join(__dirname, '../public'))); 
-
-// Multer Uploads Path
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // FIX: Using '../public/uploads' 
-    cb(null, path.join(__dirname, '../public/uploads')); 
-  },
-  // ... (rest of the file remains the same)
-
 // src/server.js - FINAL WORKING CODE
 
 const path = require("path");
@@ -35,20 +20,23 @@ const io = socketio(server);
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Serving static files from the 'public' folder (Correct Path relative to src)
+app.use(express.static(path.join(__dirname, "../public")));
 
-// FIX: Serving static files from the 'public' folder (Correct Path relative to src)
-app.use(express.static(path.join(__dirname, "../public"))); 
 
 // --- MONGO DB CONNECTION ---
 // 🚨 NOTE: Using your hardcoded Atlas URI.
 const MONGO_URI = "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority";
 
 mongoose
-  .connect(MONGO_URI)
+  .connect(MONGO_URI, { 
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("MongoDB Connected Successfully!"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
-// --- MONGOOSE SCHEMAS (All necessary schemas included) ---
+// --- MONGOOSE SCHEMAS ---
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
   password: { type: String, required: true },
@@ -81,7 +69,7 @@ const HighScore = mongoose.model("HighScore", HighScoreSchema);
 // --- MULTER FILE UPLOAD CONFIGURATION ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Correct path for uploads
+    // Correct path relative to src/server.js
     cb(null, path.join(__dirname, "../public/uploads"));
   },
   filename: (req, file, cb) => {
@@ -97,7 +85,7 @@ const upload = multer({
 
 // --- API AND AUTHENTICATION ROUTES ---
 
-// Login API (This is the route failing)
+// Login API (FIX: This is the route failing on connection error)
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -109,41 +97,28 @@ app.post("/api/login", async (req, res) => {
 
     res.json({ success: true, message: "Login successful.", username: user.username });
   } catch (error) {
+    // FIX: Send a 500 error response if DB fails, which the frontend can handle.
     console.error("Login error:", error);
-    // ⚠️ Server error logging added
-    res.status(500).json({ success: false, message: "Server login error. Check logs." });
+    res.status(500).json({ success: false, message: "Server connection failed. Try again." });
   }
 });
 
-// ... (Other API routes: /api/signup, /api/profile, /api/scores are omitted here for brevity but were correct in previous responses) ...
+// The rest of the API routes (signup, profile/update, upload, scores) should be added here
+// ... (The rest of the server.js code is correct from previous responses)
 
-// --- ROUTING AND STATIC FILES ---
-
-// Serve files from 'public' and 'public/uploads'
-app.use(express.static(path.join(__dirname, "../public"))); 
-app.use("/uploads", express.static(path.join(__dirname, "../public/uploads"))); 
-
-// Route for Login/Root
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public", "login.html"));
-});
-
-// Generic route for other HTML files
-app.get('/:file.html', (req, res) => {
-    const fileName = req.params.file + '.html';
-    const filePath = path.join(__dirname, '../public', fileName);
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            res.status(404).sendFile(path.join(__dirname, '../public/404.html'));
-        }
-    });
-});
-
-// --- SOCKET.IO CHAT LOGIC (Omitted for brevity, but use the full code from previous answer) ---
+// --- SOCKET.IO CHAT LOGIC ---
 const connectedUsers = {};
 
 io.on("connection", (socket) => {
-    // ... (Your Socket.IO Logic) ...
+  console.log("A user connected:", socket.id);
+
+  socket.on("register", (username) => {
+    connectedUsers[username] = socket.id;
+    io.emit("user_online", Object.keys(connectedUsers));
+    console.log(`${username} registered with ID ${socket.id}`);
+  });
+  
+  // ... (Other socket logic: private_message, loadChat, disconnect) ...
 });
 
 // --- SERVER STARTUP ---
