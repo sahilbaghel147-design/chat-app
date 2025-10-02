@@ -1,98 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Aura Hub - Chat</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #1e1e2f;
-      color: white;
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #0f0f1a;
       display: flex;
       flex-direction: column;
       height: 100vh;
-      margin: 0;
     }
+
+    /* Header */
     header {
-      background: #2c2c3e;
+      background: linear-gradient(135deg, #5e6bfe, #4a59e6);
       padding: 15px;
-      text-align: center;
-      font-size: 1.5em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
       font-weight: bold;
-      color: #5e6bfe;
+      font-size: 1.2em;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
     }
+    header img {
+      width: 35px; height: 35px;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    /* Chat area */
     #chatBox {
       flex: 1;
       padding: 15px;
       overflow-y: auto;
-      border-top: 1px solid #333;
-      border-bottom: 1px solid #333;
+      background: #181828;
+      display: flex;
+      flex-direction: column;
     }
-    .message {
-      margin: 8px 0;
-      padding: 10px;
-      border-radius: 8px;
+
+    .msg-row {
+      display: flex;
+      margin: 6px 0;
+      align-items: flex-end;
+    }
+    .msg {
+      padding: 10px 14px;
+      border-radius: 15px;
       max-width: 70%;
-      word-wrap: break-word;
+      font-size: 0.95em;
+      line-height: 1.4;
     }
     .me {
       background: #5e6bfe;
       color: white;
       margin-left: auto;
+      border-bottom-right-radius: 3px;
     }
     .other {
       background: #2c2c3e;
-      color: #f0f0f0;
+      color: #eee;
       margin-right: auto;
+      border-bottom-left-radius: 3px;
     }
+    .username {
+      font-size: 0.75em;
+      opacity: 0.7;
+      margin-bottom: 3px;
+    }
+
+    /* Input area */
     #inputArea {
       display: flex;
+      padding: 10px;
+      background: #1c1c2c;
       border-top: 1px solid #333;
     }
     #messageInput {
       flex: 1;
       padding: 12px;
+      border-radius: 20px;
       border: none;
       outline: none;
-      font-size: 1em;
-      background: #282828;
+      background: #2a2a3d;
       color: white;
+      font-size: 1em;
     }
     #sendButton {
       background: #5e6bfe;
-      color: white;
       border: none;
-      padding: 12px 20px;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      margin-left: 8px;
+      color: white;
+      font-size: 1.2em;
       cursor: pointer;
-      font-weight: bold;
+      transition: 0.2s;
     }
     #sendButton:hover {
       background: #4a59e6;
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
-  <header>💬 Aura Hub - Chat</header>
+  <header>
+    <img src="https://i.pravatar.cc/100?u=me" alt="User Avatar"/>
+    Aura Hub - Chat
+  </header>
+
   <div id="chatBox"></div>
+
   <div id="inputArea">
-    <input type="text" id="messageInput" placeholder="Type your message..." />
-    <button id="sendButton">Send</button>
+    <input type="text" id="messageInput" placeholder="Type your message..."/>
+    <button id="sendButton">➤</button>
   </div>
 
   <script>
-    // ✅ Socket.IO connect
     const socket = io();
-
-    // ✅ Get username from localStorage (set during login)
     const username = localStorage.getItem("username") || "Guest";
 
     const chatBox = document.getElementById("chatBox");
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("sendButton");
 
-    // Send message
     sendButton.addEventListener("click", sendMessage);
     messageInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") sendMessage();
@@ -105,18 +141,23 @@
       messageInput.value = "";
     }
 
-    // Receive messages
     socket.on("message", (msg) => {
-      const div = document.createElement("div");
-      div.classList.add("message");
+      const row = document.createElement("div");
+      row.classList.add("msg-row");
+
+      const bubble = document.createElement("div");
+      bubble.classList.add("msg");
+
       if (msg.sender === username) {
-        div.classList.add("me");
-        div.textContent = `You: ${msg.text}`;
+        bubble.classList.add("me");
+        bubble.innerHTML = `<div class="username">You</div>${msg.text}`;
       } else {
-        div.classList.add("other");
-        div.textContent = `${msg.sender}: ${msg.text}`;
+        bubble.classList.add("other");
+        bubble.innerHTML = `<div class="username">${msg.sender}</div>${msg.text}`;
       }
-      chatBox.appendChild(div);
+
+      row.appendChild(bubble);
+      chatBox.appendChild(row);
       chatBox.scrollTop = chatBox.scrollHeight;
     });
   </script>
