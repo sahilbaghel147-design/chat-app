@@ -1,4 +1,4 @@
-// src/server.js - FINAL CLEAN + WORKING CODE
+// src/server.js - FINAL CODE WITH ONLINE USERS + CHAT + PROFILE
 
 const path = require("path");
 const express = require("express");
@@ -52,7 +52,7 @@ const UserSchema = new mongoose.Schema({
 
 const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
-  receiver: { type: String, required: true },
+  receiver: { type: String },
   text: { type: String },
   fileData: { type: String },
   fileMimeType: { type: String },
@@ -87,7 +87,28 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 }).single("chatfile");
 
-// --- ROUTES ---
+// --- API ROUTES ---
+
+// Signup
+app.post("/api/signup", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const existing = await User.findOne({ username });
+    if (existing) {
+      return res.json({ success: false, message: "Username already exists." });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const newUser = new User({ username, password: hashed });
+    await newUser.save();
+
+    res.json({ success: true, message: "Signup successful." });
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ success: false, message: "Server signup error." });
+  }
+});
 
 // Login
 app.post("/api/login", async (req, res) => {
@@ -112,27 +133,6 @@ app.post("/api/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ success: false, message: "Server login error." });
-  }
-});
-
-// Signup
-app.post("/api/signup", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    const existing = await User.findOne({ username });
-    if (existing) {
-      return res.json({ success: false, message: "Username already exists." });
-    }
-
-    const hashed = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, password: hashed });
-    await newUser.save();
-
-    res.json({ success: true, message: "Signup successful." });
-  } catch (error) {
-    console.error("Signup error:", error);
-    res.status(500).json({ success: false, message: "Server signup error." });
   }
 });
 
@@ -175,7 +175,7 @@ app.post("/api/profile/upload", (req, res) => {
   });
 });
 
-// Static pages
+// Static Pages
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public", "login.html"));
 });
@@ -190,16 +190,30 @@ app.get("/:file.html", (req, res) => {
   });
 });
 
-// --- SOCKET.IO (basic example) ---
+// --- SOCKET.IO WITH ONLINE USERS ---
+let onlineUsers = [];
+
 io.on("connection", (socket) => {
   console.log("New client connected");
 
-  socket.on("chatMessage", async (msg) => {
-    console.log("Message received:", msg);
+  // User joins
+  socket.on("join", (username) => {
+    socket.username = username;
+    if (!onlineUsers.includes(username)) {
+      onlineUsers.push(username);
+    }
+    io.emit("updateUsers", onlineUsers);
+  });
+
+  // Chat messages
+  socket.on("chatMessage", (msg) => {
     io.emit("message", msg);
   });
 
+  // Disconnect
   socket.on("disconnect", () => {
+    onlineUsers = onlineUsers.filter((u) => u !== socket.username);
+    io.emit("updateUsers", onlineUsers);
     console.log("Client disconnected");
   });
 });
