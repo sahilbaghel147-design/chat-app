@@ -1,4 +1,4 @@
-// src/server.js - FINAL FULL CODE (with all fixes)
+// src/server.js - FINAL FULL FIXED CODE
 const path = require("path");
 const express = require("express");
 const http = require("http");
@@ -20,8 +20,8 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from public/
-app.use(express.static(path.join(__dirname, "../public")));
+// ✅ Serve static files from /public
+app.use(express.static(path.join(__dirname, "../..", "public")));
 
 // --- DATABASE CONNECTION ---
 const MONGO_URI =
@@ -71,9 +71,12 @@ const Message = mongoose.model("Message", MessageSchema);
 const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
 // --- FILE UPLOAD (Multer) ---
+// ✅ Correct uploads path
+const uploadsPath = path.resolve(__dirname, "../..", "public/uploads");
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../public/uploads"));
+    cb(null, uploadsPath);
   },
   filename: (req, file, cb) => {
     const filename = Date.now() + "-" + file.originalname.replace(/ /g, "_");
@@ -129,7 +132,7 @@ app.post("/api/login", async (req, res) => {
       message: "Login successful.",
       username: user.username,
       profilePicture: user.profilePicture,
-      bio: user.bio
+      bio: user.bio,
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -137,7 +140,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ✅ Profile Picture Upload Route (FIXED)
+// ✅ Profile Picture Upload Route (FIXED PATH)
 app.post("/api/profile/upload", (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
@@ -150,7 +153,7 @@ app.post("/api/profile/upload", (req, res) => {
       return res.status(400).json({ success: false, message: "Username is missing." });
     }
 
-    // ✅ Sirf relative path store karenge
+    // ✅ Store only relative path
     const filePath = "/uploads/" + req.file.filename;
 
     try {
@@ -163,7 +166,7 @@ app.post("/api/profile/upload", (req, res) => {
       res.json({
         success: true,
         message: "Profile picture updated.",
-        profilePicture: filePath
+        profilePicture: filePath,
       });
     } catch (error) {
       console.error("Save Error:", error);
@@ -172,14 +175,31 @@ app.post("/api/profile/upload", (req, res) => {
   });
 });
 
+// ✅ Bio Update Route
+app.post("/api/profile/bio", async (req, res) => {
+  try {
+    const { username, bio } = req.body;
+    if (!username || !bio) {
+      return res.json({ success: false, message: "Missing username or bio." });
+    }
+
+    await User.findOneAndUpdate({ username }, { bio }, { new: true });
+
+    res.json({ success: true, message: "Bio updated successfully.", bio });
+  } catch (err) {
+    console.error("Bio update error:", err);
+    res.status(500).json({ success: false, message: "Error updating bio." });
+  }
+});
+
 // --- STATIC PAGES ---
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public", "login.html"));
+  res.sendFile(path.join(__dirname, "../..", "public", "login.html"));
 });
 
 app.get("/:file.html", (req, res) => {
   const fileName = req.params.file + ".html";
-  const filePath = path.join(__dirname, "../public", fileName);
+  const filePath = path.join(__dirname, "../..", "public", fileName);
   res.sendFile(filePath, (err) => {
     if (err) {
       res.status(404).send("404 Not Found");
