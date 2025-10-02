@@ -1,4 +1,4 @@
-// src/server.js - FINAL FULL FIXED CODE
+// src/server.js - FINAL FULL FIXED CODE (Render Ready)
 const path = require("path");
 const express = require("express");
 const http = require("http");
@@ -20,8 +20,8 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Serve static files from /public
-app.use(express.static(path.join(__dirname, "../..", "public")));
+// ✅ Serve static files from public/
+app.use(express.static(path.join(__dirname, "../public")));
 
 // --- DATABASE CONNECTION ---
 const MONGO_URI =
@@ -71,8 +71,7 @@ const Message = mongoose.model("Message", MessageSchema);
 const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
 // --- FILE UPLOAD (Multer) ---
-// ✅ Correct uploads path
-const uploadsPath = path.resolve(__dirname, "../..", "public/uploads");
+const uploadsPath = path.resolve(__dirname, "../public/uploads");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -140,20 +139,23 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ✅ Profile Picture Upload Route (FIXED PATH)
+// ✅ Profile Picture Upload Route
 app.post("/api/profile/upload", (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
       console.error("Upload Error:", err);
-      return res.status(500).json({ success: false, message: `Upload Error: ${err.message}` });
+      return res
+        .status(500)
+        .json({ success: false, message: `Upload Error: ${err.message}` });
     }
 
     const username = req.body.username;
     if (!username) {
-      return res.status(400).json({ success: false, message: "Username is missing." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Username is missing." });
     }
 
-    // ✅ Store only relative path
     const filePath = "/uploads/" + req.file.filename;
 
     try {
@@ -170,7 +172,9 @@ app.post("/api/profile/upload", (req, res) => {
       });
     } catch (error) {
       console.error("Save Error:", error);
-      res.status(500).json({ success: false, message: "Error saving profile picture." });
+      res
+        .status(500)
+        .json({ success: false, message: "Error saving profile picture." });
     }
   });
 });
@@ -180,7 +184,10 @@ app.post("/api/profile/bio", async (req, res) => {
   try {
     const { username, bio } = req.body;
     if (!username || !bio) {
-      return res.json({ success: false, message: "Missing username or bio." });
+      return res.json({
+        success: false,
+        message: "Missing username or bio.",
+      });
     }
 
     await User.findOneAndUpdate({ username }, { bio }, { new: true });
@@ -188,18 +195,21 @@ app.post("/api/profile/bio", async (req, res) => {
     res.json({ success: true, message: "Bio updated successfully.", bio });
   } catch (err) {
     console.error("Bio update error:", err);
-    res.status(500).json({ success: false, message: "Error updating bio." });
+    res
+      .status(500)
+      .json({ success: false, message: "Error updating bio." });
   }
 });
 
 // --- STATIC PAGES ---
+// ✅ Correct path (../public)
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../..", "public", "login.html"));
+  res.sendFile(path.join(__dirname, "../public", "login.html"));
 });
 
 app.get("/:file.html", (req, res) => {
   const fileName = req.params.file + ".html";
-  const filePath = path.join(__dirname, "../..", "public", fileName);
+  const filePath = path.join(__dirname, "../public", fileName);
   res.sendFile(filePath, (err) => {
     if (err) {
       res.status(404).send("404 Not Found");
@@ -213,7 +223,6 @@ let onlineUsers = [];
 io.on("connection", (socket) => {
   console.log("New client connected");
 
-  // User joins
   socket.on("join", (username) => {
     socket.username = username;
     if (!onlineUsers.includes(username)) {
@@ -222,12 +231,10 @@ io.on("connection", (socket) => {
     io.emit("updateUsers", onlineUsers);
   });
 
-  // Chat messages
   socket.on("chatMessage", (msg) => {
     io.emit("message", msg);
   });
 
-  // Disconnect
   socket.on("disconnect", () => {
     onlineUsers = onlineUsers.filter((u) => u !== socket.username);
     io.emit("updateUsers", onlineUsers);
