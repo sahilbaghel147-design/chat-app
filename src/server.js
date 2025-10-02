@@ -1,5 +1,4 @@
-// src/server.js - FINAL CODE WITH ONLINE USERS + CHAT + PROFILE
-
+// src/server.js - FINAL FULL CODE (with all fixes)
 const path = require("path");
 const express = require("express");
 const http = require("http");
@@ -46,7 +45,7 @@ const UserSchema = new mongoose.Schema({
     default: "Hey there! I'm new to Aura Hub.",
     maxlength: 160,
   },
-  profilePicture: { type: String, default: "uploads/default_avatar.jpg" },
+  profilePicture: { type: String, default: "/uploads/default_avatar.jpg" },
   bestSnakeScore: { type: Number, default: 0 },
 });
 
@@ -129,6 +128,8 @@ app.post("/api/login", async (req, res) => {
       success: true,
       message: "Login successful.",
       username: user.username,
+      profilePicture: user.profilePicture,
+      bio: user.bio
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -136,24 +137,21 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// Profile Picture Upload
+// ✅ Profile Picture Upload Route (FIXED)
 app.post("/api/profile/upload", (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
       console.error("Upload Error:", err);
-      return res
-        .status(500)
-        .json({ success: false, message: `Upload Error: ${err.message}` });
+      return res.status(500).json({ success: false, message: `Upload Error: ${err.message}` });
     }
 
     const username = req.body.username;
     if (!username) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Username is missing." });
+      return res.status(400).json({ success: false, message: "Username is missing." });
     }
 
-    const filePath = req.file.path.replace(/\\/g, "/").split("public/")[1];
+    // ✅ Sirf relative path store karenge
+    const filePath = "/uploads/" + req.file.filename;
 
     try {
       await User.findOneAndUpdate(
@@ -165,17 +163,16 @@ app.post("/api/profile/upload", (req, res) => {
       res.json({
         success: true,
         message: "Profile picture updated.",
-        profilePicture: filePath,
+        profilePicture: filePath
       });
     } catch (error) {
-      res
-        .status(500)
-        .json({ success: false, message: "Error saving profile picture." });
+      console.error("Save Error:", error);
+      res.status(500).json({ success: false, message: "Error saving profile picture." });
     }
   });
 });
 
-// Static Pages
+// --- STATIC PAGES ---
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public", "login.html"));
 });
