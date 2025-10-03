@@ -1,137 +1,173 @@
+const path = require("path");
 const express = require("express");
 const http = require("http");
-const socketIo = require("socket.io");
+const socketio = require("socket.io");
 const mongoose = require("mongoose");
+const dotenv = require("dotenv");
 const bcrypt = require("bcryptjs");
-const compression = require("compression");
-const path = require("path");
 const multer = require("multer");
+const compression = require("compression");
 const { v2: cloudinary } = require("cloudinary");
+
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketio(server);
 
+// --- SERVER SETTINGS & MIDDLEWARE ---
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(compression());
-app.use(express.static(path.join(__dirname, "../public")));
+app.use(express.static(path.join(__dirname, "public"))); // serve static files
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads"))); // uploads folder
 
-// ================== DATABASE (MongoDB Atlas URL) ==================
-mongoose.connect(
-  "mongodb+srv://sahil:Sahil123@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority&appName=Cluster0"
-)
-.then(() => console.log("✅ MongoDB Connected"))
-.catch((err) => console.error("❌ MongoDB Error:", err));
+// --- MONGO DB CONNECTION ---
+const MONGO_URI =
+  process.env.MONGO_URI ||
+  "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority";
 
-// ================== SCHEMAS ==================
-const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true },
-  password: String,
-  avatar: { type: String, default: "/uploads/default_avatar.jpg" },
-  bio: { type: String, default: "" },
-});
+mongoose
+  .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.error("❌ MongoDB Error:", err));
 
-const messageSchema = new mongoose.Schema({
-  username: String,
-  text: String,
-  avatar: String,
-  time: { type: Date, default: Date.now },
-});
-
-const User = mongoose.model("User", userSchema);
-const Message = mongoose.model("Message", messageSchema);
-
-// ================== CLOUDINARY CONFIG ==================
+// --- CLOUDINARY CONFIG ---
 cloudinary.config({
-  cloud_name: "dwbp5c6xi",   // ✅ Tera Cloudinary Cloud Name
-  api_key: "173424873274959",  // ✅ Tera API Key
-  api_secret: "wV5xytTDOV2LhuvMEsEdr7hbdyM", // ✅ Tera API Secret
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "your_cloud_name",
+  api_key: process.env.CLOUDINARY_API_KEY || "your_api_key",
+  api_secret: process.env.CLOUDINARY_API_SECRET || "your_api_secret",
+});
+console.log("✅ Cloudinary Configured");
+
+// --- MONGOOSE SCHEMAS ---
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true, trim: true },
+  password: { type: String, required: true },
+  bio: { type: String, default: "Hey there! I'm new to Aura Hub.", maxlength: 160 },
+  profilePicture: { type: String, default: "uploads/default_avatar.jpg" },
+  bestSnakeScore: { type: Number, default: 0 },
 });
 
-// ================== MULTER (Memory Storage) ==================
-const upload = multer({ storage: multer.memoryStorage() });
-
-// ================== ROUTES ==================
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public/index.html"));
+const MessageSchema = new mongoose.Schema({
+  sender: { type: String, required: true },
+  receiver: { type: String, required: true },
+  text: { type: String },
+  fileData: { type: String },
+  fileMimeType: { type: String },
+  originalName: { type: String },
+  timestamp: { type: Date, default: Date.now },
 });
 
-// Upload profile picture to Cloudinary
-app.post("/api/upload", upload.single("avatar"), (req, res) => {
-  if (!req.file)
-    return res.status(400).json({ success: false, message: "No file uploaded" });
-
-  const stream = cloudinary.uploader.upload_stream(
-    { folder: "profile_pics" },
-    (err, result) => {
-      if (err) {
-        console.error("Upload Error:", err);
-        return res
-          .status(500)
-          .json({ success: false, message: "Upload failed", error: err.message });
-      }
-      res.json({ success: true, url: result.secure_url });
-    }
-  );
-
-  stream.end(req.file.buffer);
+const HighScoreSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  score: { type: Number, required: true, default: 0 },
+  game: { type: String, default: "Snake" },
+  date: { type: Date, default: Date.now },
 });
 
-// Save bio
-app.post("/api/bio", async (req, res) => {
-  const { username, bio } = req.body;
+const User = mongoose.model("User", UserSchema);
+const Message = mongoose.model("Message", MessageSchema);
+const HighScore = mongoose.model("HighScore", HighScoreSchema);
+
+// --- MULTER FILE UPLOAD CONFIGURATION ---
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "public/uploads"));
+  },
+  filename: (req, file, cb) => {
+    const filename = Date.now() + "-" + file.originalname.replace(/ /g, "_");
+    cb(null, filename);
+  },
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }).single("chatfile");
+
+// --- API ROUTES ---
+// LOGIN
+app.post("/api/login", async (req, res) => {
   try {
-    await User.updateOne({ username }, { bio });
-    res.json({ success: true });
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.json({ success: false, message: "Invalid username or password." });
+    }
+    res.json({ success: true, message: "Login successful.", username: user.username });
   } catch (err) {
-    res.status(500).json({ success: false, error: err });
+    console.error("Login error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-// ================== SOCKET.IO (CHAT) ==================
-io.on("connection", (socket) => {
-  console.log("🟢 User connected");
+// PROFILE UPDATE
+app.post("/api/profile/update", async (req, res) => {
+  try {
+    const { username, bio, bestSnakeScore } = req.body;
+    const updateFields = {};
+    if (bio) updateFields.bio = bio;
+    if (bestSnakeScore) updateFields.bestSnakeScore = bestSnakeScore;
 
-  // Receive chat message
-  socket.on("chatMessage", async (data) => {
-    const newMsg = new Message({
-      username: data.username,
-      text: data.text,
-      avatar: data.avatar,
-    });
-    await newMsg.save();
+    const updatedUser = await User.findOneAndUpdate({ username }, { $set: updateFields }, { new: true });
+    if (!updatedUser) return res.status(404).json({ success: false, message: "User not found" });
 
-    io.emit("message", {
-      username: data.username,
-      text: data.text,
-      avatar: data.avatar,
-      time: new Date(),
-    });
-  });
+    res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error("Profile update error:", err);
+    res.status(500).json({ success: false, message: "Error updating profile" });
+  }
+});
 
-  // Update online users
-  socket.on("join", async (user) => {
-    socket.username = user.username;
-    socket.avatar = user.avatar;
+// PROFILE PICTURE UPLOAD
+app.post("/api/profile/upload", (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) return res.status(500).json({ success: false, message: err.message });
 
-    const users = [];
-    for (let [id, s] of io.of("/").sockets) {
-      users.push({ username: s.username, avatar: s.avatar });
+    const username = req.body.username;
+    if (!username) return res.status(400).json({ success: false, message: "Username required" });
+
+    const filePath = req.file.path.replace(/\\/g, "/").split("public/")[1];
+    try {
+      await User.findOneAndUpdate({ username }, { profilePicture: filePath }, { new: true });
+      res.json({ success: true, profilePicture: filePath });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Error saving profile picture" });
     }
-    io.emit("updateUsers", users);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("🔴 User disconnected");
-    const users = [];
-    for (let [id, s] of io.of("/").sockets) {
-      users.push({ username: s.username, avatar: s.avatar });
-    }
-    io.emit("updateUsers", users);
   });
 });
 
-// ================== START SERVER ==================
+// --- PAGE ROUTES (without .html) ---
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
+app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public", "chat.html")));
+app.get("/profile", (req, res) => res.sendFile(path.join(__dirname, "public", "profile.html")));
+app.get("/games", (req, res) => res.sendFile(path.join(__dirname, "public", "games.html")));
+app.get("/videos", (req, res) => res.sendFile(path.join(__dirname, "public", "videos.html")));
+app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
+app.get("/signup", (req, res) => res.sendFile(path.join(__dirname, "public", "signup.html")));
+app.get("/client", (req, res) => res.sendFile(path.join(__dirname, "public", "client.html")));
+
+// --- SOCKET.IO CHAT LOGIC ---
+const connectedUsers = {};
+
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("register", (username) => {
+    connectedUsers[username] = socket.id;
+    io.emit("updateUsers", Object.keys(connectedUsers));
+  });
+
+  socket.on("chatMessage", (data) => {
+    io.emit("chatMessage", { user: data.user, text: data.text, time: new Date() });
+  });
+
+  socket.on("disconnect", () => {
+    for (const [user, id] of Object.entries(connectedUsers)) {
+      if (id === socket.id) delete connectedUsers[user];
+    }
+    io.emit("updateUsers", Object.keys(connectedUsers));
+    console.log("User disconnected:", socket.id);
+  });
+});
+
+// --- START SERVER ---
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
