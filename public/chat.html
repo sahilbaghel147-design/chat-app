@@ -5,156 +5,221 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Aura Hub - Chat</title>
   <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", sans-serif;
-      background: #0f0f1a;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
+    /* style.css - Final Unified, Professional, and Theme-Enabled CSS */
 
-    /* Navbar */
+/* 1. Global Reset & Root Variables */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:root {
+    /* --- DARK MODE --- */
+    --bg-main: #181828;
+    --bg-sidebar: #1c1c2c;
+    --bg-component: #2a2a3d;
+    --bg-chat-area: #181828;
+    --color-primary: #5e6bfe;   /* Accent Blue */
+    --color-text-main: #f0f0f0;
+    --color-text-secondary: #aaaaaa;
+    --color-border: #333;
+    --color-error: #ef4444;
+}
+
+/* 2. Light Mode Variables */
+body.light {
+    --bg-main: #f0f2f5;
+    --bg-sidebar: #ffffff;
+    --bg-component: #e0e0e0;
+    --bg-chat-area: #f5f5f5;
+    --color-primary: #3F51B5;   /* Indigo Blue */
+    --color-text-main: #212121;
+    --color-text-secondary: #6c757d;
+    --color-border: #ccc;
+    --color-error: #dc3545;
+}
+
+
+/* 3. Base Body and Typography */
+body {
+    background: var(--bg-main);
+    color: var(--color-text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a {
+    text-decoration: none;
+    color: var(--color-primary);
+    transition: color 0.3s;
+}
+
+/* 4. Main Navbar (Top Header - Desktop/General) */
+nav {
+    background: var(--bg-sidebar);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    font-weight: bold;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    flex-shrink: 0;
+}
+nav a {
+    color: var(--color-text-main);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: 0.3s;
+    font-size: 0.9em;
+}
+nav a:hover {
+    background: rgba(255,255,255,0.1);
+}
+nav .logout-btn {
+    background: var(--color-error);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+/* New: Toggle Button Style */
+#themeToggleBtn {
+    background: var(--bg-component);
+    color: var(--color-text-main);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+/* 5. Main Chat Layout */
+.chat-container {
+    flex: 1;
+    display: flex;
+    height: calc(100vh - 50px);
+    overflow: hidden;
+}
+
+/* Sidebar (Left Panel) */
+.sidebar {
+    width: 250px;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--color-border);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+.sidebar h3 {
+    margin: 0 0 10px;
+    font-size: 1.1em;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 6px;
+    color: var(--color-primary);
+}
+.user {
+    padding: 8px;
+    background: var(--bg-component);
+    margin: 4px 0;
+    border-radius: 8px;
+    font-size: 0.9em;
+    color: var(--color-text-main);
+}
+.user:hover {
+    background: #3a3a5a;
+}
+
+/* Chat Area */
+.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-chat-area);
+    overflow: hidden;
+}
+#chatBox {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: var(--bg-chat-area);
+}
+.msg {
+    padding: 10px 14px;
+    border-radius: 15px;
+    max-width: 70%;
+}
+.me {
+    background: var(--color-primary);
+    color: white;
+    margin-left: auto;
+}
+.other {
+    background: var(--bg-component);
+    color: var(--color-text-main);
+    margin-right: auto;
+}
+
+/* Input Area */
+#inputArea {
+    display: flex;
+    padding: 10px 20px;
+    background: var(--bg-sidebar);
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+#messageInput {
+    flex: 1;
+    padding: 12px;
+    border-radius: 20px;
+    border: none;
+    outline: none;
+    background: var(--bg-component);
+    color: var(--color-text-main);
+    font-size: 1em;
+}
+#sendButton {
+    background: var(--color-primary);
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    margin-left: 8px;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+/* Responsive (Minimal adjustments, relying on flex) */
+@media (max-width: 600px) {
     nav {
-      background: linear-gradient(135deg, #5e6bfe, #4a59e6);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding: 12px 0;
-      font-weight: bold;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+        justify-content: space-between;
     }
     nav a {
-      color: white;
-      text-decoration: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      transition: 0.3s;
+        padding: 6px;
+        font-size: 0.8em;
     }
-    nav a:hover { background: rgba(255,255,255,0.2); }
-    nav a.active { background: rgba(255,255,255,0.3); }
-
-    /* Layout */
     .chat-container {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
+        flex-direction: column;
     }
     .sidebar {
-      width: 220px;
-      background: #181828;
-      border-right: 1px solid #2c2c3e;
-      padding: 15px;
-      overflow-y: auto;
+        width: 100%;
+        height: 150px;
+        order: -1;
     }
-    .sidebar h3 {
-      margin-top: 0;
-      color: #5e6bfe;
-      font-size: 1.1em;
-      border-bottom: 1px solid #2c2c3e;
-      padding-bottom: 8px;
+    .chat-area {
+        height: calc(100vh - 200px);
     }
-    .user {
-      display: flex;
-      align-items: center;
-      padding: 8px;
-      margin: 5px 0;
-      background: #222233;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    .user:hover { background: #2c2c3e; }
-    .user img {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      margin-right: 10px;
-      object-fit: cover;
-    }
-    .user span {
-      font-size: 0.9em;
-      color: #ddd;
-    }
+}
 
-    .chat-window {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: #12121c;
-    }
-
-    .messages {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .message-container {
-      display: flex;
-      align-items: flex-end;
-      margin-bottom: 12px;
-    }
-    .message-container.sent { justify-content: flex-end; }
-    .message-container.received { justify-content: flex-start; }
-
-    .message-avatar {
-      width: 35px;
-      height: 35px;
-      border-radius: 50%;
-      margin: 0 8px;
-      object-fit: cover;
-    }
-
-    .message {
-      max-width: 65%;
-      padding: 12px;
-      border-radius: 12px;
-      line-height: 1.4;
-      font-size: 0.95em;
-      word-wrap: break-word;
-    }
-    .sent .message {
-      background: #5e6bfe;
-      border-bottom-right-radius: 4px;
-    }
-    .received .message {
-      background: #2c2c3e;
-      border-bottom-left-radius: 4px;
-    }
-
-    /* Input Bar */
-    .input-bar {
-      display: flex;
-      padding: 12px;
-      background: #181828;
-      border-top: 1px solid #2c2c3e;
-    }
-    #messageInput {
-      flex: 1;
-      padding: 12px;
-      border-radius: 8px;
-      border: none;
-      outline: none;
-      font-size: 1em;
-      background: #2c2c3e;
-      color: white;
-    }
-    #sendBtn {
-      background: #5e6bfe;
-      border: none;
-      padding: 12px 20px;
-      margin-left: 10px;
-      border-radius: 8px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    #sendBtn:hover { background: #4a59e6; }
   </style>
 </head>
 <body>
