@@ -2,174 +2,135 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Profile - Aura Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      background: #1e1e2f;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    .container {
+    .profile-container {
       max-width: 400px;
-      margin: 0 auto;
-      background: #2c2c3e;
+      margin: 40px auto;
+      background: #1e1e2e;
       padding: 20px;
       border-radius: 15px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+      text-align: center;
     }
-    h2 {
-      color: #5e6bfe;
+    .profile-container h2 {
+      color: #4c6ef5;
+      margin-bottom: 15px;
     }
-    img {
-      border-radius: 50%;
+    .profile-avatar {
       width: 120px;
       height: 120px;
+      border-radius: 50%;
       object-fit: cover;
-      margin: 15px auto;
-      display: block;
-      border: 3px solid #5e6bfe;
+      border: 3px solid #4c6ef5;
+      margin-bottom: 15px;
     }
-    input, textarea {
-      width: 100%;
-      padding: 12px;
+    .input-box {
       margin: 10px 0;
+      width: 100%;
+    }
+    .input-box input[type="file"],
+    .input-box textarea {
+      width: 100%;
+      padding: 10px;
       border: none;
       border-radius: 8px;
+      margin-top: 5px;
     }
-    button {
-      width: 100%;
-      padding: 12px;
-      background: #5e6bfe;
-      border: none;
+    .btn {
+      background: #4c6ef5;
       color: white;
-      font-size: 1em;
+      border: none;
+      padding: 10px 20px;
+      margin: 8px 0;
       border-radius: 8px;
       cursor: pointer;
-      margin-top: 10px;
-    }
-    button:hover {
-      background: #4a59e6;
-    }
-    #status {
-      margin-top: 10px;
       font-weight: bold;
-      color: yellow;
+      transition: 0.3s;
     }
-    nav {
-      background: #3c3c55;
-      padding: 12px;
-      text-align: center;
-      margin-bottom: 20px;
+    .btn:hover {
+      background: #364fc7;
     }
-    nav a {
-      color: white;
-      margin: 0 10px;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    nav a:hover {
-      color: #5e6bfe;
-    }
+    .error { color: red; margin-top: 10px; }
+    .success { color: lime; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <nav>
-    <a href="/index.html">Home</a>
-    <a href="/chat.html">Chat</a>
-    <a href="/profile.html">Profile</a>
-    <a href="/games.html">Games</a>
-    <a href="/videos.html">Videos</a>
-    <a href="/about.html">About</a>
+  <!-- 🔹 Navbar -->
+  <nav style="background:#4c6ef5; padding:10px; text-align:center;">
+    <a href="index.html" style="color:white; margin:0 10px;">Home</a>
+    <a href="chat.html" style="color:white; margin:0 10px;">Chat</a>
+    <a href="profile.html" style="color:yellow; margin:0 10px;">Profile</a>
+    <a href="games.html" style="color:white; margin:0 10px;">Games</a>
+    <a href="videos.html" style="color:white; margin:0 10px;">Videos</a>
+    <a href="about.html" style="color:white; margin:0 10px;">About</a>
   </nav>
 
-  <div class="container">
+  <div class="profile-container">
     <h2>My Profile</h2>
-    <img id="avatarPreview" src="https://res.cloudinary.com/demo/image/upload/sample.jpg" alt="Avatar"/>
-    
-    <input type="file" id="fileInput" accept="image/*"/>
-    <button onclick="uploadProfile()">Upload Picture</button>
+    <img id="avatarPreview" src="assets/default_avatar.png" alt="Avatar" class="profile-avatar" />
 
-    <textarea id="bioInput" placeholder="Write your bio..."></textarea>
-    <button onclick="saveBio()">Save Bio</button>
+    <!-- Upload Form -->
+    <form id="uploadForm" enctype="multipart/form-data" class="input-box">
+      <input type="file" name="avatar" required />
+      <button type="submit" class="btn">Upload Picture</button>
+    </form>
 
-    <div id="status"></div>
+    <!-- Bio Form -->
+    <form id="bioForm" class="input-box">
+      <textarea name="bio" placeholder="Write your bio..." rows="3"></textarea>
+      <button type="submit" class="btn">Save Bio</button>
+    </form>
+
+    <div id="messageBox"></div>
   </div>
 
   <script>
-    const username = localStorage.getItem("username");
+    const username = localStorage.getItem("username") || "guest"; // 🔹 user identity (temp)
 
-    // Load saved avatar from localStorage
-    document.addEventListener("DOMContentLoaded", () => {
-      const savedPic = localStorage.getItem("profilePicture");
-      if (savedPic) {
-        document.getElementById("avatarPreview").src = savedPic;
+    // ✅ Upload Avatar
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+
+      const msgBox = document.getElementById("messageBox");
+      if (data.success) {
+        document.getElementById("avatarPreview").src = data.url;
+        msgBox.innerHTML = `<p class="success">✅ Picture uploaded!</p>`;
+        // save in localStorage for chat use
+        localStorage.setItem("avatar", data.url);
+      } else {
+        msgBox.innerHTML = `<p class="error">❌ Upload failed: ${data.message}</p>`;
       }
     });
 
-    async function uploadProfile() {
-      const file = document.getElementById("fileInput").files[0];
-      if (!file) {
-        alert("Please select a file");
-        return;
+    // ✅ Save Bio
+    document.getElementById("bioForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const bio = e.target.bio.value;
+
+      const res = await fetch("/api/bio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, bio })
+      });
+      const data = await res.json();
+
+      const msgBox = document.getElementById("messageBox");
+      if (data.success) {
+        msgBox.innerHTML = `<p class="success">✅ Bio saved!</p>`;
+      } else {
+        msgBox.innerHTML = `<p class="error">❌ Failed: ${data.error}</p>`;
       }
-
-      const formData = new FormData();
-      formData.append("chatfile", file);
-      formData.append("username", username);
-
-      document.getElementById("status").textContent = "Uploading...";
-
-      try {
-        const res = await fetch("/api/profile/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const data = await res.json();
-        if (data.success) {
-          document.getElementById("status").style.color = "lightgreen";
-          document.getElementById("status").textContent = "Profile updated!";
-          document.getElementById("avatarPreview").src = data.profilePicture;
-          localStorage.setItem("profilePicture", data.profilePicture);
-        } else {
-          document.getElementById("status").style.color = "red";
-          document.getElementById("status").textContent = data.message;
-        }
-      } catch (err) {
-        console.error(err);
-        document.getElementById("status").style.color = "red";
-        document.getElementById("status").textContent = "Upload failed!";
-      }
-    }
-
-    async function saveBio() {
-      const bio = document.getElementById("bioInput").value;
-      document.getElementById("status").textContent = "Saving bio...";
-
-      try {
-        const res = await fetch("/api/profile/bio", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, bio }),
-        });
-
-        const data = await res.json();
-        if (data.success) {
-          document.getElementById("status").style.color = "lightgreen";
-          document.getElementById("status").textContent = "Bio saved!";
-        } else {
-          document.getElementById("status").style.color = "red";
-          document.getElementById("status").textContent = data.message;
-        }
-      } catch (err) {
-        console.error(err);
-        document.getElementById("status").style.color = "red";
-        document.getElementById("status").textContent = "Failed to save bio!";
-      }
-    }
+    });
   </script>
 </body>
 </html>
