@@ -1,73 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatHub - Chat</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <link rel="stylesheet" href="style.css"> 
-
-    <style>
-        /* This minimal CSS ensures the basic layout works without relying fully on the external file */
-        body { margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; background: #1a1a2e; color: white; }
-        nav { background: #3f51b5; padding: 12px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex-shrink: 0; }
-        .chat-container { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 250px; background: #2c3e50; padding: 15px; flex-shrink: 0; overflow-y: auto; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; background: #1a1a2e; }
-        #messages { flex: 1; padding: 15px; overflow-y: auto; }
-        #inputArea { display: flex; padding: 10px; background: #2c3e50; }
-        #messageInput { flex: 1; padding: 10px; border-radius: 20px; background: #3c4d62; color: white; border: none; }
-        #sendButton { background: #79a6fe; color: white; border: none; padding: 10px; border-radius: 50%; width: 40px; height: 40px; margin-left: 8px; }
-        .msg-row { display: flex; margin: 6px 0; }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aura Hub - Chat</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css"> 
+  
+  <style>
+    /* ⚠️ WARNING: If you are not using style.css externally, this CSS must be complete.
+       Assuming you want the attractive dark mode from your previous requests.
+    */
+    /* Minimal style included here for structural integrity */
+    body { background: #1a1a2e; color: white; margin: 0; font-family: "Segoe UI", sans-serif; }
+    nav { background: #3f51b5; display: flex; justify-content: space-between; padding: 12px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .chat-container { display: flex; height: calc(100vh - 50px); overflow: hidden; }
+    .sidebar { width: 250px; background: #2c3e50; padding: 15px; flex-shrink: 0; overflow-y: auto; }
+    .chat-area { flex: 1; background: #181828; overflow: hidden; }
+    .user { padding: 8px; background: #3a3a5a; margin: 4px 0; border-radius: 6px; cursor: pointer; }
+    .user:hover { background: #4a5966; }
+    .online-users-header { color: #79a6fe; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 10px; }
+  </style>
 </head>
 <body>
+  <nav>
+    <div style="font-size: 1.5em; font-weight: bold; color: white;">ChatHub</div>
+    <div style="flex-grow: 1; text-align: right;">
+        <a href="/index.html">Home</a>
+        <a href="/chat.html" class="active">Chat</a>
+        <a href="/profile.html">Profile</a>
+        <a href="/games.html">Games</a>
+        <a href="/videos.html">Videos</a>
+        <a href="/about.html">About</a>
+    </div>
+    <button onclick="logout()" style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 6px;">Logout</button>
+  </nav>
 
-    <nav>
-        <a href="/index.html" style="font-size: 1.5em; font-weight: bold; color: white; text-decoration: none;">ChatHub</a>
-        <div style="flex-grow: 1; text-align: center;">
-             <a href="/index.html">Home</a>
-             <a href="/chat.html" style="background: rgba(255,255,255,0.2);">Chat</a>
-             <a href="/profile.html">Profile</a>
-             <a href="/games.html">Games</a>
-             <a href="/videos.html">Videos</a>
-             <a href="/about.html">About</a>
-        </div>
-        <button onclick="logout()" style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 6px;">Logout</button>
-    </nav>
-
-    <div class="chat-container">
-        <div class="sidebar">
-            <h3 style="color: #79a6fe; border-bottom: 1px solid #444; padding-bottom: 5px;">Online Users</h3>
-            <div id="usersList">
-                </div>
-        </div>
-
-        <div class="chat-area">
-            <h2 style="padding: 15px; border-bottom: 1px solid #333; background: #1c1c2c;">Select a User to Chat</h2>
-            <div id="chatBox">
-                 <div style="color: #bbb; text-align: center; margin-top: 50px;">Select a user to start chatting.</div>
-            </div>
-            <div id="inputArea">
-                <input type="text" id="messageInput" placeholder="Type your message..."/>
-                <button id="sendButton">➤</button>
-            </div>
-        </div>
+  <div class="chat-container">
+    <div class="sidebar">
+      <h3 class="online-users-header">🟢 Online Users</h3>
+      <div id="usersList"></div>
     </div>
 
-  <script src="/socket.io/socket.io.js"></script>
+    <div class="chat-area">
+      <h2 style="padding: 15px; border-bottom: 1px solid #333; color: white;">Select a User to Chat</h2>
+      <div id="chatBox">
+         <div style="color: #bbb; text-align: center; margin-top: 50px;">Start by clicking a user name.</div>
+      </div>
+      <div id="inputArea">
+        <input type="text" id="messageInput" placeholder="Type your message..."/>
+        <button id="sendButton">➤</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const socket = io();
     let username = localStorage.getItem("username");
     
-    // FINAL FIX FOR UNDEFINED ERROR
+    // Auth check and redirect
     if (!username || username === "undefined") {
         window.location.href = "/login.html";
-        username = "Guest"; 
+        username = "Guest";
     }
-    
+
     const chatBox = document.getElementById("chatBox");
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("sendButton");
@@ -87,8 +85,8 @@
       const text = messageInput.value.trim();
       if (!text) return;
       
-      // Sending message as a simple chat message (Assuming your server logic handles it)
-      socket.emit("chatMessage", { sender: username, text }); 
+      // FIX: Use the correct event name your server handles (e.g., 'privateMessage')
+      socket.emit("privateMessage", { sender: username, receiver: 'All', text: text }); 
       messageInput.value = "";
     }
 
@@ -101,10 +99,10 @@
 
       if (msg.sender === username) {
         bubble.classList.add("me");
-        bubble.innerHTML = `You: ${msg.text}`;
+        bubble.innerHTML = `<div>You</div>${msg.text}`;
       } else {
         bubble.classList.add("other");
-        bubble.innerHTML = `${msg.sender}: ${msg.text}`;
+        bubble.innerHTML = `<div>${msg.sender}</div>${msg.text}`;
       }
 
       row.appendChild(bubble);
@@ -112,16 +110,17 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     });
 
-    // Online users update
-    socket.emit("newUser", username); // Ensure this matches your server.js
-    socket.on("updateUsers", (users) => { // Assuming server sends an array of usernames
+    // 🚨 FIX: Online users update - Now expects only names (values)
+    socket.emit("newUser", username); 
+    socket.on("updateUsers", (users) => { 
       usersList.innerHTML = "";
+      // Users is now an array of strings (usernames)
       users.forEach(u => {
         if (u !== username) {
             const div = document.createElement("div");
             div.classList.add("user");
             div.textContent = u;
-            div.onclick = () => console.log('Starting chat with:', u); // Placeholder for starting private chat
+            div.onclick = () => console.log('Starting chat with:', u); 
             usersList.appendChild(div);
         }
       });
