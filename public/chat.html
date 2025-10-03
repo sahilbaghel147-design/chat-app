@@ -1,130 +1,317 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Aura Hub - Chat</title>
-  <script src="/socket.io/socket.io.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  
-  <link rel="stylesheet" href="style.css"> 
-  
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YourApp • Chat</title>
+
+  <!-- Roboto (optional) -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
   <style>
-    /* ⚠️ WARNING: If you are not using style.css externally, this CSS must be complete.
-       Assuming you want the attractive dark mode from your previous requests.
-    */
-    /* Minimal style included here for structural integrity */
-    body { background: #1a1a2e; color: white; margin: 0; font-family: "Segoe UI", sans-serif; }
-    nav { background: #3f51b5; display: flex; justify-content: space-between; padding: 12px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    .chat-container { display: flex; height: calc(100vh - 50px); overflow: hidden; }
-    .sidebar { width: 250px; background: #2c3e50; padding: 15px; flex-shrink: 0; overflow-y: auto; }
-    .chat-area { flex: 1; background: #181828; overflow: hidden; }
-    .user { padding: 8px; background: #3a3a5a; margin: 4px 0; border-radius: 6px; cursor: pointer; }
-    .user:hover { background: #4a5966; }
-    .online-users-header { color: #79a6fe; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 10px; }
+    :root{
+      --bg:#0f1120;
+      --panel:#17192b;
+      --panel-2:#1e2238;
+      --text:#e7e9f3;
+      --muted:#a3a7c2;
+      --accent:#7c5cff;
+      --accent-2:#5dd6ff;
+      --danger:#ff5c7a;
+      --success:#44d07b;
+      --radius:14px;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#0b0d1a 0%, var(--bg) 40%, #0e0f1c 100%);
+      color:var(--text);
+      font-family:Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+    }
+
+    /* Top Nav */
+    .nav{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(8px);
+      background:rgba(15,17,32,.7);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .nav-inner{
+      max-width:1100px; margin:auto;
+      padding:10px 14px; display:flex; align-items:center; gap:14px;
+    }
+    .brand{
+      font-weight:700; letter-spacing:.3px;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .tabs{display:flex; gap:14px; flex-wrap:wrap}
+    .tab{
+      text-decoration:none; color:var(--muted); font-weight:500;
+      padding:8px 12px; border-radius:999px;
+      transition:.2s;
+    }
+    .tab:hover{color:var(--text); background:rgba(255,255,255,.06)}
+    .tab.active{color:#111;background:var(--accent);}
+
+    /* Layout */
+    .page{
+      max-width:1100px; margin:18px auto; padding:0 14px 24px;
+      display:grid; grid-template-columns: 280px 1fr; gap:16px;
+    }
+    @media (max-width:900px){
+      .page{grid-template-columns: 1fr}
+    }
+
+    /* Online users */
+    .card{
+      background:linear-gradient(180deg,var(--panel), var(--panel-2));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .card h3{
+      margin:0; padding:14px 16px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:18px;
+    }
+    .users{padding:10px 8px; max-height:60vh; overflow:auto}
+    .user{
+      display:flex; align-items:center; gap:10px;
+      padding:8px; border-radius:12px;
+      transition:.2s;
+    }
+    .user:hover{background:rgba(255,255,255,.04)}
+    .avatar{
+      width:28px; height:28px; border-radius:50%;
+      background:#2a2e4a; display:inline-grid; place-items:center;
+      color:#c8ccf0; font-size:12px; font-weight:700;
+      border:1px solid rgba(255,255,255,.08)
+    }
+    .u-name{font-weight:500}
+
+    /* Chat */
+    .chat-wrap{display:flex; flex-direction:column; gap:10px; height:72vh}
+    .chat-header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px
+    }
+    .room-pill{
+      background:rgba(124,92,255,.15);
+      border:1px solid rgba(124,92,255,.4);
+      color:#d6d0ff; padding:6px 10px; border-radius:999px; font-size:12px;
+    }
+    .chat-box{
+      flex:1; min-height:260px;
+      background:linear-gradient(180deg,var(--panel), var(--panel-2));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:var(--radius);
+      padding:12px; overflow:auto; box-shadow:var(--shadow);
+    }
+    .msg{
+      display:flex; gap:10px; margin:8px 0;
+      animation:pop .14s ease-out;
+    }
+    @keyframes pop{from{transform:translateY(4px); opacity:.0} to{transform:none; opacity:1}}
+    .bubble{
+      padding:10px 12px; border-radius:14px;
+      background:#242845; border:1px solid rgba(255,255,255,.06);
+      max-width:80%;
+      word-wrap:break-word; white-space:pre-wrap;
+    }
+    .me .bubble{
+      background:linear-gradient(180deg,#2b2f55, #2a2f60);
+      border-color:rgba(124,92,255,.45)
+    }
+    .meta{font-size:11px; color:var(--muted); margin:2px 2px 0}
+
+    /* Input area */
+    .composer{
+      display:flex; gap:10px; align-items:center; padding:8px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:calc(var(--radius) + 2px);
+    }
+    .input{
+      flex:1; height:44px; padding:0 14px; color:var(--text);
+      background:#14162a; border:1px solid rgba(255,255,255,.08);
+      border-radius:12px; outline:none;
+    }
+    .btn{
+      height:44px; padding:0 16px; border-radius:12px; border:none; cursor:pointer;
+      font-weight:600; letter-spacing:.2px;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      color:#0c0d18; transition:.2s; box-shadow:var(--shadow);
+    }
+    .btn:active{transform:translateY(1px)}
+    .muted{color:var(--muted)}
   </style>
 </head>
 <body>
-  <nav>
-    <div style="font-size: 1.5em; font-weight: bold; color: white;">ChatHub</div>
-    <div style="flex-grow: 1; text-align: right;">
-        <a href="/index.html">Home</a>
-        <a href="/chat.html" class="active">Chat</a>
-        <a href="/profile.html">Profile</a>
-        <a href="/games.html">Games</a>
-        <a href="/videos.html">Videos</a>
-        <a href="/about.html">About</a>
+  <!-- Top Nav -->
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand">YourApp</div>
+      <nav class="tabs" aria-label="Main">
+        <a class="tab" href="/">Home</a>
+        <a class="tab active" href="/chat">Chat</a>
+        <a class="tab" href="/profile">Profile</a>
+        <a class="tab" href="/games">Games</a>
+        <a class="tab" href="/videos">Videos</a>
+        <a class="tab" href="/about">About</a>
+      </nav>
     </div>
-    <button onclick="logout()" style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 6px;">Logout</button>
-  </nav>
+  </header>
 
-  <div class="chat-container">
-    <div class="sidebar">
-      <h3 class="online-users-header">🟢 Online Users</h3>
-      <div id="usersList"></div>
-    </div>
-
-    <div class="chat-area">
-      <h2 style="padding: 15px; border-bottom: 1px solid #333; color: white;">Select a User to Chat</h2>
-      <div id="chatBox">
-         <div style="color: #bbb; text-align: center; margin-top: 50px;">Start by clicking a user name.</div>
+  <main class="page">
+    <!-- Sidebar: Online users -->
+    <aside class="card">
+      <h3>Online Users</h3>
+      <div id="users" class="users">
+        <!-- populated by JS -->
       </div>
-      <div id="inputArea">
-        <input type="text" id="messageInput" placeholder="Type your message..."/>
-        <button id="sendButton">➤</button>
-      </div>
-    </div>
-  </div>
+    </aside>
 
+    <!-- Chat area -->
+    <section class="card chat-wrap">
+      <div class="chat-header">
+        <div>
+          <div style="font-weight:700; font-size:18px;">Global Chat</div>
+          <div class="muted" style="font-size:12px;">Be kind. No spam.</div>
+        </div>
+        <span class="room-pill" id="selfTag">You</span>
+      </div>
+
+      <div id="messages" class="chat-box" aria-live="polite" aria-label="Messages"></div>
+
+      <form id="composer" class="composer" autocomplete="off">
+        <input id="messageInput" class="input" type="text" placeholder="Type your message…" maxlength="1000" />
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- Socket.io client (change src if your server hosts it elsewhere) -->
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
-    let username = localStorage.getItem("username");
-    
-    // Auth check and redirect
-    if (!username || username === "undefined") {
-        window.location.href = "/login.html";
-        username = "Guest";
-    }
+    // --- tiny helpers ---
+    const qs = (s, el=document) => el.querySelector(s);
+    const qsa = (s, el=document) => [...el.querySelectorAll(s)];
+    const fmtTime = d => new Intl.DateTimeFormat([], {hour:'2-digit', minute:'2-digit'}).format(d);
 
-    const chatBox = document.getElementById("chatBox");
-    const messageInput = document.getElementById("messageInput");
-    const sendButton = document.getElementById("sendButton");
-    const usersList = document.getElementById("usersList");
-
-    sendButton.addEventListener("click", sendMessage);
-    messageInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendMessage();
-    });
-
-    function logout() {
-        localStorage.clear();
-        window.location.href = "/login.html";
-    }
-
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-      
-      // FIX: Use the correct event name your server handles (e.g., 'privateMessage')
-      socket.emit("privateMessage", { sender: username, receiver: 'All', text: text }); 
-      messageInput.value = "";
-    }
-
-    socket.on("message", (msg) => {
-      const row = document.createElement("div");
-      row.classList.add("msg-row");
-
-      const bubble = document.createElement("div");
-      bubble.classList.add("msg");
-
-      if (msg.sender === username) {
-        bubble.classList.add("me");
-        bubble.innerHTML = `<div>You</div>${msg.text}`;
-      } else {
-        bubble.classList.add("other");
-        bubble.innerHTML = `<div>${msg.sender}</div>${msg.text}`;
+    // username from localStorage or ?username=... (fallback: 'guest-xxxx')
+    function getUsername(){
+      const urlU = new URLSearchParams(location.search).get('username');
+      if(urlU){ localStorage.setItem('username', urlU.trim()); }
+      let name = localStorage.getItem('username');
+      if(!name || !name.trim()){
+        name = 'guest-' + Math.random().toString(36).slice(2,6);
+        localStorage.setItem('username', name);
       }
+      return name.trim();
+    }
+    const USERNAME = getUsername();
+    qs('#selfTag').textContent = USERNAME;
 
-      row.appendChild(bubble);
-      chatBox.appendChild(row);
-      chatBox.scrollTop = chatBox.scrollHeight;
+    // Connect socket
+    // If your server is on another origin, replace undefined with the URL: io("https://your-domain")
+    const socket = io();
+
+    socket.on('connect', () => {
+      socket.emit('join', { username: USERNAME });
     });
 
-    // 🚨 FIX: Online users update - Now expects only names (values)
-    socket.emit("newUser", username); 
-    socket.on("updateUsers", (users) => { 
-      usersList.innerHTML = "";
-      // Users is now an array of strings (usernames)
-      users.forEach(u => {
-        if (u !== username) {
-            const div = document.createElement("div");
-            div.classList.add("user");
-            div.textContent = u;
-            div.onclick = () => console.log('Starting chat with:', u); 
-            usersList.appendChild(div);
-        }
+    // Incoming chat message
+    socket.on('message', payload => {
+      addMessage(payload.username, payload.text, payload.timestamp || Date.now());
+    });
+
+    // When server emits full online list: [{id, username, avatarUrl}]
+    socket.on('online-users', list => {
+      renderUsers(list);
+    });
+
+    // When someone joined/left, you may get smaller events (optional)
+    socket.on('user-joined', user => banner(`${user.username} joined`));
+    socket.on('user-left', user => banner(`${user.username} left`));
+
+    // --- UI handlers ---
+    qs('#composer').addEventListener('submit', e => {
+      e.preventDefault();
+      const input = qs('#messageInput');
+      const text = (input.value || '').trim();
+      if(!text) return;
+
+      // send to server
+      socket.emit('message', { text });
+
+      // optimistic render as "me"
+      addMessage(USERNAME, text, Date.now(), true);
+
+      input.value = '';
+      input.focus();
+    });
+
+    // Enter to send is default for input inside form. Optional: Shift+Enter for newline (for textarea).
+    function addMessage(username, text, ts, isSelf=false){
+      const box = qs('#messages');
+      const row = document.createElement('div');
+      row.className = 'msg' + (isSelf || username === USERNAME ? ' me' : '');
+      row.innerHTML = `
+        <div class="avatar">${(username||'?').slice(0,1).toUpperCase()}</div>
+        <div>
+          <div class="bubble">${escapeHtml(text)}</div>
+          <div class="meta">${username} • ${fmtTime(new Date(ts))}</div>
+        </div>
+      `;
+      box.appendChild(row);
+      // auto-scroll to bottom
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function renderUsers(list=[]){
+      const wrap = qs('#users');
+      wrap.innerHTML = '';
+      list.forEach(u => {
+        const el = document.createElement('div');
+        el.className = 'user';
+        const letter = (u.username||'?').slice(0,1).toUpperCase();
+        el.innerHTML = `
+          <div class="avatar">${letter}</div>
+          <div class="u-name">${u.username||'Unknown'}</div>
+        `;
+        wrap.appendChild(el);
       });
-    });
+      if(list.length === 0){
+        wrap.innerHTML = `<div class="muted" style="padding:8px 10px;">No one online</div>`;
+      }
+    }
+
+    function banner(text){
+      addMessage('System', text, Date.now(), false);
+    }
+
+    function escapeHtml(str){
+      return (str+'')
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#039;');
+    }
+
+    // --- Safety: reconnect & ask for online list on connect ---
+    socket.on('connect', ()=> socket.emit('get-online'));
+
+    // Optional: if your backend uses different event names, change them above.
+    // Minimal server mapping expected:
+    //  - client emits: 'join', {username}
+    //  - client emits: 'message', {text}
+    //  - server emits: 'message', {username, text, timestamp}
+    //  - server emits: 'online-users', [{username, id}]
+    //  - (optional) server emits: 'user-joined' / 'user-left', {username}
   </script>
 </body>
 </html>
