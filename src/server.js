@@ -18,13 +18,11 @@ app.use(compression());
 app.use(express.static(path.join(__dirname, "../public")));
 
 // ================== DATABASE (MongoDB Atlas URL) ==================
-mongoose
-  .connect(
-    "mongodb+srv://sahilbaghel147:Sahil123@cluster0.plvyk.mongodb.net/chatapp?retryWrites=true&w=majority",
-    { useNewUrlParser: true, useUnifiedTopology: true }
-  )
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("❌ MongoDB Error:", err));
+mongoose.connect(
+  "mongodb+srv://sahil:Sahil123@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority&appName=Cluster0"
+)
+.then(() => console.log("✅ MongoDB Connected"))
+.catch((err) => console.error("❌ MongoDB Error:", err));
 
 // ================== SCHEMAS ==================
 const userSchema = new mongoose.Schema({
