@@ -5,11 +5,12 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "postinstall": "npm install cloudinary multer"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-     "cloudinary": "^1.41.0",
+    "cloudinary": "^1.41.0",
     "compression": "^1.7.4",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
