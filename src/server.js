@@ -19,8 +19,10 @@ const io = socketio(server);
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public"))); // serve static files
-app.use("/uploads", express.static(path.join(__dirname, "public/uploads"))); // uploads folder
+
+// FIX: Public folder is in root (one level up from /src)
+app.use(express.static(path.join(__dirname, "..", "public")));
+app.use("/uploads", express.static(path.join(__dirname, "..", "public/uploads")));
 
 // --- MONGO DB CONNECTION ---
 const MONGO_URI =
@@ -73,7 +75,7 @@ const HighScore = mongoose.model("HighScore", HighScoreSchema);
 // --- MULTER FILE UPLOAD CONFIGURATION ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "public/uploads"));
+    cb(null, path.join(__dirname, "..", "public/uploads"));
   },
   filename: (req, file, cb) => {
     const filename = Date.now() + "-" + file.originalname.replace(/ /g, "_");
@@ -134,15 +136,15 @@ app.post("/api/profile/upload", (req, res) => {
   });
 });
 
-// --- PAGE ROUTES (without .html) ---
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
-app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public", "chat.html")));
-app.get("/profile", (req, res) => res.sendFile(path.join(__dirname, "public", "profile.html")));
-app.get("/games", (req, res) => res.sendFile(path.join(__dirname, "public", "games.html")));
-app.get("/videos", (req, res) => res.sendFile(path.join(__dirname, "public", "videos.html")));
-app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
-app.get("/signup", (req, res) => res.sendFile(path.join(__dirname, "public", "signup.html")));
-app.get("/client", (req, res) => res.sendFile(path.join(__dirname, "public", "client.html")));
+// --- PAGE ROUTES ---
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "..", "public", "login.html")));
+app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "..", "public", "chat.html")));
+app.get("/profile", (req, res) => res.sendFile(path.join(__dirname, "..", "public", "profile.html")));
+app.get("/games", (req, res) => res.sendFile(path.join(__dirname, "..", "public", "games.html")));
+app.get("/videos", (req, res) => res.sendFile(path.join(__dirname, "..", "public", "videos.html")));
+app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "..", "public", "about.html")));
+app.get("/signup", (req, res) => res.sendFile(path.join(__dirname, "..", "public", "signup.html")));
+app.get("/client", (req, res) => res.sendFile(path.join(__dirname, "..", "public", "client.html")));
 
 // --- SOCKET.IO CHAT LOGIC ---
 const connectedUsers = {};
