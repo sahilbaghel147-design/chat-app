@@ -4,320 +4,222 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Aura Hub - Chat</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-
+  
+  <link rel="stylesheet" href="style.css"> 
+  
   <style>
-    /* CSS: Directly from your last code (Final Dark Mode UI) */
-    :root{
-      --bg:#0f0f1a;
-      --panel:#17192b;
-      --panel-2:#1e2238;
-      --text:#e7e9f3;
-      --muted:#a3a7c2;
-      --accent:#7c5cff;
-      --accent-2:#5dd6ff;
-      --danger:#ff5c7a;
-      --success:#44d07b;
-      --radius:14px;
-      --shadow:0 5px 20px rgba(0,0,0,.35);
+    /* ⚠️ NOTE: This style block is minimized. Please ensure your external style.css 
+       contains the complete Dark Mode/Layout CSS from our previous successful fixes. */
+    body {
+      background: #1a1a2e;
+      color: #f0f0f0;
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font-family:Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
-      display:flex; flex-direction:column;
+    nav {
+      background: #3f51b5;
+      padding: 12px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-
-    /* Top Nav */
-    .nav{
-      position:sticky; top:0; z-index:50;
-      background:var(--panel-2);
-      border-bottom:1px solid rgba(255,255,255,.06);
+    .chat-container {
+      flex: 1;
+      display: flex;
+      height: calc(100vh - 50px);
+      overflow: hidden;
     }
-    .nav-inner{
-      max-width:1100px; margin:auto;
-      padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:14px;
+    .sidebar {
+      width: 250px;
+      background: #2c3e50;
+      padding: 15px;
+      flex-shrink: 0;
+      overflow-y: auto;
     }
-    .brand{
-      font-weight:700; letter-spacing:.3px;
-      background:linear-gradient(90deg,var(--accent),var(--accent-2));
-      -webkit-background-clip:text; background-clip:text; color:transparent;
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #181828;
     }
-    .tabs{display:flex; gap:14px; flex-wrap:wrap}
-    .tab{
-      text-decoration:none; color:var(--muted); font-weight:500;
-      padding:8px 12px; border-radius:999px;
-      transition:.2s;
+    #chatBox {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background: #181828;
     }
-    .tab:hover{color:var(--text); background:rgba(255,255,255,.06)}
-    .tab.active{background:var(--accent); color:#111}
-
-    /* Layout */
-    .page{
-      flex:1; display:grid; 
-      grid-template-columns: 280px 1fr; gap:16px;
-      max-width:1100px; margin:18px auto; padding:0 14px 24px;
+    /* Input Area */
+    #inputArea {
+      display: flex;
+      padding: 10px 20px;
+      background: #2c3e50;
+      border-top: 1px solid #333;
+      flex-shrink: 0;
     }
-    @media (max-width:900px){
-      .page{grid-template-columns: 1fr}
+    #messageInput {
+      flex: 1;
+      padding: 12px;
+      border-radius: 20px;
+      border: none;
+      background: #3a3a5a;
+      color: white;
     }
-
-    /* Online users */
-    .card{
-      background:var(--panel);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
+    #sendButton {
+      background: #5e6bfe;
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      margin-left: 8px;
+      color: white;
+      font-size: 1.2em;
+      cursor: pointer;
     }
-    .card h3{
-      margin:0; padding:14px 16px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:18px;
-    }
-    .users{padding:10px 8px; max-height:60vh; overflow:auto}
-    .user{
-      display:flex; align-items:center; gap:10px;
-      padding:8px; border-radius:12px;
-      transition:.2s; cursor:pointer;
-    }
-    .user:hover{background:rgba(255,255,255,.04)}
-    .avatar-img{
-      width:32px; height:32px; border-radius:50%;
-      object-fit:cover; border:1px solid var(--accent);
-    }
-    .u-name{font-weight:500}
-
-    /* Chat */
-    .chat-wrap{display:flex; flex-direction:column; gap:10px; height:72vh}
-    .chat-header{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:12px 16px; background:var(--panel-2); border-radius:var(--radius) var(--radius) 0 0;
-    }
-    .room-pill{
-      background:var(--accent); color:#111; padding:6px 10px; border-radius:999px; font-size:12px;
-    }
-    .chat-box{
-      flex:1; min-height:260px;
-      background:var(--panel);
-      border-radius:0 0 var(--radius) var(--radius);
-      padding:12px; overflow:auto;
-    }
-    
-    /* Message Styling */
-    .msg-row{display:flex; margin:8px 0; align-items:flex-start;}
-    .me .msg-row{flex-direction:row-reverse} /* Flip direction for sender */
-    
-    .msg{
-      padding:10px 12px; border-radius:14px;
-      background:var(--panel-2); border:1px solid rgba(255,255,255,.06);
-      max-width:80%; word-wrap:break-word; white-space:pre-wrap;
-    }
-    .me .msg{
-      background:var(--accent); color:#111; border-color:var(--accent-2);
-    }
-    .meta{font-size:11px; color:var(--muted); margin:2px 2px 0; text-align:right}
-
-    /* Input area */
-    .composer{
-      display:flex; gap:10px; align-items:center; padding:8px;
-      background:var(--panel);
-      border-radius:var(--radius);
-    }
-    .input{
-      flex:1; height:44px; padding:0 14px; color:var(--text);
-      background:var(--panel-2); border:1px solid rgba(255,255,255,.08);
-      border-radius:12px; outline:none;
-    }
-    .btn{
-      height:44px; padding:0 16px; border-radius:12px; border:none; cursor:pointer;
-      font-weight:600; letter-spacing:.2px;
-      background:var(--accent);
-      color:#0c0d18; transition:.2s;
-    }
-    .btn:active{transform:translateY(1px)}
-    .logout-btn{
-        background:var(--danger); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;
-    }
+    /* Message Bubbles - add your previous bubble styles here */
   </style>
 </head>
 <body>
-  <header class="nav">
-    <div class="nav-inner">
-      <div class="brand">ChatHub</div>
-      <nav class="tabs" aria-label="Main">
-        <a class="tab" href="/index.html">Home</a>
-        <a class="tab active" href="/chat.html">Chat</a>
-        <a class="tab" href="/profile.html">Profile</a>
-        <a class="tab" href="/games.html">Games</a>
-        <a class="tab" href="/videos.html">Videos</a>
-        <a class="tab" href="/about.html">About</a>
-      </nav>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+  <nav>
+    <a href="/index.html">Home</a>
+    <a href="/chat.html" class="active">Chat</a>
+    <a href="/profile.html">Profile</a>
+    <a href="/games.html">Games</a>
+    <a href="/videos.html">Videos</a>
+    <a href="/about.html">About</a>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </nav>
+
+  <div class="chat-container">
+    <div class="sidebar">
+      <h3>🟢 Online Users</h3>
+      <div id="usersList"></div>
     </div>
-  </header>
 
-  <main class="page">
-    <aside class="card">
-      <h3>Online Users</h3>
-      <div id="usersList" class="users">
-        <div class="muted" style="padding:8px 10px;">Loading users...</div>
+    <div class="chat-area">
+        <h2 id="chatRecipientHeader" style="padding: 15px; border-bottom: 1px solid #333; background: #2c3e50;">Select a User to Chat</h2>
+      <div id="chatBox"></div>
+      <div id="inputArea">
+        <input type="text" id="messageInput" placeholder="Type your message..."/>
+        <button id="sendButton">➤</button>
       </div>
-    </aside>
+    </div>
+  </div>
 
-    <section class="chat-wrap">
-      <div class="card chat-header">
-        <div style="font-weight:700; font-size:18px;" id="recipientUsername">Select a user to chat</div>
-        <span class="room-pill" id="selfTag"></span>
-      </div>
-
-      <div id="chatBox" class="chat-box" aria-live="polite" aria-label="Messages"></div>
-
-      <form id="composer" class="composer" autocomplete="off">
-        <input id="messageInput" class="input" type="text" placeholder="Type your message…" maxlength="1000" />
-        <button class="btn" type="submit">Send</button>
-      </form>
-    </section>
-  </main>
-
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    // --- Initial Setup and Helpers ---
-    const qs = (s, el=document) => el.querySelector(s);
-    const getUsername = () => {
-      const name = localStorage.getItem('username');
-      // FIX: Redirect if username is missing or invalid
-      if(!name || name === 'undefined' || !name.trim()){
-        window.location.href = '/login.html';
-        return 'Guest'; // Should not reach here
-      }
-      return name.trim();
-    }
-    const USERNAME = getUsername();
-    if(qs('#selfTag')) qs('#selfTag').textContent = USERNAME;
-
-    // Connect socket
     const socket = io();
+    let username = localStorage.getItem("username") || "Guest";
+    let currentRecipient = null; // 🚨 NEW STATE VARIABLE
 
-    // --- Chat Functions ---
+    const chatBox = document.getElementById("chatBox");
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+    const usersList = document.getElementById("usersList");
+    const chatRecipientHeader = document.getElementById("chatRecipientHeader");
 
-    function addMessage(sender, text, ts, isSelf=false, senderPicture='/uploads/default_avatar.png'){
-      const box = qs('#messages');
-      const row = document.createElement('div');
-      row.className = 'msg-row' + (isSelf || sender === USERNAME ? ' me' : '');
-      
-      const content = document.createElement('div');
-      content.className = 'msg';
-      content.innerHTML = `
-        <div>${escapeHtml(text)}</div>
-        <div class="meta">${sender} • ${formatTime(new Date(ts))}</div>
-      `;
-      
-      const avatar = document.createElement('img');
-      avatar.className = 'avatar-img';
-      avatar.src = senderPicture;
-      avatar.alt = sender.slice(0,1).toUpperCase();
 
-      row.appendChild(content);
-      row.appendChild(avatar);
-
-      // FIX: Order of elements needs adjustment to align left/right correctly
-      if (isSelf || sender === USERNAME) {
-          row.style.flexDirection = 'row-reverse';
-      } else {
-          row.style.flexDirection = 'row';
-      }
-      
-      box.appendChild(row);
-      box.scrollTop = box.scrollHeight;
-    }
-
-    function renderUsers(list=[]){
-      const wrap = qs('#usersList');
-      wrap.innerHTML = '';
-      list.forEach(u => {
-        if (u.username === USERNAME) return;
-
-        const el = document.createElement('div');
-        el.className = 'user';
-        el.dataset.username = u.username;
-        const letter = (u.username||'?').slice(0,1).toUpperCase();
-        
-        // Assuming the server sends profilePicture in the list (if you implement that feature)
-        // If not, we use the simple letter avatar:
-        const avatarHtml = `<div class="avatar">${letter}</div>`; 
-
-        el.innerHTML = `
-          ${avatarHtml}
-          <div class="u-name">${u.username||'Unknown'}</div>
-        `;
-        wrap.appendChild(el);
-      });
-      if(list.length <= 1){
-        wrap.innerHTML = `<div class="muted" style="padding:8px 10px;">No one else online</div>`;
-      }
-    }
-
-    // --- Event Handlers and Socket Logic ---
-
-    socket.on('connect', () => {
-      // FIX: Use the correct event name for registration
-      socket.emit('newUser', USERNAME); 
-    });
-
-    socket.on('privateMessage', payload => {
-      // Logic for receiving private messages goes here
-      // For now, let's just log it:
-      console.log('Received private message:', payload);
-    });
-
-    socket.on('updateUsers', list => {
-      // Server sends array of usernames (strings)
-      // We convert strings to objects for consistency in renderUsers
-      const userObjects = list.map(name => ({ username: name }));
-      renderUsers(userObjects);
-    });
-
-    qs('#composer').addEventListener('submit', e => {
-      e.preventDefault();
-      const input = qs('#messageInput');
-      const text = (input.value || '').trim();
-      if(!text) return;
-
-      // FIX: This is only a simple global chat for testing.
-      // For private chat, you need to select a recipient first.
-      socket.emit('chatMessage', { sender: USERNAME, text: text }); 
-      
-      // Optimistic render as "me"
-      addMessage(USERNAME, text, Date.now(), true);
-
-      input.value = '';
-      input.focus();
-    });
-    
-    function logout() {
-        localStorage.clear();
+    if (username === "Guest") {
         window.location.href = "/login.html";
     }
+
+    sendButton.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    document.querySelector('.logout-btn').addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = "/login.html";
+    });
+
+    // --- Core Functions ---
+
+    function startChat(recipient) {
+        currentRecipient = recipient;
+        chatRecipientHeader.textContent = `Chatting with: ${recipient}`;
+        chatBox.innerHTML = ''; // Clear chat area
+        // Enable input
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+        
+        // FIX: Add logic to fetch chat history here (if implemented on server)
+        // socket.emit("loadChatHistory", { user1: username, user2: recipient }); 
+    }
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text || !currentRecipient) {
+          if (!currentRecipient) alert("Please select an online user first.");
+          return;
+      }
+      
+      // 🚨 FINAL FIX: Emit privateMessage with correct recipient
+      socket.emit("privateMessage", { 
+          sender: username, 
+          receiver: currentRecipient, 
+          text: text 
+      }); 
+      
+      // Optimistic rendering (show my own message immediately)
+      addMessage({ sender: username, text: text });
+      messageInput.value = "";
+    }
+
+    function addMessage(msg) {
+      const row = document.createElement("div");
+      row.classList.add("msg-row");
+
+      const bubble = document.createElement("div");
+      bubble.classList.add("msg");
+
+      if (msg.sender === username) {
+        bubble.classList.add("me");
+        bubble.innerHTML = `<div>You</div>${msg.text}`;
+      } else {
+        bubble.classList.add("other");
+        bubble.innerHTML = `<div>${msg.sender}</div>${msg.text}`;
+      }
+
+      row.appendChild(bubble);
+      chatBox.appendChild(row);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // --- Socket Logic ---
+    socket.emit("newUser", username); // Register user
+
+    socket.on("message", (msg) => {
+        // This is for Global Chat. Since you are building Private Chat, you might not need this.
+        // If your server sends private messages using a different event name (like 'newPrivateMessage'), 
+        // you should add that listener here.
+        // For now, it will display the global chat if your server sends 'message'.
+        addMessage(msg);
+    });
+
+    socket.on("updateUsers", (users) => { // Array of usernames
+      usersList.innerHTML = "";
+      users.forEach(u => {
+        if (u !== username) {
+            const div = document.createElement("div");
+            div.classList.add("user");
+            div.textContent = u;
+            // 🔑 Start chat on user click
+            div.onclick = () => startChat(u); 
+            usersList.appendChild(div);
+        }
+      });
+    });
     
-    // --- General Helpers ---
-    function formatTime(d){
-        return new Intl.DateTimeFormat([], {hour:'2-digit', minute:'2-digit'}).format(d);
-    }
-    function escapeHtml(str){
-      return (str+'')
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;')
-        .replace(/'/g,'&#039;');
-    }
+    // Listener for private messages coming in
+    socket.on("privateMessage", (msg) => {
+        // Display only if it's the current active chat
+        if (msg.sender === currentRecipient || msg.receiver === currentRecipient) {
+             addMessage(msg);
+        }
+    });
+
   </script>
 </body>
-  </html>
-  
+</html>
