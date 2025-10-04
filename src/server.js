@@ -215,40 +215,54 @@ app.get('/:file.html', (req, res) => {
 // --- SOCKET.IO CHAT LOGIC (FIXED) ---
 const connectedUsers = {}; // Stores username -> socket.id
 
+// server.js - Socket.IO Logic (Final Fix for Message Routing)
+
+// connectedUsers will now map username to socket.id
+const connectedUsers = {}; 
+
 io.on("connection", (socket) => {
-  let user_name = null; // To store the username of this connection
+  let currentUsername = null; // Track the username for this specific socket
 
-  // 🚨 FIX 1: Event Name Mismatch Fixed (Listening for "newUser")
-  socket.on("newUser", (username) => { 
-    if (!username || username === "undefined") return;
-
-    user_name = username; // Store username for disconnect
+  // 1. REGISTER USER
+  socket.on("newUser", (username) => {
+    // 🚨 FIX 1: Store the username and update the map
+    currentUsername = username;
     connectedUsers[username] = socket.id;
     
-    // Send only the usernames to all clients
+    // Broadcast list of currently online usernames (keys)
     io.emit("updateUsers", Object.keys(connectedUsers));
-    console.log(`User registered: ${username}. Total online: ${Object.keys(connectedUsers).length}`);
   });
 
-  // Handle Disconnect
-  socket.on("disconnect", () => {
-    console.log("A user disconnected:", socket.id);
-    
-    if (user_name && connectedUsers[user_name]) {
-        // Remove the user from the map
-        delete connectedUsers[user_name];
-        
-        // 🚨 FIX 2: Update the list to all clients when a user leaves
-        io.emit("updateUsers", Object.keys(connectedUsers));
-        console.log(`User disconnected: ${user_name}. Remaining online: ${Object.keys(connectedUsers).length}`);
+  // 2. HANDLE PRIVATE MESSAGE (The failing part)
+  socket.on("privateMessage", async (data) => {
+    const { sender, receiver, text, fileDir, fileMimeType, originalName } = data;
+
+    // ... (Your save to DB logic is correct and omitted here) ...
+    // Note: You should save the message before routing.
+
+    const messageToSend = { sender, receiver, text, fileDir, fileMimeType, originalName };
+
+    // A. Send to sender (to display immediately)
+    socket.emit("privateMessage", messageToSend); 
+
+    // B. Send to receiver
+    // 🚨 FIX 2: Check the map using the receiver's username to get their Socket ID
+    const receiverSocketId = connectedUsers[receiver]; 
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("privateMessage", messageToSend);
     }
   });
 
-  // Handle messages (if implemented)
-  socket.on("chatMessage", (msg) => {
-    // This sends the message to everyone
-    io.emit("message", msg); 
+  // 3. DISCONNECT
+  socket.on("disconnect", () => {
+    if (currentUsername && connectedUsers[currentUsername]) {
+        // Remove the user from the map
+        delete connectedUsers[currentUsername];
+        // Broadcast the updated list
+        io.emit("updateUsers", Object.keys(connectedUsers));
+    }
   });
+
 });
 
 
