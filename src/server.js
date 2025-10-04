@@ -1,4 +1,4 @@
-// server.js — FINAL CLEAN
+// server.js — FINAL (inside /src)
 
 const path = require("path");
 const fs = require("fs");
@@ -23,9 +23,9 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static: public/ at project root
-app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
+// Static: public/ at project root (../public)
+app.use(express.static(path.join(__dirname, "../public")));
+app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
 
 // -------------------- MONGODB --------------------
 const MONGO_URI =
@@ -33,7 +33,7 @@ const MONGO_URI =
   "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority&appName=Cluster0";
 
 mongoose
-  .connect(MONGO_URI) // deprecation options not needed on latest driver
+  .connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Error:", err));
 
@@ -55,10 +55,10 @@ const UserSchema = new mongoose.Schema({
 });
 
 const MessageSchema = new mongoose.Schema({
-  sender: { type: String, required: true },    // username
-  receiver: { type: String, required: true },  // username or 'global'
+  sender: { type: String, required: true },
+  receiver: { type: String, required: true },
   text: { type: String },
-  fileData: { type: String },      // optional path/URL
+  fileData: { type: String },
   fileMimeType: { type: String },
   originalName: { type: String },
   timestamp: { type: Date, default: Date.now },
@@ -76,7 +76,7 @@ const Message = mongoose.model("Message", MessageSchema);
 const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
 // -------------------- MULTER (LOCAL UPLOADS) --------------------
-const uploadsDir = path.join(__dirname, "public/uploads");
+const uploadsDir = path.join(__dirname, "../public/uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -127,7 +127,7 @@ app.post("/api/profile/update", async (req, res) => {
   }
 });
 
-// Profile picture upload (local). If you want Cloudinary upload, you can add it here.
+// Profile picture upload
 app.post("/api/profile/upload", (req, res) => {
   upload(req, res, async (err) => {
     if (err) return res.status(500).json({ success: false, message: `Upload Error: ${err.message}` });
@@ -137,7 +137,7 @@ app.post("/api/profile/upload", (req, res) => {
       return res.status(400).json({ success: false, message: "Username or file missing." });
     }
 
-    const publicPath = req.file.path.replace(/\\/g, "/").split("public/")[1]; // relative path for client
+    const publicPath = req.file.path.replace(/\\/g, "/").split("public/")[1];
     try {
       await User.findOneAndUpdate({ username }, { profilePicture: publicPath }, { new: true });
       res.json({ success: true, message: "Profile picture updated.", profilePicture: publicPath });
@@ -148,8 +148,9 @@ app.post("/api/profile/upload", (req, res) => {
   });
 });
 
-// -------------------- PAGE ROUTES (no .html in URL) --------------------
-const page = (name) => (req, res) => res.sendFile(path.join(__dirname, "public", `${name}.html`));
+// -------------------- PAGE ROUTES --------------------
+const page = (name) => (req, res) =>
+  res.sendFile(path.join(__dirname, "../public", `${name}.html`));
 
 app.get("/", page("login"));
 app.get("/chat", page("chat"));
@@ -160,9 +161,9 @@ app.get("/about", page("about"));
 app.get("/signup", page("signup"));
 app.get("/client", page("client"));
 
-// Optional: fallback to 404.html if present
+// 404 fallback
 app.use((req, res) => {
-  const notFound = path.join(__dirname, "public", "404.html");
+  const notFound = path.join(__dirname, "../public/404.html");
   if (fs.existsSync(notFound)) return res.status(404).sendFile(notFound);
   res.status(404).send("Not Found");
 });
@@ -179,12 +180,10 @@ io.on("connection", (socket) => {
     io.emit("updateUsers", Object.keys(connectedUsers));
   });
 
-  // simple public message
   socket.on("chatMessage", ({ user, text }) => {
     io.emit("chatMessage", { user: user || "Guest", text: text || "", time: new Date() });
   });
 
-  // private message (optional)
   socket.on("pm", ({ to, from, text }) => {
     const sid = connectedUsers[to];
     if (sid) io.to(sid).emit("pm", { from, text, time: new Date() });
