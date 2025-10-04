@@ -212,12 +212,45 @@ app.get('/:file.html', (req, res) => {
     });
 });
 
-// --- SOCKET.IO CHAT LOGIC ---
-const connectedUsers = {};
+// --- SOCKET.IO CHAT LOGIC (FIXED) ---
+const connectedUsers = {}; // Stores username -> socket.id
 
 io.on("connection", (socket) => {
-  // ... (Socket.IO Logic) ...
+  let user_name = null; // To store the username of this connection
+
+  // 🚨 FIX 1: Event Name Mismatch Fixed (Listening for "newUser")
+  socket.on("newUser", (username) => { 
+    if (!username || username === "undefined") return;
+
+    user_name = username; // Store username for disconnect
+    connectedUsers[username] = socket.id;
+    
+    // Send only the usernames to all clients
+    io.emit("updateUsers", Object.keys(connectedUsers));
+    console.log(`User registered: ${username}. Total online: ${Object.keys(connectedUsers).length}`);
+  });
+
+  // Handle Disconnect
+  socket.on("disconnect", () => {
+    console.log("A user disconnected:", socket.id);
+    
+    if (user_name && connectedUsers[user_name]) {
+        // Remove the user from the map
+        delete connectedUsers[user_name];
+        
+        // 🚨 FIX 2: Update the list to all clients when a user leaves
+        io.emit("updateUsers", Object.keys(connectedUsers));
+        console.log(`User disconnected: ${user_name}. Remaining online: ${Object.keys(connectedUsers).length}`);
+    }
+  });
+
+  // Handle messages (if implemented)
+  socket.on("chatMessage", (msg) => {
+    // This sends the message to everyone
+    io.emit("message", msg); 
+  });
 });
+
 
 // --- SERVER STARTUP ---
 const PORT = process.env.PORT || 4000;
