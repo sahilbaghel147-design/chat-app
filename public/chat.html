@@ -124,150 +124,158 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // --- Initial Setup and Helpers ---
-    const qs = (s) => document.querySelector(s);
-    const getUsername = () => {
-      const name = localStorage.getItem('username');
-      if(!name || name === 'undefined' || !name.trim()){
-        window.location.href = '/login.html';
-        return 'Guest';
-      }
-      return name.trim();
-    }
-    const USERNAME = getUsername();
-    
-    // UI Elements
-    const chatBox = qs('#chatBox');
-    const messageInput = qs('#messageInput');
-    const sendButton = qs('#sendButton');
-    const usersList = qs('#usersList');
-    const recipientHeader = qs('#chatRecipientHeader');
-    const composerForm = qs('#composer');
-    const fileInput = qs('#fileInput');
-    const attachButton = qs('#attachButton');
-    const typingIndicator = qs('#typingIndicator');
+    // chat.html - FINAL WORKING JAVASCRIPT LOGIC
 
-    let currentRecipient = null; 
-    let typingTimer; // For typing indicator
-    
-    // Connect socket
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- 1. INITIAL SETUP & AUTHENTICATION CHECK ---
     const socket = io();
+    let username = localStorage.getItem('username');
+
+    // FIX: Strong check for null, empty string, or the literal string "undefined"
+    if (!username || username === "undefined" || !username.trim()) {
+        console.log("Invalid username found. Clearing data and redirecting to login.");
+        localStorage.clear(); 
+        window.location.href = "/login.html";
+        return;
+    }
     
-    // --- Message Rendering and Helpers ---
-    function formatTime(d){
-        return new Intl.DateTimeFormat([], {hour:'2-digit', minute:'2-digit'}).format(d);
+    username = username.trim(); // Ensure username is trimmed
+    
+    // --- 2. ELEMENTS & STATE ---
+    const sidebar = document.getElementById('sidebar');
+    const sidebarCollapse = document.querySelector('.menu-toggle');
+    const content = document.getElementById('content');
+    const welcomeMessageEl = document.getElementById('welcomeMessage');
+    const onlineUsersList = document.getElementById('onlineUsersList');
+    const messageInput = document.getElementById('messageInput');
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    const messageDisplayArea = document.getElementById('messageDisplayArea');
+    
+    let currentRecipient = null; 
+
+    if (welcomeMessageEl) {
+        welcomeMessageEl.textContent = `Hello, ${username}!`; 
     }
-    function escapeHtml(str){
-      return (str+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+
+
+    // --- 3. UI and SIDEBAR LOGIC (Fixes button not working) ---
+    function toggleSidebar() {
+        if (sidebar && content) {
+            // Toggles the class that hides/shows the sidebar via CSS
+            sidebar.classList.toggle('active');
+            content.classList.toggle('active'); 
+        }
+    }
+
+    if (sidebarCollapse) {
+        sidebarCollapse.addEventListener('click', toggleSidebar);
     }
     
-    function addMessage(msg, isSelf=false){
-      if (!isSelf && msg.sender !== currentRecipient) return; // Only show for active chat
-
-      const row = document.createElement('div');
-      row.className = 'msg-row' + (isSelf || msg.sender === USERNAME ? ' me' : '');
-      
-      const content = document.createElement('div');
-      content.className = 'msg-content';
-      
-      const bubble = document.createElement('div');
-      bubble.classList.add('msg');
-      bubble.innerHTML = `
-        <div class="username-tag">${msg.sender}</div>
-        ${escapeHtml(msg.text)}
-        <div class="meta">${formatTime(new Date(msg.timestamp || Date.now()))}</div>
-      `;
-      
-      row.appendChild(content);
-
-      if (isSelf || msg.sender === USERNAME) {
-          row.style.flexDirection = 'row-reverse';
-      } else {
-          row.style.flexDirection = 'row';
-      }
-      
-      content.appendChild(bubble); // Append bubble after meta/username
-      chatBox.appendChild(row);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // --- User Management ---
-    function startChat(recipient) {
-        if (recipient === currentRecipient) return;
-
-        currentRecipient = recipient;
-        recipientHeader.textContent = `Chatting with: ${recipient}`;
-        chatBox.innerHTML = ''; // Clear chat area
-        chatBox.innerHTML = `<div class="muted" style="text-align:center; padding:20px;">Loading chat history...</div>`;
-
-        // Enable input and buttons
-        messageInput.disabled = false;
-        sendButton.disabled = false;
-        attachButton.disabled = false;
-        messageInput.focus();
-        
-        // Update active class in sidebar
-        document.querySelectorAll('.user').forEach(el => el.classList.remove('active'));
-        qs(`.user[data-username="${recipient}"]`).classList.add('active');
-        
-        // Load chat history (Your server needs to handle this event)
-        socket.emit("loadChat", { user1: USERNAME, user2: currentRecipient }); 
-    }
-
-    function renderUsers(list=[]){
-      usersList.innerHTML = '';
-      list.forEach(u => {
-        if (u === USERNAME) return;
-
-        const el = document.createElement('div');
-        el.className = 'user';
-        el.dataset.username = u;
-        const letter = (u||'?').slice(0,1).toUpperCase();
-
-        el.innerHTML = `
-          <div class="avatar-img" style="background:var(--accent); display:grid; place-items:center; font-size:16px;">${letter}</div>
-          <div class="u-name">${u||'Unknown'}</div>
-        `;
-        
-        // Start chat on user click
-        el.onclick = () => startChat(u); 
-        
-        usersList.appendChild(el);
-      });
-      if(list.length <= 1){
-        usersList.innerHTML = `<div class="muted" style="padding:8px 10px;">No one else online</div>`;
-      }
+    // Add event listener to the Dismiss (X) button if it exists
+    const dismissBtn = document.getElementById('dismiss');
+    if (dismissBtn) {
+        dismissBtn.addEventListener('click', toggleSidebar);
     }
 
 
-    // --- Socket Logic ---
+    // --- 4. CHAT AND SOCKET.IO LOGIC ---
+
+    // Initial Registration
     socket.on('connect', () => {
-      socket.emit('newUser', USERNAME); // Register user
+        socket.emit('newUser', username); 
     });
 
-    socket.on("updateUsers", (users) => { // Array of usernames
-      renderUsers(users);
+    // Logout
+    document.querySelector('.logout-btn').addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = "/login.html";
+    });
+
+    // User Selection Handler
+    function selectRecipient(recipientName, clickedElement) {
+        // Highlight active user
+        document.querySelectorAll('.user').forEach(el => el.classList.remove('active'));
+        if(clickedElement) clickedElement.classList.add('active');
+
+        currentRecipient = recipientName;
+        document.querySelector('.chat-header h2').textContent = `Chatting with: ${recipientName}`;
+        
+        // Clear message area and request history
+        messageDisplayArea.innerHTML = ''; 
+        messageDisplayArea.innerHTML = `<p style="text-align:center; padding:20px;">Loading chat history...</p>`;
+        socket.emit('loadChat', { sender: username, receiver: currentRecipient });
+        
+        // Ensure input is enabled
+        messageInput.disabled = false;
+        sendMessageBtn.disabled = false;
+        messageInput.focus();
+    }
+
+
+    // Message Sending Logic
+    sendMessageBtn.addEventListener('click', () => {
+        const text = messageInput.value.trim();
+        
+        if (!currentRecipient) {
+            alert("Please select a user to chat with.");
+            return;
+        }
+        if (!text) return; // Ignore empty messages
+
+        const messagePayload = { 
+            sender: username, 
+            receiver: currentRecipient, 
+            text: text,
+            timestamp: new Date().toISOString()
+        };
+        
+        // 🚨 Final Socket Emit: Send private message
+        socket.emit("privateMessage", messagePayload); 
+        
+        // Optimistic rendering (show my own message immediately)
+        addMessage(messagePayload, true);
+        
+        messageInput.value = '';
     });
     
-    // 🚨 NEW: Typing Indicator Listeners
-    socket.on("userTyping", ({ sender }) => {
-        if (sender === currentRecipient) {
-            typingIndicator.textContent = `${sender} is typing...`;
+    // Enter key press handler
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessageBtn.click();
         }
     });
 
-    socket.on("stopTyping", ({ sender }) => {
-        if (sender === currentRecipient) {
-            typingIndicator.textContent = '';
-        }
-    });
+
+    // --- Socket Listeners ---
     
-    // Listener for chat history retrieval
+    // Receive Online Users List (FIXED: Expects array of usernames)
+    socket.on("updateUsers", (users) => { 
+        onlineUsersList.innerHTML = '';
+        users.forEach(u => {
+            if (u !== username) {
+                const div = document.createElement("div");
+                div.classList.add("user");
+                div.textContent = u;
+                div.dataset.username = u;
+                
+                // Attach click handler to start chat
+                div.onclick = (e) => selectRecipient(u, e.currentTarget); 
+                
+                onlineUsersList.appendChild(div);
+            }
+        });
+    });
+
+    // Receive Message History
     socket.on("chatHistory", (history) => {
-        chatBox.innerHTML = ''; // Clear "loading" message
+        messageDisplayArea.innerHTML = '';
         history.forEach(msg => addMessage(msg));
+        messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
     });
 
+    // Receive New Private Message
     socket.on("privateMessage", (msg) => {
         // Display only if it's the current active chat
         if (msg.sender === currentRecipient || msg.receiver === currentRecipient) {
@@ -275,58 +283,49 @@
         }
     });
 
-
-    // --- Send Message Logic ---
-    composerForm.addEventListener('submit', (e) => {
-        e.preventDefault();
+    // --- MESSAGE RENDERING ---
+    function addMessage(msg, isSelf=false) {
+        const row = document.createElement('div');
+        row.className = 'msg-row' + (isSelf || msg.sender === username ? ' me' : '');
         
-        const text = messageInput.value.trim();
-        if (!text || !currentRecipient) {
-            if (!currentRecipient) alert("Please select a user to chat.");
-            return;
+        const content = document.createElement('div');
+        content.className = 'msg-content';
+        
+        const bubble = document.createElement('div');
+        bubble.classList.add('msg');
+        
+        // Add sender tag (visible only for 'other' messages)
+        const senderTag = (isSelf || msg.sender === username) ? 'You' : msg.sender;
+        
+        bubble.innerHTML = `
+          <div class="username-tag">${senderTag}</div>
+          ${escapeHtml(msg.text || '')}
+          <div class="meta">${formatTime(new Date(msg.timestamp || Date.now()))}</div>
+        `;
+        
+        content.appendChild(bubble);
+        row.appendChild(content);
+
+        // FIX: Ensure correct alignment (assuming simple left/right layout without DP for now)
+        if (isSelf || msg.sender === username) {
+            row.style.justifyContent = 'flex-end';
+        } else {
+            row.style.justifyContent = 'flex-start';
         }
 
-        const messagePayload = { 
-            sender: USERNAME, 
-            receiver: currentRecipient, 
-            text: text,
-            timestamp: new Date().toISOString()
-        };
-        
-        // Send message to server
-        socket.emit("privateMessage", messagePayload); 
-        
-        // 🚨 Send 'stopTyping' event immediately after sending
-        socket.emit("stopTyping", currentRecipient);
-
-        // Optimistic rendering
-        addMessage(messagePayload, true);
-        
-        messageInput.value = "";
-        messageInput.focus();
-    });
-    
-    // 🚨 NEW: Typing Indicator Logic
-    messageInput.addEventListener('input', () => {
-        if (!currentRecipient) return;
-
-        if (typingTimer) clearTimeout(typingTimer);
-        
-        // Send typing event
-        socket.emit("typing", currentRecipient);
-
-        // Set a timer to stop typing after 1 second of no input
-        typingTimer = setTimeout(() => {
-            socket.emit("stopTyping", currentRecipient);
-        }, 1000);
-    });
-
-
-    // --- General Functions ---
-    function logout() {
-        localStorage.clear();
-        window.location.href = "/login.html";
+        messageDisplayArea.appendChild(row);
+        messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
     }
+    
+    // General Helpers (Assumed to be defined in your code or in a separate file)
+    function formatTime(d){
+        return new Intl.DateTimeFormat([], {hour:'2-digit', minute:'2-digit'}).format(d);
+    }
+    function escapeHtml(str){
+      return (str+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+});
+
 
   </script>
 </body>
