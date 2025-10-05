@@ -1,5 +1,3 @@
-// server.js - FINAL WORKING CODE (Fixes all Errors and Paths)
-
 const path = require("path");
 const express = require("express");
 const http = require("http");
@@ -43,6 +41,7 @@ const UserSchema = new mongoose.Schema({
   profilePicture: { type: String, default: "uploads/default_avatar.jpg" },
   bestSnakeScore: { type: Number, default: 0 },
 });
+
 const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   receiver: { type: String, required: true },
@@ -83,7 +82,7 @@ const upload = multer({
 
 // --- API AND AUTHENTICATION ROUTES ---
 
-// Login API 
+// Login API (The route that was failing)
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -100,51 +99,83 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// Signup API
-app.post("/api/signup", async (req, res) => {
+// Update Profile API
+app.post("/api/profile/update", async (req, res) => {
+  const { username, bio, bestSnakeScore } = req.body;
+
   try {
-    const { username, password } = req.body;
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.json({ success: false, message: "User already exists." });
+    const updateFields = {};
+    if (bio !== undefined) updateFields.bio = bio;
+    if (bestSnakeScore !== undefined) updateFields.bestSnakeScore = bestSnakeScore;
+
+    const updatedUser = await User.findOneAndUpdate(
+      { username },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found." });
     }
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const newUser = new User({ username, password: hashedPassword });
-    await newUser.save();
-    res.json({ success: true, message: "Signup successful!" });
+
+    res.json({ success: true, message: "Profile updated successfully.", user: updatedUser });
   } catch (error) {
-    res.json({ success: false, message: "Error in signup." });
+    console.error("Profile update error:", error);
+    res.status(500).json({ success: false, message: "Internal server error during update." });
   }
 });
 
+// Update Profile Picture
+app.post("/api/profile/upload", (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) {
+      console.error("Upload Error:", err);
+      return res.status(500).json({ success: false, message: `Upload Error: ${err.message}` });
+    }
+
+    const username = req.body.username;
+    if (!username) {
+      return res.status(400).json({ success: false, message: "Username is missing." });
+    }
+
+    const filePath = req.file.path.replace(/\\/g, "/").split("public/")[1];
+
+    try {
+      await User.findOneAndUpdate(
+        { username },
+        { profilePicture: filePath },
+        { new: true }
+      );
+
+      res.json({ success: true, message: "Profile picture updated.", profilePicture: filePath });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Error saving profile picture." });
+    }
+  });
+});
 
 // --- ROUTING ---
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads"))); 
 
-// 🚨 FIX: Root URL Serves Login.html
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// Generic route for all HTML files (ensuring correct loading)
 app.get('/:file.html', (req, res) => {
     const fileName = req.params.file + '.html';
     const filePath = path.join(__dirname, 'public', fileName);
     res.sendFile(filePath, (err) => {
         if (err) {
-            // FIX: If file not found, try to redirect to login or show 404
             res.status(404).sendFile(path.join(__dirname, 'public/404.html'));
         }
     });
 });
 
-
-// --- SOCKET.IO CHAT LOGIC (Final structure) ---
+// --- SOCKET.IO CHAT LOGIC ---
 const connectedUsers = {};
 
 io.on("connection", (socket) => {
-    // ... (rest of the Socket.IO Logic) ...
+  // ... (Socket.IO Logic) ...
 });
 
 // --- SERVER STARTUP ---
