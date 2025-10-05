@@ -1,137 +1,16 @@
-/* style.css - Clean, Unified, and Responsive Code */
-
-/* 1. Global Reset & Variables */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
+/* public/style.css - small shared styles */
 :root {
-    --bg-main: #1a1a2e;         /* Deep Violet/Navy Background */
-    --bg-sidebar: #282a36;      /* Sidebar Background */
-    --bg-component: #333642;    /* Card/Input Background */
-    --color-accent: #79a6fe;    /* Primary Action Blue */
-    --color-text: #f0f0f0;      /* Light Text */
-    --color-secondary: #bdbdbd; /* Secondary Text Color */
-    --color-border: #44475a;    /* Border/Divider Color */
-    --color-error: #ef4444;     /* Logout/Error Red */
+  --bg1: #0f1017;
+  --card: #151522;
+  --accent: #6766ff;
+  --muted: #9a9ab0;
 }
-
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: var(--bg-main);
-    color: var(--color-text);
-    min-height: 100vh;
-    overflow-x: hidden;
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,#0b0b12 0%, #0f0f1a 100%); color:#fff;
 }
-
-a {
-    text-decoration: none;
-    color: var(--color-accent);
-}
-
-/* 2. Main Layout (Sidebar & Content) */
-
-#sidebar {
-    width: 250px; 
-    position: fixed;
-    top: 0;
-    left: -250px; /* Initially hidden on small screens */
-    height: 100vh;
-    z-index: 1000;
-    background: var(--bg-sidebar); 
-    color: var(--color-text);
-    padding: 20px 0;
-    transition: all 0.3s;
-    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.4);
-}
-
-/* JS द्वारा जोड़ा गया क्लास: साइडबार को दिखाता है */
-#sidebar.open { 
-    left: 0; 
-}
-
-#content {
-    margin-left: 0; /* Default to 0 margin for mobile first */
-    padding: 20px;
-    min-height: 100vh;
-    transition: all 0.3s;
-    width: 100%;
-}
-
-/* Desktop Styles */
-@media (min-width: 769px) {
-    #sidebar {
-        left: 0; /* Sidebar always visible on desktop */
-        position: fixed;
-    }
-    #content {
-        margin-left: 250px; /* Content shifted for desktop */
-        width: calc(100% - 250px);
-    }
-}
-
-
-/* Sidebar Navigation Links */
-.sidebar-header {
-    padding: 20px;
-    padding-bottom: 20px;
-    text-align: center;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.list-unstyled {
-    list-style: none;
-    padding: 0;
-}
-
-#sidebar a {
-    color: var(--color-secondary); 
-    display: flex;
-    align-items: center;
-    padding: 12px 20px;
-    font-size: 1em;
-    transition: background 0.2s;
-}
-
-#sidebar a:hover,
-#sidebar li.active a {
-    color: var(--color-text);
-    background: var(--color-border); 
-    border-left: 5px solid var(--color-accent);
-}
-
-.online-users-list {
-    padding: 20px;
-    border-top: 1px solid var(--color-border);
-    margin-top: 20px;
-}
-
-/* Top Navbar (Hamburger and Logout) */
-.top-navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 0;
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: 25px;
-}
-
-#menuToggle {
-    background: var(--bg-component);
-    border: 1px solid var(--color-border);
-    color: var(--color-text);
-    padding: 8px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.2em;
-}
-
-/* Chat Interface Specifics */
-.chat-wrapper {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 100px); 
-    background: var(--bg-main);
-}
+.container{max-width:1024px;margin:0 auto;padding:12px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03)}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer}
+input,textarea{outline:none}
