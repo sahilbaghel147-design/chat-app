@@ -55,10 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let currentRecipient = null;
 
-        // --- A. Connection & User List ---
-        socket.emit("newUser", username);
+        // --- A. Socket Connection & Online Users Handling ---
+        socket.emit("registerUser", username);
 
-        socket.on("updateUsers", (users) => {
+        socket.on("updateUserList", (users) => {
             onlineUsersList.innerHTML = '';
             users.forEach(user => {
                 if (user !== username) {
