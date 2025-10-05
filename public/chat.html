@@ -9,26 +9,25 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   
   <style>
-    /* 🚨 FINAL WORKING UI CSS */
+    /* --- CSS Variables and Global Styles --- */
     :root {
-      --color-primary: #5e6bfe;
-      --color-dark-bg: #181828;
-      --color-chat-bg: #181828;
-      --color-sidebar-bg: #1c1c2c;
-      --color-component-bg: #2a2a3d;
-      --color-text: #f0f0f0;
-      --color-error: #ef4444;
-      --color-online: #4CAF50;
+      --bg-main: #181828;
+      --panel: #1c1c2c;
+      --panel-2: #2a2a3d;
+      --text: #f0f0f0;
+      --muted: #aaaaaa;
+      --accent: #7c5cff; 
+      --danger: #ff5c7a;
       --radius: 10px;
     }
-
-    /* Basic Layout */
     body {
-      margin: 0; padding: 0; background: var(--color-dark-bg); color: var(--color-text);
+      margin: 0; padding: 0; background: var(--bg-main); color: var(--text);
       font-family: "Segoe UI", sans-serif; display: flex; flex-direction: column; min-height: 100vh;
     }
+    
+    /* Navbar */
     nav {
-      background: var(--color-primary);
+      background: var(--panel-2);
       padding: 12px 20px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.3);
       flex-shrink: 0;
@@ -36,48 +35,59 @@
       justify-content: space-between;
       align-items: center;
     }
-    nav a { color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; }
+    nav a { color: var(--text); text-decoration: none; padding: 8px 12px; border-radius: 6px; transition: 0.2s; }
+    nav a:hover, nav a.active { background: rgba(255,255,255,0.1); }
+    .logout-btn { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
 
-    .chat-container {
-      flex: 1; display: flex; height: calc(100vh - 50px); overflow: hidden;
-    }
 
-    /* Sidebar */
-    .sidebar {
-      width: 250px; background: var(--color-sidebar-bg); padding: 15px; flex-shrink: 0; overflow-y: auto;
-    }
-    .online-users-header { color: var(--color-primary); border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 10px; }
+    /* Main Layout and Sidebar */
+    .chat-container { flex: 1; display: flex; height: calc(100vh - 50px); overflow: hidden; }
+    .sidebar { width: 250px; background: var(--panel); padding: 15px; flex-shrink: 0; overflow-y: auto; }
+    .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); overflow: hidden; }
     
+    .sidebar h3 { color: var(--accent); border-bottom: 1px solid #444; padding-bottom: 6px; margin: 0 0 10px 0; }
     #usersList { list-style: none; padding: 0; }
-    .user {
-      padding: 8px; background: var(--color-component-bg); margin: 4px 0; border-radius: 6px; cursor: pointer;
-      display: flex; align-items: center; gap: 10px; transition: background 0.2s;
-    }
+    .user { padding: 8px; background: var(--panel-2); margin: 4px 0; border-radius: 6px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 10px; }
     .user:hover, .user.active { background: #3a3a5a; }
-    .online-dot { width: 8px; height: 8px; background: var(--color-online); border-radius: 50%; display: inline-block; }
+    .online-dot { width: 8px; height: 8px; background: #4CAF50; border-radius: 50%; display: inline-block; }
+
 
     /* Chat Area */
-    .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--color-chat-bg); overflow: hidden; }
-    #chatRecipientHeader { padding: 15px; background: var(--color-sidebar-bg); border-bottom: 1px solid #333; }
+    #chatRecipientHeader { padding: 15px; background: var(--panel-2); border-bottom: 1px solid #333; font-weight: 700; }
     #chatBox { flex: 1; padding: 15px; overflow-y: auto; }
+
+    /* Message Styling */
+    .msg-row{display:flex; margin:8px 0; align-items:flex-end;}
+    .me .msg-row{flex-direction:row-reverse} /* Flip direction for sender */
     
+    .msg-content{max-width:70%;}
+    .msg{ padding:10px 12px; border-radius:14px; background:var(--panel-2); border:1px solid rgba(255,255,255,.06); }
+    .me .msg{ background:var(--accent); color:#111; border-color:#5dd6ff; }
+    .meta{font-size:11px; color:var(--muted); margin-top:2px;}
+    .me .meta{text-align:right;}
+
+    /* 🚨 NEW: Typing Indicator */
+    #typingIndicator { color: #5dd6ff; font-style: italic; padding: 0 15px; height: 20px; font-size: 0.9em; }
+
     /* Input Area */
-    #inputArea { display: flex; padding: 10px 20px; background: var(--color-sidebar-bg); border-top: 1px solid #333; flex-shrink: 0; }
-    #messageInput { flex: 1; padding: 12px; border-radius: 20px; border: none; background: var(--color-component-bg); color: white; }
-    #sendButton { background: var(--color-primary); border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 8px; color: white; font-size: 1.2em; cursor: pointer; }
+    .composer{ display:flex; gap:10px; align-items:center; padding:10px 20px; background:var(--panel); border-top:1px solid #333; flex-shrink: 0; }
+    #messageInput { flex:1; height:44px; padding:0 14px; color:var(--text); background:var(--panel-2); border:none; border-radius:20px; outline:none; }
+    #sendButton, #attachButton { background:var(--accent); color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:1.1em; cursor:pointer; margin-left:5px; }
+    #sendButton { background: #44d07b; }
+    #attachButton { background: #5e6bfe; }
     
-    /* Message Bubbles */
-    .msg-row { display: flex; margin: 6px 0; align-items: flex-end; }
-    .msg { padding: 10px 14px; border-radius: 15px; max-width: 70%; line-height: 1.4; }
-    .me { background: var(--color-primary); color: white; margin-left: auto; }
-    .other { background: var(--color-component-bg); color: var(--color-text); margin-right: auto; }
-    .username-tag { font-size: 0.75em; opacity: 0.7; margin-bottom: 3px; display: block; }
+    /* Responsive Adjustments */
+    @media (max-width: 600px) {
+        .chat-container{flex-direction:column;}
+        .sidebar{width:100%; height:auto; order:-1;}
+        .chat-area{height:calc(100vh - 100px);}
+    }
   </style>
 </head>
 <body>
   <nav>
     <div class="brand">ChatHub</div>
-    <div style="flex-grow: 1; text-align: center;">
+    <div style="flex-grow: 1; text-align: right;">
         <a href="/index.html">Home</a>
         <a href="/chat.html" class="active">Chat</a>
         <a href="/profile.html">Profile</a>
@@ -88,138 +98,167 @@
     <button class="logout-btn" onclick="logout()">Logout</button>
   </nav>
 
-  <div class="chat-container">
-    <div class="sidebar">
-      <h3 class="online-users-header">🟢 Online Users</h3>
+  <main class="page chat-container">
+    <aside class="card sidebar">
+      <h3>🟢 Online Users</h3>
       <div id="usersList"></div>
-    </div>
+    </aside>
 
-    <div class="chat-area">
+    <section class="chat-area">
         <h2 id="chatRecipientHeader">Select a User to Chat</h2>
-      <div id="chatBox"></div>
-      <div id="inputArea">
-        <input type="text" id="messageInput" placeholder="Type your message..."/>
-        <button id="sendButton">➤</button>
+        
+        <div id="typingIndicator"></div>
+        
+      <div id="chatBox">
+         <div class="muted" style="text-align:center; padding:20px;">Start by clicking a user name.</div>
       </div>
-    </div>
-  </div>
+
+      <form id="composer" class="composer" autocomplete="off">
+        <input type="file" id="fileInput" style="display:none;">
+        <button type="button" id="attachButton" disabled><i class="fas fa-paperclip"></i></button>
+        <input id="messageInput" class="input" type="text" placeholder="Type your message…" maxlength="1000" disabled />
+        <button class="btn" type="submit" id="sendButton" disabled>➤</button>
+      </form>
+    </section>
+  </main>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    // --- Initial Setup and Helpers ---
+    const qs = (s) => document.querySelector(s);
+    const getUsername = () => {
+      const name = localStorage.getItem('username');
+      if(!name || name === 'undefined' || !name.trim()){
+        window.location.href = '/login.html';
+        return 'Guest';
+      }
+      return name.trim();
+    }
+    const USERNAME = getUsername();
+    
+    // UI Elements
+    const chatBox = qs('#chatBox');
+    const messageInput = qs('#messageInput');
+    const sendButton = qs('#sendButton');
+    const usersList = qs('#usersList');
+    const recipientHeader = qs('#chatRecipientHeader');
+    const composerForm = qs('#composer');
+    const fileInput = qs('#fileInput');
+    const attachButton = qs('#attachButton');
+    const typingIndicator = qs('#typingIndicator');
+
+    let currentRecipient = null; 
+    let typingTimer; // For typing indicator
+    
+    // Connect socket
     const socket = io();
-    let username = localStorage.getItem("username") || "Guest";
-    let currentRecipient = null;
+    
+    // --- Message Rendering and Helpers ---
+    function formatTime(d){
+        return new Intl.DateTimeFormat([], {hour:'2-digit', minute:'2-digit'}).format(d);
+    }
+    function escapeHtml(str){
+      return (str+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+    
+    function addMessage(msg, isSelf=false){
+      if (!isSelf && msg.sender !== currentRecipient) return; // Only show for active chat
 
-    const chatBox = document.getElementById("chatBox");
-    const messageInput = document.getElementById("messageInput");
-    const sendButton = document.getElementById("sendButton");
-    const usersList = document.getElementById("usersList");
-    const chatRecipientHeader = document.getElementById("chatRecipientHeader");
+      const row = document.createElement('div');
+      row.className = 'msg-row' + (isSelf || msg.sender === USERNAME ? ' me' : '');
+      
+      const content = document.createElement('div');
+      content.className = 'msg-content';
+      
+      const bubble = document.createElement('div');
+      bubble.classList.add('msg');
+      bubble.innerHTML = `
+        <div class="username-tag">${msg.sender}</div>
+        ${escapeHtml(msg.text)}
+        <div class="meta">${formatTime(new Date(msg.timestamp || Date.now()))}</div>
+      `;
+      
+      row.appendChild(content);
 
-    if (username === "Guest") {
-        window.location.href = "/login.html";
+      if (isSelf || msg.sender === USERNAME) {
+          row.style.flexDirection = 'row-reverse';
+      } else {
+          row.style.flexDirection = 'row';
+      }
+      
+      content.appendChild(bubble); // Append bubble after meta/username
+      chatBox.appendChild(row);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- Core Functions ---
-
+    // --- User Management ---
     function startChat(recipient) {
         if (recipient === currentRecipient) return;
-        
+
         currentRecipient = recipient;
-        chatRecipientHeader.textContent = `Chatting with: ${recipient}`;
-        chatBox.innerHTML = ''; 
-        
-        // Highlight active user
-        document.querySelectorAll('.user').forEach(el => el.classList.remove('active'));
-        document.querySelector(`.user[data-username="${recipient}"]`).classList.add('active');
-        
-        // Add placeholder message
+        recipientHeader.textContent = `Chatting with: ${recipient}`;
+        chatBox.innerHTML = ''; // Clear chat area
         chatBox.innerHTML = `<div class="muted" style="text-align:center; padding:20px;">Loading chat history...</div>`;
+
+        // Enable input and buttons
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+        attachButton.disabled = false;
+        messageInput.focus();
         
-        // Fetch chat history (Your server needs to handle this event)
-        socket.emit("loadChat", { user1: username, user2: recipient }); 
+        // Update active class in sidebar
+        document.querySelectorAll('.user').forEach(el => el.classList.remove('active'));
+        qs(`.user[data-username="${recipient}"]`).classList.add('active');
+        
+        // Load chat history (Your server needs to handle this event)
+        socket.emit("loadChat", { user1: USERNAME, user2: currentRecipient }); 
     }
 
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text || !currentRecipient) {
-          if (!currentRecipient) alert("Please select an online user first.");
-          return;
+    function renderUsers(list=[]){
+      usersList.innerHTML = '';
+      list.forEach(u => {
+        if (u === USERNAME) return;
+
+        const el = document.createElement('div');
+        el.className = 'user';
+        el.dataset.username = u;
+        const letter = (u||'?').slice(0,1).toUpperCase();
+
+        el.innerHTML = `
+          <div class="avatar-img" style="background:var(--accent); display:grid; place-items:center; font-size:16px;">${letter}</div>
+          <div class="u-name">${u||'Unknown'}</div>
+        `;
+        
+        // Start chat on user click
+        el.onclick = () => startChat(u); 
+        
+        usersList.appendChild(el);
+      });
+      if(list.length <= 1){
+        usersList.innerHTML = `<div class="muted" style="padding:8px 10px;">No one else online</div>`;
       }
-      
-      // 🚨 FIX: Emit privateMessage with correct recipient
-      const messagePayload = { 
-          sender: username, 
-          receiver: currentRecipient, 
-          text: text,
-          timestamp: new Date().toISOString()
-      };
-      
-      socket.emit("privateMessage", messagePayload); 
-      
-      // Optimistic render (show my own message immediately)
-      addMessage(messagePayload, true);
-      messageInput.value = "";
     }
 
-    function addMessage(msg, isSelf=false) {
-        // Filter out messages that don't belong to the current chat window
-        if (!isSelf && msg.sender !== currentRecipient) return; 
-
-        const row = document.createElement("div");
-        row.classList.add("msg-row");
-
-        const bubble = document.createElement("div");
-        bubble.classList.add("msg");
-        
-        // Determine alignment and styling
-        const senderName = msg.sender === username ? 'You' : msg.sender;
-
-        if (isSelf || msg.sender === username) {
-            row.classList.add("me");
-            bubble.innerHTML = `<div class="username-tag">You</div>${msg.text}`;
-        } else {
-            row.classList.add("other");
-            bubble.innerHTML = `<div class="username-tag">${msg.sender}</div>${msg.text}`;
-        }
-        
-        row.appendChild(bubble); // Simple structure for now
-        chatBox.appendChild(row);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
 
     // --- Socket Logic ---
-    sendButton.addEventListener("click", sendMessage);
-    messageInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-          e.preventDefault();
-          sendMessage();
-      }
+    socket.on('connect', () => {
+      socket.emit('newUser', USERNAME); // Register user
     });
-
-    socket.on("newUser", username); // Initial registration
-    socket.emit("newUser", username); // Register user
 
     socket.on("updateUsers", (users) => { // Array of usernames
-      usersList.innerHTML = "";
-      users.forEach(u => {
-        if (u !== username) {
-            const div = document.createElement("div");
-            div.classList.add("user");
-            div.textContent = u;
-            div.dataset.username = u;
-            // 🔑 Start chat on user click
-            div.onclick = () => startChat(u); 
-            usersList.appendChild(div);
+      renderUsers(users);
+    });
+    
+    // 🚨 NEW: Typing Indicator Listeners
+    socket.on("userTyping", ({ sender }) => {
+        if (sender === currentRecipient) {
+            typingIndicator.textContent = `${sender} is typing...`;
         }
-      });
     });
 
-    // Listener for private messages (for both sender and receiver)
-    socket.on("privateMessage", (msg) => {
-        // Display if the message is for the current chat
-        if (msg.sender === currentRecipient || msg.receiver === currentRecipient) {
-             addMessage(msg);
+    socket.on("stopTyping", ({ sender }) => {
+        if (sender === currentRecipient) {
+            typingIndicator.textContent = '';
         }
     });
     
@@ -229,11 +268,66 @@
         history.forEach(msg => addMessage(msg));
     });
 
-    // --- Logout ---
-    document.querySelector('.logout-btn').addEventListener('click', () => {
+    socket.on("privateMessage", (msg) => {
+        // Display only if it's the current active chat
+        if (msg.sender === currentRecipient || msg.receiver === currentRecipient) {
+             addMessage(msg);
+        }
+    });
+
+
+    // --- Send Message Logic ---
+    composerForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const text = messageInput.value.trim();
+        if (!text || !currentRecipient) {
+            if (!currentRecipient) alert("Please select a user to chat.");
+            return;
+        }
+
+        const messagePayload = { 
+            sender: USERNAME, 
+            receiver: currentRecipient, 
+            text: text,
+            timestamp: new Date().toISOString()
+        };
+        
+        // Send message to server
+        socket.emit("privateMessage", messagePayload); 
+        
+        // 🚨 Send 'stopTyping' event immediately after sending
+        socket.emit("stopTyping", currentRecipient);
+
+        // Optimistic rendering
+        addMessage(messagePayload, true);
+        
+        messageInput.value = "";
+        messageInput.focus();
+    });
+    
+    // 🚨 NEW: Typing Indicator Logic
+    messageInput.addEventListener('input', () => {
+        if (!currentRecipient) return;
+
+        if (typingTimer) clearTimeout(typingTimer);
+        
+        // Send typing event
+        socket.emit("typing", currentRecipient);
+
+        // Set a timer to stop typing after 1 second of no input
+        typingTimer = setTimeout(() => {
+            socket.emit("stopTyping", currentRecipient);
+        }, 1000);
+    });
+
+
+    // --- General Functions ---
+    function logout() {
         localStorage.clear();
         window.location.href = "/login.html";
-    });
+    }
+
   </script>
 </body>
 </html>
