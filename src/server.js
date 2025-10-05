@@ -338,26 +338,37 @@ app.use((req, res) => {
   res.status(404).send("Not Found");
 });
 
-// simple socket.io
-const connectedUsers = {};
+// --- SOCKET.IO CHAT LOGIC ---
+const connectedUsers = {}; // username -> socket.id mapping
+
 io.on("connection", (socket) => {
-  console.log("Socket connected:", socket.id);
+  console.log("🔵 New client connected:", socket.id);
 
-  socket.on("register", (username) => {
-    if (!username) return;
+  // When a user logs in and sends their username
+  socket.on("registerUser", (username) => {
     connectedUsers[username] = socket.id;
-    io.emit("updateUsers", Object.keys(connectedUsers));
+    console.log("✅ Registered user:", username);
+    io.emit("updateUserList", Object.keys(connectedUsers)); // send updated list to all
   });
 
-  socket.on("chatMessage", ({ user, text }) => {
-    io.emit("chatMessage", { user: user || "Guest", text: text || "", time: new Date() });
-  });
-
+  // When user disconnects
   socket.on("disconnect", () => {
-    for (const [u, id] of Object.entries(connectedUsers)) {
-      if (id === socket.id) delete connectedUsers[u];
+    for (const [username, id] of Object.entries(connectedUsers)) {
+      if (id === socket.id) {
+        delete connectedUsers[username];
+        break;
+      }
     }
-    io.emit("updateUsers", Object.keys(connectedUsers));
+    console.log("🔴 User disconnected:", socket.id);
+    io.emit("updateUserList", Object.keys(connectedUsers)); // update everyone
+  });
+
+  // Message handling
+  socket.on("privateMessage", ({ sender, receiver, message }) => {
+    const receiverSocketId = connectedUsers[receiver];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("receiveMessage", { sender, message });
+    }
   });
 });
 
