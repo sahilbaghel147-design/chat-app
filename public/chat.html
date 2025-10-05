@@ -4,411 +4,236 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Aura Hub - Chat</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-
+  
   <style>
-    /* --- CSS Variables and Global Styles --- */
-    :root{
-      --bg:#0f0f1a;
-      --panel:#17192b;
-      --panel-2:#1e2238;
-      --text:#e7e9f3;
-      --muted:#a3a7c2;
-      --accent:#7c5cff;
-      --accent-2:#5dd6ff;
-      --danger:#ff5c7a;
-      --radius:14px;
-      --shadow:0 5px 20px rgba(0,0,0,.35);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font-family:Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
-      display:flex; flex-direction:column;
+    /* 🚨 FINAL WORKING UI CSS */
+    :root {
+      --color-primary: #5e6bfe;
+      --color-dark-bg: #181828;
+      --color-chat-bg: #181828;
+      --color-sidebar-bg: #1c1c2c;
+      --color-component-bg: #2a2a3d;
+      --color-text: #f0f0f0;
+      --color-error: #ef4444;
+      --color-online: #4CAF50;
+      --radius: 10px;
     }
 
-    /* --- Navigation --- */
-    .nav{
-      position:sticky; top:0; z-index:50;
-      background:var(--panel-2);
-      border-bottom:1px solid rgba(255,255,255,.06);
+    /* Basic Layout */
+    body {
+      margin: 0; padding: 0; background: var(--color-dark-bg); color: var(--color-text);
+      font-family: "Segoe UI", sans-serif; display: flex; flex-direction: column; min-height: 100vh;
     }
-    .nav-inner{
-      max-width:1100px; margin:auto;
-      padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:14px;
+    nav {
+      background: var(--color-primary);
+      padding: 12px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .brand{
-      font-weight:700; letter-spacing:.3px;
-      background:linear-gradient(90deg,var(--accent),var(--accent-2));
-      -webkit-background-clip:text; background-clip:text; color:transparent;
-    }
-    .tabs{display:flex; gap:14px; flex-wrap:wrap}
-    .tab{
-      text-decoration:none; color:var(--muted); font-weight:500;
-      padding:8px 12px; border-radius:999px; transition:.2s;
-    }
-    .tab:hover{color:var(--text); background:rgba(255,255,255,.06)}
-    .tab.active{background:var(--accent); color:#111}
-    .logout-btn{
-        background:var(--danger); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;
-    }
-    .menu-toggle{display:none; background:none; border:none; color:var(--text); font-size:1.5em; cursor:pointer;}
+    nav a { color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; }
 
-
-    /* --- Layout --- */
-    .page{
-      flex:1; display:grid; 
-      grid-template-columns: 280px 1fr; gap:16px;
-      max-width:1100px; margin:18px auto; padding:0 14px 24px;
-      width:100%;
-    }
-    .card{
-      background:var(--panel);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
+    .chat-container {
+      flex: 1; display: flex; height: calc(100vh - 50px); overflow: hidden;
     }
 
-    /* --- Online Users Sidebar --- */
-    .card h3{
-      margin:0; padding:14px 16px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:18px;
+    /* Sidebar */
+    .sidebar {
+      width: 250px; background: var(--color-sidebar-bg); padding: 15px; flex-shrink: 0; overflow-y: auto;
     }
-    .users{padding:10px 8px; max-height:80vh; overflow-y:auto;}
-    .user{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 8px; border-radius:12px;
-      transition:.2s; cursor:pointer;
-    }
-    .user:hover, .user.active{background:rgba(255,255,255,.08)}
-    .avatar-img{
-      width:32px; height:32px; border-radius:50%;
-      object-fit:cover; border:2px solid var(--accent);
-    }
-    .u-name{font-weight:500}
-
-    /* --- Chat Area --- */
-    .chat-wrap{display:flex; flex-direction:column; gap:10px; height:80vh;}
-    .chat-header{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:12px 16px; background:var(--panel-2); border-radius:var(--radius) var(--radius) 0 0;
-    }
-    .room-pill{
-      background:var(--accent); color:#111; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700;
-    }
-    .chat-box{
-      flex:1; padding:12px; overflow-y:auto; 
-      background:var(--panel); border-radius:0 0 var(--radius) var(--radius);
-      border-bottom:1px solid rgba(255,255,255,.06);
-    }
+    .online-users-header { color: var(--color-primary); border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 10px; }
     
-    /* Message Styling */
-    .msg-row{
-      display:flex; margin:8px 0; align-items:flex-end;
-      animation:pop .14s ease-out;
+    #usersList { list-style: none; padding: 0; }
+    .user {
+      padding: 8px; background: var(--color-component-bg); margin: 4px 0; border-radius: 6px; cursor: pointer;
+      display: flex; align-items: center; gap: 10px; transition: background 0.2s;
     }
-    @keyframes pop{from{transform:translateY(4px); opacity:.0} to{transform:none; opacity:1}}
+    .user:hover, .user.active { background: #3a3a5a; }
+    .online-dot { width: 8px; height: 8px; background: var(--color-online); border-radius: 50%; display: inline-block; }
+
+    /* Chat Area */
+    .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--color-chat-bg); overflow: hidden; }
+    #chatRecipientHeader { padding: 15px; background: var(--color-sidebar-bg); border-bottom: 1px solid #333; }
+    #chatBox { flex: 1; padding: 15px; overflow-y: auto; }
     
-    .msg-content{max-width:70%;}
-    .msg{
-      padding:10px 12px; border-radius:14px;
-      background:var(--panel-2); border:1px solid rgba(255,255,255,.06);
-      word-wrap:break-word; white-space:pre-wrap;
-    }
-    .me .msg-row{flex-direction:row-reverse;} /* Flip direction for sender */
-    .me .msg{
-      background:var(--accent); color:#111; border-color:var(--accent-2);
-      border-bottom-right-radius: 4px; /* Tail effect */
-    }
-    .msg-row:not(.me) .msg{
-      border-bottom-left-radius: 4px;
-    }
-    .meta{font-size:11px; color:var(--muted); margin-top:2px;}
-    .me .meta{text-align:right;}
-
-    /* Input area */
-    .composer{
-      display:flex; gap:10px; align-items:center; padding:8px;
-      background:var(--panel-2); border-radius:0 0 var(--radius) var(--radius);
-      position: sticky; bottom: 0;
-    }
-    .input{
-      flex:1; height:44px; padding:0 14px; color:var(--text);
-      background:var(--panel); border:1px solid rgba(255,255,255,.08);
-      border-radius:12px; outline:none;
-    }
-    .btn{
-      height:44px; width:44px; border-radius:12px; border:none; cursor:pointer;
-      background:var(--accent); color:#0c0d18; font-size:1.2em;
-      transition:.2s;
-    }
-    .btn:active{transform:translateY(1px)}
-    .btn:disabled {background: #333; cursor: not-allowed;}
-
-    /* --- Mobile Responsiveness --- */
-    @media (max-width:900px){
-      .page{
-        grid-template-columns: 1fr;
-        gap:0; /* Remove gap on mobile */
-      }
-      .sidebar{
-        position:absolute; top:0; left:0; right:0; bottom:0;
-        z-index:100;
-        display:none; /* Start hidden */
-        width:100%;
-        max-height:100vh;
-        overflow-y:auto;
-      }
-      .chat-wrap{
-        height:auto; min-height:85vh;
-        border-radius:var(--radius);
-      }
-      .menu-toggle{display:block;}
-      .nav-inner {padding-right: 20px;}
-    }
-    .sidebar.open {display:block;}
+    /* Input Area */
+    #inputArea { display: flex; padding: 10px 20px; background: var(--color-sidebar-bg); border-top: 1px solid #333; flex-shrink: 0; }
+    #messageInput { flex: 1; padding: 12px; border-radius: 20px; border: none; background: var(--color-component-bg); color: white; }
+    #sendButton { background: var(--color-primary); border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 8px; color: white; font-size: 1.2em; cursor: pointer; }
+    
+    /* Message Bubbles */
+    .msg-row { display: flex; margin: 6px 0; align-items: flex-end; }
+    .msg { padding: 10px 14px; border-radius: 15px; max-width: 70%; line-height: 1.4; }
+    .me { background: var(--color-primary); color: white; margin-left: auto; }
+    .other { background: var(--color-component-bg); color: var(--color-text); margin-right: auto; }
+    .username-tag { font-size: 0.75em; opacity: 0.7; margin-bottom: 3px; display: block; }
   </style>
 </head>
 <body>
-  <header class="nav">
-    <div class="nav-inner">
-      <div class="brand">Aura Hub Chat</div>
-      <nav class="tabs" aria-label="Main">
-        <a class="tab" href="/index.html">Home</a>
-        <a class="tab active" href="/chat.html">Chat</a>
-        <a class="tab" href="/profile.html">Profile</a>
-        <a class="tab" href="/games.html">Games</a>
-        <a class="tab" href="/videos.html">Videos</a>
-      </nav>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-      <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+  <nav>
+    <div class="brand">ChatHub</div>
+    <div style="flex-grow: 1; text-align: center;">
+        <a href="/index.html">Home</a>
+        <a href="/chat.html" class="active">Chat</a>
+        <a href="/profile.html">Profile</a>
+        <a href="/games.html">Games</a>
+        <a href="/videos.html">Videos</a>
+        <a href="/about.html">About</a>
     </div>
-  </header>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </nav>
 
-  <main class="page">
-    <aside class="card sidebar" id="usersSidebar">
-      <h3>Online Users <span style="float:right; cursor:pointer; display:none" id="closeSidebar"><i class="fas fa-times"></i></span></h3>
-      <div id="usersList" class="users">
-        <div class="muted" style="padding:8px 10px;">Loading users...</div>
+  <div class="chat-container">
+    <div class="sidebar">
+      <h3 class="online-users-header">🟢 Online Users</h3>
+      <div id="usersList"></div>
+    </div>
+
+    <div class="chat-area">
+        <h2 id="chatRecipientHeader">Select a User to Chat</h2>
+      <div id="chatBox"></div>
+      <div id="inputArea">
+        <input type="text" id="messageInput" placeholder="Type your message..."/>
+        <button id="sendButton">➤</button>
       </div>
-    </aside>
-
-    <section class="card chat-wrap">
-      <div class="chat-header">
-        <div style="font-weight:700; font-size:18px;" id="recipientUsername">Select a user to chat</div>
-        <span class="room-pill" id="selfTag"></span>
-      </div>
-
-      <div id="chatBox" class="chat-box" aria-live="polite" aria-label="Messages">
-        <div class="muted" style="text-align:center; padding:20px;">
-            <i class="fas fa-comment-dots" style="font-size:2em; margin-bottom:10px;"></i><br>
-            Please select a user from the Online Users list to start chatting.
-        </div>
-      </div>
-
-      <form id="composer" class="composer" autocomplete="off">
-        <input id="messageInput" class="input" type="text" placeholder="Type your message…" maxlength="1000" disabled />
-        <button class="btn" type="submit" disabled><i class="fas fa-paper-plane"></i></button>
-      </form>
-    </section>
-  </main>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // --- Initial Setup and Helpers ---
-    const qs = (s) => document.querySelector(s);
-    const getUsername = () => {
-      const name = localStorage.getItem('username');
-      if(!name || name === 'undefined' || !name.trim()){
-        window.location.href = '/login.html';
-        return 'Guest'; 
-      }
-      return name.trim();
-    }
-    const USERNAME = getUsername();
-    
-    // UI Elements
-    const chatBox = qs('#chatBox');
-    const messageInput = qs('#messageInput');
-    const sendButton = qs('.composer button[type="submit"]');
-    const usersList = qs('#usersList');
-    const recipientHeader = qs('#recipientUsername');
-    const composerForm = qs('#composer');
-    const usersSidebar = qs('#usersSidebar');
-    const menuToggle = qs('#menuToggle');
-    const closeSidebar = qs('#closeSidebar');
-
-    let currentRecipient = null; 
-    
-    if(qs('#selfTag')) qs('#selfTag').textContent = USERNAME;
-
-    // Connect socket
     const socket = io();
+    let username = localStorage.getItem("username") || "Guest";
+    let currentRecipient = null;
 
-    // --- Message Rendering ---
-    function formatTime(d){
-        return new Intl.DateTimeFormat([], {hour:'2-digit', minute:'2-digit'}).format(d);
+    const chatBox = document.getElementById("chatBox");
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+    const usersList = document.getElementById("usersList");
+    const chatRecipientHeader = document.getElementById("chatRecipientHeader");
+
+    if (username === "Guest") {
+        window.location.href = "/login.html";
     }
-    function escapeHtml(str){
-      return (str+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+
+    // --- Core Functions ---
+
+    function startChat(recipient) {
+        if (recipient === currentRecipient) return;
+        
+        currentRecipient = recipient;
+        chatRecipientHeader.textContent = `Chatting with: ${recipient}`;
+        chatBox.innerHTML = ''; 
+        
+        // Highlight active user
+        document.querySelectorAll('.user').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.user[data-username="${recipient}"]`).classList.add('active');
+        
+        // Add placeholder message
+        chatBox.innerHTML = `<div class="muted" style="text-align:center; padding:20px;">Loading chat history...</div>`;
+        
+        // Fetch chat history (Your server needs to handle this event)
+        socket.emit("loadChat", { user1: username, user2: recipient }); 
     }
-    
-    function addMessage(msg, isSelf=false){
-        if (msg.sender !== USERNAME && msg.sender !== currentRecipient) return; // Only show messages for the active chat
 
-        const row = document.createElement('div');
-        row.className = 'msg-row' + (isSelf || msg.sender === USERNAME ? ' me' : '');
-        
-        const content = document.createElement('div');
-        content.className = 'msg-content';
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'msg';
-        bubble.textContent = msg.text;
-        
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        meta.textContent = `${msg.sender} • ${formatTime(new Date(msg.timestamp || Date.now()))}`;
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text || !currentRecipient) {
+          if (!currentRecipient) alert("Please select an online user first.");
+          return;
+      }
+      
+      // 🚨 FIX: Emit privateMessage with correct recipient
+      const messagePayload = { 
+          sender: username, 
+          receiver: currentRecipient, 
+          text: text,
+          timestamp: new Date().toISOString()
+      };
+      
+      socket.emit("privateMessage", messagePayload); 
+      
+      // Optimistic render (show my own message immediately)
+      addMessage(messagePayload, true);
+      messageInput.value = "";
+    }
 
-        content.appendChild(bubble);
-        content.appendChild(meta);
-        
-        row.appendChild(content);
+    function addMessage(msg, isSelf=false) {
+        // Filter out messages that don't belong to the current chat window
+        if (!isSelf && msg.sender !== currentRecipient) return; 
 
+        const row = document.createElement("div");
+        row.classList.add("msg-row");
+
+        const bubble = document.createElement("div");
+        bubble.classList.add("msg");
+        
+        // Determine alignment and styling
+        const senderName = msg.sender === username ? 'You' : msg.sender;
+
+        if (isSelf || msg.sender === username) {
+            row.classList.add("me");
+            bubble.innerHTML = `<div class="username-tag">You</div>${msg.text}`;
+        } else {
+            row.classList.add("other");
+            bubble.innerHTML = `<div class="username-tag">${msg.sender}</div>${msg.text}`;
+        }
+        
+        row.appendChild(bubble); // Simple structure for now
         chatBox.appendChild(row);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- User Management ---
-    function startChat(recipient) {
-        if (recipient === currentRecipient) return;
-
-        currentRecipient = recipient;
-        recipientHeader.textContent = `Chatting with: ${recipient}`;
-        chatBox.innerHTML = ''; // Clear chat area
-
-        // Enable input
-        messageInput.disabled = false;
-        sendButton.disabled = false;
-        
-        // Update active class in sidebar
-        document.querySelectorAll('.user').forEach(el => el.classList.remove('active'));
-        qs(`.user[data-username="${recipient}"]`).classList.add('active');
-        
-        // Hide sidebar on mobile after selection
-        if (window.innerWidth <= 900) {
-            usersSidebar.classList.remove('open');
-        }
-        
-        // FIX: Add logic to fetch chat history here (if implemented on server)
-    }
-
-    function renderUsers(list=[]){
-      usersList.innerHTML = '';
-      list.forEach(u => {
-        if (u === USERNAME) return;
-
-        const el = document.createElement('div');
-        el.className = 'user';
-        el.dataset.username = u;
-        
-        const letter = (u||'?').slice(0,1).toUpperCase();
-        
-        // Placeholder Avatar (can be replaced with actual DP logic)
-        const avatarHtml = `<div class="avatar-img" style="background:#2a2e4a; display:grid; place-items:center; color:#c8ccf0;">${letter}</div>`; 
-
-        el.innerHTML = `
-          ${avatarHtml}
-          <div class="u-name">${u||'Unknown'}</div>
-        `;
-        
-        // 🔑 FIX: Start chat on user click
-        el.onclick = () => startChat(u); 
-        
-        usersList.appendChild(el);
-      });
-      if(list.length <= 1){
-        usersList.innerHTML = `<div class="muted" style="padding:8px 10px;">No one else online</div>`;
-      }
-    }
-
-
     // --- Socket Logic ---
-    socket.on('connect', () => {
-      socket.emit('newUser', USERNAME); // Register user
+    sendButton.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+          e.preventDefault();
+          sendMessage();
+      }
     });
+
+    socket.on("newUser", username); // Initial registration
+    socket.emit("newUser", username); // Register user
 
     socket.on("updateUsers", (users) => { // Array of usernames
-      renderUsers(users);
+      usersList.innerHTML = "";
+      users.forEach(u => {
+        if (u !== username) {
+            const div = document.createElement("div");
+            div.classList.add("user");
+            div.textContent = u;
+            div.dataset.username = u;
+            // 🔑 Start chat on user click
+            div.onclick = () => startChat(u); 
+            usersList.appendChild(div);
+        }
+      });
     });
-    
-    // 🔑 FINAL FIX: Listener for private messages coming in
+
+    // Listener for private messages (for both sender and receiver)
     socket.on("privateMessage", (msg) => {
-        // Only display if it's the current active chat
+        // Display if the message is for the current chat
         if (msg.sender === currentRecipient || msg.receiver === currentRecipient) {
              addMessage(msg);
         }
     });
-
-
-    // --- Send Message Logic ---
-    composerForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        const text = messageInput.value.trim();
-        if (!text || !currentRecipient) {
-            if (!currentRecipient) alert("Please select a user to chat.");
-            return;
-        }
-
-        // 🚨 FIX: Emit privateMessage with correct recipient
-        const messagePayload = { 
-            sender: USERNAME, 
-            receiver: currentRecipient, 
-            text: text 
-        };
-        
-        socket.emit("privateMessage", messagePayload); 
-        
-        // Optimistic rendering (show my own message immediately)
-        addMessage(messagePayload, true);
-        
-        messageInput.value = "";
-        messageInput.focus();
+    
+    // Listener for chat history retrieval
+    socket.on("chatHistory", (history) => {
+        chatBox.innerHTML = ''; // Clear "loading" message
+        history.forEach(msg => addMessage(msg));
     });
 
-    // --- General Functions ---
-    function logout() {
+    // --- Logout ---
+    document.querySelector('.logout-btn').addEventListener('click', () => {
         localStorage.clear();
         window.location.href = "/login.html";
-    }
-
-    // --- Mobile Toggle ---
-    menuToggle.addEventListener('click', () => {
-        usersSidebar.classList.add('open');
-        closeSidebar.style.display = 'block';
     });
-    closeSidebar.addEventListener('click', () => {
-        usersSidebar.classList.remove('open');
-        closeSidebar.style.display = 'none';
-    });
-    // Ensure sidebar is closed when selecting a user on mobile
-    document.querySelectorAll('.user').forEach(el => {
-        el.addEventListener('click', () => {
-             if (window.innerWidth <= 900) {
-                usersSidebar.classList.remove('open');
-                closeSidebar.style.display = 'none';
-            }
-        });
-    });
-
   </script>
 </body>
 </html>
