@@ -194,7 +194,26 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ success: false, message: "Server login error" });
   }
 });
+// Forgot Password 🔑 
+app.post("/api/reset-password", async (req, res) => {
+  try {
+    const { username, newPass } = req.body;
+    const user = await User.findOne({ username });
 
+    if (!user) {
+      return res.json({ success: false, message: "Username not found." });
+    }
+
+    const hashed = await bcrypt.hash(newPass, 10);
+    user.password = hashed;
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successful." });
+  } catch (error) {
+    console.error("Password reset error:", error);
+    res.status(500).json({ success: false, message: "Server error resetting password." });
+  }
+});
 // Forgot password -> generate token, email link
 app.post("/api/forgot-password", async (req, res) => {
   try {
