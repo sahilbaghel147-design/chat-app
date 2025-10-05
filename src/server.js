@@ -19,7 +19,7 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // FIX: Serving static files from the 'public' folder (Correct Path from root)
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public, src")));
 
 
 // --- MONGO DB CONNECTION ---
