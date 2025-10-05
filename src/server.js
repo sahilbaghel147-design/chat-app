@@ -339,17 +339,61 @@ app.use((req, res) => {
 });
 
 // --- SOCKET.IO CHAT LOGIC ---
-const connectedUsers = {}; // username -> socket.id mapping
+const connectedUsers = {};
 
 io.on("connection", (socket) => {
-  console.log("🔵 New client connected:", socket.id);
+  console.log("⚡ New client connected:", socket.id);
 
-  // When a user logs in and sends their username
+  // ✅ When a user logs in or connects
   socket.on("registerUser", (username) => {
-    connectedUsers[username] = socket.id;
-    console.log("✅ Registered user:", username);
-    io.emit("updateUserList", Object.keys(connectedUsers)); // send updated list to all
+    if (username) {
+      connectedUsers[username] = socket.id;
+      console.log(`✅ ${username} connected`);
+      io.emit("updateUserList", Object.keys(connectedUsers)); // send updated list
+    }
   });
+
+  // ✅ When a private message is sent
+  socket.on("privateMessage", async (msg) => {
+    const { sender, receiver, text, fileUrl, mimeType, originalName } = msg;
+    const newMsg = new Message({ sender, receiver, text, fileData: fileUrl, fileMimeType: mimeType, originalName });
+    await newMsg.save();
+
+    const receiverSocketId = connectedUsers[receiver];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("privateMessage", msg);
+    }
+    socket.emit("privateMessage", msg);
+  });
+
+  // ✅ When user requests previous chat
+  socket.on("loadChat", async ({ user1, user2 }) => {
+    const history = await Message.find({
+      $or: [
+        { sender: user1, receiver: user2 },
+        { sender: user2, receiver: user1 }
+      ]
+    }).sort({ timestamp: 1 });
+    socket.emit("chatHistory", history);
+  });
+
+  // ✅ When a user disconnects
+  socket.on("disconnect", () => {
+    let disconnectedUser = null;
+    for (let [user, id] of Object.entries(connectedUsers)) {
+      if (id === socket.id) {
+        disconnectedUser = user;
+        delete connectedUsers[user];
+        break;
+      }
+    }
+
+    if (disconnectedUser) {
+      console.log(`❌ ${disconnectedUser} disconnected`);
+      io.emit("updateUserList", Object.keys(connectedUsers));
+    }
+  });
+});
 
   // When user disconnects
   socket.on("disconnect", () => {
