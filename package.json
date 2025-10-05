@@ -2,9 +2,9 @@
   "name": "chat-app",
   "version": "1.0.0",
   "description": "A full-stack real-time chat application",
-  "main": "server.js",       <-- ✅ FIX: Main file is in root
+  "main": "server.js",
   "scripts": {
-    "start": "node server.js",  <-- ✅ FIX: Node must run 'server.js' from root
+    "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "keywords": [
