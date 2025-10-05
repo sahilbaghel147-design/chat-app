@@ -336,9 +336,7 @@ app.use((req, res) => {
   const nf = path.join(__dirname, "../public/404.html");
   if (fs.existsSync(nf)) return res.status(404).sendFile(nf);
   res.status(404).send("Not Found");
-});
-
-// --- SOCKET.IO CHAT LOGIC ---
+}// --- SOCKET.IO CHAT LOGIC ---
 const connectedUsers = {};
 
 io.on("connection", (socket) => {
@@ -395,17 +393,7 @@ io.on("connection", (socket) => {
   });
 });
 
-  // When user disconnects
-  socket.on("disconnect", () => {
-    for (const [username, id] of Object.entries(connectedUsers)) {
-      if (id === socket.id) {
-        delete connectedUsers[username];
-        break;
-      }
-    }
-    console.log("🔴 User disconnected:", socket.id);
-    io.emit("updateUserList", Object.keys(connectedUsers)); // update everyone
-  });
+
 
   // Message handling
   socket.on("privateMessage", ({ sender, receiver, message }) => {
