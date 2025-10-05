@@ -34,7 +34,52 @@ mongoose
   .then(() => console.log("MongoDB Connected Successfully!"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
-// --- MONGOOSE SCHEMAS --- (Omitted for brevity, but use the full schemas)
+// --- MONGOOSE SCHEMAS ---
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true, trim: true },
+  password: { type: String, required: true },
+  bio: { type: String, default: "Hey there! I'm new to Aura Hub.", maxlength: 160 },
+  profilePicture: { type: String, default: "uploads/default_avatar.jpg" },
+  bestSnakeScore: { type: Number, default: 0 },
+});
+
+const MessageSchema = new mongoose.Schema({
+  sender: { type: String, required: true },
+  receiver: { type: String, required: true },
+  text: { type: String },
+  fileData: { type: String }, 
+  fileMimeType: { type: String },
+  originalName: { type: String }, 
+  timestamp: { type: Date, default: Date.now },
+});
+
+const HighScoreSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  score: { type: Number, required: true, default: 0 },
+  game: { type: String, default: "Snake" },
+  date: { type: Date, default: Date.now },
+});
+
+const User = mongoose.model("User", UserSchema);
+const Message = mongoose.model("Message", MessageSchema);
+const HighScore = mongoose.model("HighScore", HighScoreSchema);
+
+// --- MULTER FILE UPLOAD CONFIGURATION ---
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Correct path for uploads (from root)
+    cb(null, path.join(__dirname, "public/uploads"));
+  },
+  filename: (req, file, cb) => {
+    const filename = Date.now() + "-" + file.originalname.replace(/ /g, "_");
+    cb(null, filename);
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, 
+}).single("chatfile");
 
 // --- API AND AUTHENTICATION ROUTES ---
 
@@ -54,12 +99,65 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ success: false, message: "Server login error. Check logs." });
   }
 });
-// ... (All other APIs omitted for brevity) ...
+
+// Update Profile API
+app.post("/api/profile/update", async (req, res) => {
+  const { username, bio, bestSnakeScore } = req.body;
+
+  try {
+    const updateFields = {};
+    if (bio !== undefined) updateFields.bio = bio;
+    if (bestSnakeScore !== undefined) updateFields.bestSnakeScore = bestSnakeScore;
+
+    const updatedUser = await User.findOneAndUpdate(
+      { username },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    res.json({ success: true, message: "Profile updated successfully.", user: updatedUser });
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({ success: false, message: "Internal server error during update." });
+  }
+});
+
+// Update Profile Picture
+app.post("/api/profile/upload", (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) {
+      console.error("Upload Error:", err);
+      return res.status(500).json({ success: false, message: `Upload Error: ${err.message}` });
+    }
+
+    const username = req.body.username;
+    if (!username) {
+      return res.status(400).json({ success: false, message: "Username is missing." });
+    }
+
+    const filePath = req.file.path.replace(/\\/g, "/").split("public/")[1];
+
+    try {
+      await User.findOneAndUpdate(
+        { username },
+        { profilePicture: filePath },
+        { new: true }
+      );
+
+      res.json({ success: true, message: "Profile picture updated.", profilePicture: filePath });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Error saving profile picture." });
+    }
+  });
+});
 
 // --- ROUTING ---
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads"))); 
 
-// 🚨 FIX: Login.html pathing
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
@@ -74,8 +172,12 @@ app.get('/:file.html', (req, res) => {
     });
 });
 
-// --- SOCKET.IO CHAT LOGIC (Omitted for brevity) ---
-// ...
+// --- SOCKET.IO CHAT LOGIC ---
+const connectedUsers = {};
+
+io.on("connection", (socket) => {
+  // ... (Socket.IO Logic) ...
+});
 
 // --- SERVER STARTUP ---
 const PORT = process.env.PORT || 4000;
