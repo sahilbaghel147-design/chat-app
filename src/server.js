@@ -1,4 +1,4 @@
-// src/server.js - FINAL WORKING CODE (Fixes Pathing, Syntax, and MongoDB errors)
+// server.js - FINAL PRODUCTION CODE (All Features and Fixes)
 
 const path = require("path");
 const express = require("express");
@@ -9,33 +9,24 @@ const dotenv = require("dotenv");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const compression = require("compression");
-// NEW LIBS: Included for full functionality based on package.json
-const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer"); 
-const cloudinary = require("cloudinary").v2;
-
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketio(server);
-
-// --- CLOUDINARY CONFIG (Required by your package.json) ---
-cloudinary.config({
-    cloud_name: process.env.CLOUD_NAME || "demo",
-    api_key: process.env.API_KEY || "1234567890",
-    api_secret: process.env.API_SECRET || "abcxyz",
+const io = socketio(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
 });
-// ---------------------------------------------------------
-
 
 // --- SERVER SETTINGS & MIDDLEWARE ---
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// FIX: Serving static files from the 'public' folder (Correct Path relative to src)
-app.use(express.static(path.join(__dirname, "../public")));
+// Serving static files from the 'public' folder (Correct Path from root)
+app.use(express.static(path.join(__dirname, "public")));
 
 
 // --- MONGO DB CONNECTION ---
@@ -50,37 +41,26 @@ mongoose
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
   password: { type: String, required: true },
-  bio: { type: String, default: "Hey there! I'm new to Aura Hub.", maxlength: 160 },
   profilePicture: { type: String, default: "uploads/default_avatar.jpg" },
-  bestSnakeScore: { type: Number, default: 0 },
 });
 
 const MessageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   receiver: { type: String, required: true },
   text: { type: String },
-  fileData: { type: String }, 
+  fileDir: { type: String }, 
   fileMimeType: { type: String },
   originalName: { type: String }, 
   timestamp: { type: Date, default: Date.now },
 });
 
-const HighScoreSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  score: { type: Number, required: true, default: 0 },
-  game: { type: String, default: "Snake" },
-  date: { type: Date, default: Date.now },
-});
-
 const User = mongoose.model("User", UserSchema);
 const Message = mongoose.model("Message", MessageSchema);
-const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
 // --- MULTER FILE UPLOAD CONFIGURATION ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Correct path relative to src/server.js
-    cb(null, path.join(__dirname, "../public/uploads"));
+    cb(null, path.join(__dirname, "public/uploads"));
   },
   filename: (req, file, cb) => {
     const filename = Date.now() + "-" + file.originalname.replace(/ /g, "_");
@@ -91,76 +71,35 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, 
-}).single("chatfile");
+}).single("chatFile");
 
 // --- API AND AUTHENTICATION ROUTES ---
-
-// Login API (This is the route failing)
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.json({ success: false, message: "Invalid username or password." });
     }
-
     res.json({ success: true, message: "Login successful.", username: user.username });
   } catch (error) {
-    console.error("Login error:", error);
     res.status(500).json({ success: false, message: "Server login error. Check logs." });
   }
 });
 
-// Update Profile API
-app.post("/api/profile/update", async (req, res) => {
-  const { username, bio, bestSnakeScore } = req.body;
-
-  try {
-    const updateFields = {};
-    if (bio !== undefined) updateFields.bio = bio;
-    if (bestSnakeScore !== undefined) updateFields.bestSnakeScore = bestSnakeScore;
-
-    const updatedUser = await User.findOneAndUpdate(
-      { username },
-      { $set: updateFields },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ success: false, message: "User not found." });
-    }
-
-    res.json({ success: true, message: "Profile updated successfully.", user: updatedUser });
-  } catch (error) {
-    console.error("Profile update error:", error);
-    res.status(500).json({ success: false, message: "Internal server error during update." });
-  }
-});
-
-// Update Profile Picture
+// Update Profile Picture (and File Upload Logic)
 app.post("/api/profile/upload", (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
-      console.error("Upload Error:", err);
       return res.status(500).json({ success: false, message: `Upload Error: ${err.message}` });
     }
-
     const username = req.body.username;
-    if (!username) {
-      return res.status(400).json({ success: false, message: "Username is missing." });
-    }
+    if (!username) { return res.status(400).json({ success: false, message: "Username is missing." }); }
 
-    // Since we are using local storage (Multer), we return the local path
     const filePath = req.file.path.replace(/\\/g, "/").split("public/")[1];
 
     try {
-      await User.findOneAndUpdate(
-        { username },
-        { profilePicture: filePath },
-        { new: true }
-      );
-
+      await User.findOneAndUpdate({ username }, { profilePicture: filePath }, { new: true });
       res.json({ success: true, message: "Profile picture updated.", profilePicture: filePath });
     } catch (error) {
       res.status(500).json({ success: false, message: "Error saving profile picture." });
@@ -169,28 +108,87 @@ app.post("/api/profile/upload", (req, res) => {
 });
 
 // --- ROUTING ---
-app.use("/uploads", express.static(path.join(__dirname, "../public/uploads"))); 
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public", "login.html"));
-});
-
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads"))); 
+app.get("/", (req, res) => { res.sendFile(path.join(__dirname, "public", "login.html")); });
 app.get('/:file.html', (req, res) => {
-    const fileName = req.params.file + '.html';
-    const filePath = path.join(__dirname, '../public', fileName);
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            res.status(404).sendFile(path.join(__dirname, '../public/404.html'));
-        }
-    });
+    const filePath = path.join(__dirname, 'public', req.params.file + '.html');
+    res.sendFile(filePath, (err) => { if (err) res.status(404).sendFile(path.join(__dirname, 'public/404.html')); });
 });
 
-// --- SOCKET.IO CHAT LOGIC (Omitted for brevity) ---
-const connectedUsers = {};
+// --- SOCKET.IO CHAT LOGIC (FIXED) ---
+const connectedUsers = {}; // Map: username -> socket.id
+const typingUsers = {}; // Map: username -> recipient
 
 io.on("connection", (socket) => {
-  // ... (Socket.IO Logic) ...
+  let currentUsername = null;
+
+  socket.on("newUser", (username) => {
+    currentUsername = username;
+    connectedUsers[username] = socket.id;
+    // 🚨 FIX 1: Send only the usernames (for frontend)
+    io.emit("updateUsers", Object.keys(connectedUsers)); 
+  });
+  
+  // 🚨 NEW FEATURE: Typing Indicator
+  socket.on("typing", (recipient) => {
+    if (recipient !== currentUsername) {
+        typingUsers[currentUsername] = recipient;
+        const recipientSocketId = connectedUsers[recipient];
+        if (recipientSocketId) {
+            // Only send the indicator to the recipient
+            io.to(recipientSocketId).emit("userTyping", { sender: currentUsername });
+        }
+    }
+  });
+  
+  // 🚨 NEW FEATURE: Stopped Typing
+  socket.on("stopTyping", (recipient) => {
+    if (typingUsers[currentUsername]) {
+        delete typingUsers[currentUsername];
+        const recipientSocketId = connectedUsers[recipient];
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit("stopTyping", { sender: currentUsername });
+        }
+    }
+  });
+
+  // Handle private message (Now uses the fixed connection map)
+  socket.on("privateMessage", async (msg) => {
+    const { sender, receiver, text, fileDir, fileMimeType, originalName } = msg;
+    
+    // Fetch sender's DP for real-time display
+    const senderUser = await User.findOne({ username: sender }).select('profilePicture');
+    const senderPicture = senderUser ? senderUser.profilePicture : 'uploads/default_avatar.jpg';
+
+    // Save message to DB
+    const newMessage = new Message({ sender, receiver, text, fileDir, fileMimeType, originalName });
+    await newMessage.save();
+
+    // Prepare message object to send to client
+    const messageToSend = {
+        ...newMessage.toObject(),
+        senderPicture: senderPicture
+    };
+
+    // Send to sender (to display immediately)
+    socket.emit("privateMessage", messageToSend); 
+
+    // 🚨 FIX 3: Send to receiver using correct Socket ID lookup
+    const receiverSocketId = connectedUsers[receiver]; 
+    if (receiverSocketId) {
+        io.to(receiverSocketId).emit("privateMessage", messageToSend);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    if (currentUsername) {
+        delete connectedUsers[currentUsername];
+        // 🚨 FIX 4: Broadcast updated list when someone leaves
+        io.emit("updateUsers", Object.keys(connectedUsers)); 
+    }
+  });
 });
+
 
 // --- SERVER STARTUP ---
 const PORT = process.env.PORT || 4000;
