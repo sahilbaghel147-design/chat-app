@@ -3,193 +3,225 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aura Chat</title>
+<title>Aura Hub Pro Chat</title>
 <script src="/socket.io/socket.io.js"></script>
 <style>
   body {
-    background: #1e1e2f;
-    color: #f5f5f5;
-    font-family: 'Poppins', sans-serif;
     margin: 0;
+    background: radial-gradient(circle at top left, #1f1f39, #0d0d1a);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
     height: 100vh;
     display: flex;
     flex-direction: column;
   }
   header {
-    background: #2b2b3d;
-    padding: 12px 20px;
+    background: rgba(60, 60, 100, 0.6);
+    padding: 14px;
     text-align: center;
     font-size: 18px;
-    font-weight: 600;
-    border-bottom: 2px solid #444;
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #3a3a5e;
   }
   .chat-container {
     display: flex;
     flex: 1;
     overflow: hidden;
   }
-  .user-list {
+  .users {
     width: 30%;
-    background: #242437;
-    border-right: 2px solid #444;
+    border-right: 1px solid #333;
     overflow-y: auto;
+    background: rgba(20,20,40,0.6);
   }
-  .user-item {
+  .user {
     padding: 15px;
-    border-bottom: 1px solid #3b3b50;
+    border-bottom: 1px solid #2a2a44;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: 0.3s;
   }
-  .user-item:hover, .user-item.active {
-    background: #3e3e60;
+  .user:hover, .user.active {
+    background: #3e3e8e;
   }
   .chat-box {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #1b1b2b;
+    background: #121225;
+    position: relative;
   }
   .messages {
     flex: 1;
     padding: 15px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
   }
   .message {
     margin: 8px 0;
     padding: 10px;
-    border-radius: 8px;
-    max-width: 80%;
-    word-wrap: break-word;
+    border-radius: 10px;
+    max-width: 75%;
+    animation: fadeIn 0.3s;
+    font-size: 15px;
   }
   .sender {
-    background: #4a59e6;
+    background: linear-gradient(135deg, #4b5eff, #6a73ff);
     align-self: flex-end;
   }
   .receiver {
-    background: #333;
+    background: #272753;
     align-self: flex-start;
+  }
+  .meta {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 3px;
   }
   .input-area {
     display: flex;
     padding: 10px;
-    background: #2b2b3d;
-    border-top: 2px solid #444;
+    background: rgba(30, 30, 60, 0.8);
+    border-top: 1px solid #444;
   }
   .input-area input {
     flex: 1;
     padding: 10px;
     border: none;
     border-radius: 6px;
-    outline: none;
-    background: #1f1f2f;
-    color: #fff;
+    background: #1b1b3b;
+    color: white;
   }
   .input-area button {
-    background: #4a59e6;
-    border: none;
-    color: white;
-    padding: 10px 15px;
     margin-left: 10px;
+    background: #5b67ff;
+    border: none;
+    padding: 10px 15px;
     border-radius: 6px;
+    color: white;
     cursor: pointer;
-    font-weight: bold;
+    transition: 0.3s;
+  }
+  .input-area button:hover {
+    background: #7883ff;
+  }
+  .typing {
+    font-size: 13px;
+    color: #aaa;
+    position: absolute;
+    bottom: 60px;
+    left: 15px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   @media (max-width: 768px) {
-    .chat-container {
-      flex-direction: column;
-    }
-    .user-list {
+    .users {
       width: 100%;
       display: flex;
       overflow-x: auto;
     }
-    .user-item {
+    .user {
       flex: 1;
       text-align: center;
-      border-right: 1px solid #3b3b50;
-      border-bottom: none;
     }
   }
 </style>
 </head>
 <body>
-  <header>💬 Aura Hub Chat</header>
-  <div class="chat-container">
-    <div class="user-list" id="userList">
-      <div class="user-item">Loading users...</div>
-    </div>
+<header>⚡ Aura Hub Pro</header>
 
-    <div class="chat-box">
-      <div class="messages" id="messageArea">
-        <p style="text-align:center; color:#aaa;">Select a user to start chat</p>
-      </div>
-      <div class="input-area">
-        <input id="messageInput" placeholder="Type a message..." />
-        <button id="sendBtn">Send</button>
-      </div>
+<div class="chat-container">
+  <div class="users" id="users"></div>
+  <div class="chat-box">
+    <div class="messages" id="messages">
+      <p style="text-align:center;opacity:0.7;">Select a user to start chat</p>
+    </div>
+    <div class="typing" id="typing"></div>
+    <div class="input-area">
+      <input id="msgInput" placeholder="Type a message..." />
+      <button id="sendBtn">Send</button>
     </div>
   </div>
+</div>
 
 <script>
-  const username = localStorage.getItem("username");
-  if (!username) window.location.href = "/login.html";
+const username = localStorage.getItem("username");
+if (!username) window.location.href = "/login.html";
+const socket = io();
+socket.emit("registerUser", username);
 
-  const socket = io();
-  socket.emit("registerUser", username);
+const usersDiv = document.getElementById("users");
+const messagesDiv = document.getElementById("messages");
+const input = document.getElementById("msgInput");
+const sendBtn = document.getElementById("sendBtn");
+const typingDiv = document.getElementById("typing");
 
-  const userList = document.getElementById("userList");
-  const messageArea = document.getElementById("messageArea");
-  const messageInput = document.getElementById("messageInput");
-  const sendBtn = document.getElementById("sendBtn");
+let current = null;
+let typingTimeout;
 
-  let currentChat = null;
-
-  socket.on("updateUserList", (users) => {
-    userList.innerHTML = '';
-    users.forEach(u => {
-      if (u !== username) {
-        const el = document.createElement("div");
-        el.className = "user-item";
-        el.textContent = u;
-        el.onclick = () => selectUser(u, el);
-        userList.appendChild(el);
-      }
-    });
+socket.on("updateUserList", ({ users }) => {
+  usersDiv.innerHTML = '';
+  users.forEach(u => {
+    if (u !== username) {
+      const div = document.createElement("div");
+      div.classList.add("user");
+      div.textContent = u;
+      div.onclick = () => selectUser(u, div);
+      usersDiv.appendChild(div);
+    }
   });
+});
 
-  function selectUser(u, el) {
-    currentChat = u;
-    document.querySelectorAll(".user-item").forEach(i => i.classList.remove("active"));
-    el.classList.add("active");
-    socket.emit("loadChat", { user1: username, user2: u });
-    messageArea.innerHTML = `<p style="text-align:center; color:#aaa;">Chatting with ${u}</p>`;
+function selectUser(u, div) {
+  current = u;
+  document.querySelectorAll(".user").forEach(e => e.classList.remove("active"));
+  div.classList.add("active");
+  messagesDiv.innerHTML = '';
+  socket.emit("loadChat", { user1: username, user2: u });
+}
+
+socket.on("chatHistory", msgs => {
+  messagesDiv.innerHTML = '';
+  msgs.forEach(m => showMsg(m));
+});
+
+sendBtn.onclick = sendMsg;
+input.onkeypress = e => {
+  if (e.key === "Enter") sendMsg();
+  socket.emit("typing", { sender: username, receiver: current });
+};
+
+socket.on("userTyping", sender => {
+  if (sender === current) {
+    typingDiv.textContent = `${sender} is typing...`;
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => typingDiv.textContent = '', 1500);
   }
+});
 
-  socket.on("chatHistory", (messages) => {
-    messageArea.innerHTML = '';
-    messages.forEach(m => displayMessage(m));
-  });
+function sendMsg() {
+  const text = input.value.trim();
+  if (!text || !current) return;
+  socket.emit("privateMessage", { sender: username, receiver: current, text });
+  input.value = '';
+}
 
-  sendBtn.onclick = sendMessage;
-  messageInput.addEventListener("keypress", e => e.key === "Enter" && sendMessage());
+socket.on("privateMessage", m => showMsg(m));
 
-  function sendMessage() {
-    const text = messageInput.value.trim();
-    if (!text || !currentChat) return;
-    socket.emit("privateMessage", { sender: username, receiver: currentChat, text });
-    messageInput.value = '';
-  }
-
-  socket.on("privateMessage", (msg) => displayMessage(msg));
-
-  function displayMessage(msg) {
-    const div = document.createElement("div");
-    div.classList.add("message", msg.sender === username ? "sender" : "receiver");
-    div.textContent = msg.text;
-    messageArea.appendChild(div);
-    messageArea.scrollTop = messageArea.scrollHeight;
-  }
+function showMsg(m) {
+  const div = document.createElement("div");
+  div.classList.add("message", m.sender === username ? "sender" : "receiver");
+  div.innerHTML = `
+    <div>${m.text}</div>
+    <div class="meta">${new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+  `;
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
 </script>
 </body>
 </html>
