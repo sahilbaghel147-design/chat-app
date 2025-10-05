@@ -1,332 +1,359 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Aura Hub - Chat</title>
-  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aura Chat - Realtime</title>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
   <script src="/socket.io/socket.io.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  
   <style>
-    /* --- CSS Variables and Global Styles --- */
     :root {
-      --bg-main: #181828;
-      --panel: #1c1c2c;
-      --panel-2: #2a2a3d;
-      --text: #f0f0f0;
-      --muted: #aaaaaa;
-      --accent: #7c5cff; 
-      --danger: #ff5c7a;
-      --radius: 10px;
+      --bg-dark: #0d0f1a;
+      --bg-card: #1b1e2f;
+      --accent: #5e6bfe;
+      --accent-hover: #4656dc;
+      --text-light: #f5f5f5;
+      --text-dim: #9ca3af;
     }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Poppins", sans-serif;
+    }
+
     body {
-      margin: 0; padding: 0; background: var(--bg-main); color: var(--text);
-      font-family: "Segoe UI", sans-serif; display: flex; flex-direction: column; min-height: 100vh;
+      background: var(--bg-dark);
+      color: var(--text-light);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
     }
-    
-    /* Navbar */
-    nav {
-      background: var(--panel-2);
-      padding: 12px 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      flex-shrink: 0;
+
+    /* Sidebar */
+    #sidebar {
+      width: 260px;
+      background: var(--bg-card);
+      border-right: 1px solid #2a2d3e;
+      display: flex;
+      flex-direction: column;
+      transition: 0.3s;
+    }
+
+    #sidebar h2 {
+      text-align: center;
+      padding: 20px 0;
+      color: var(--accent);
+      border-bottom: 1px solid #2a2d3e;
+    }
+
+    #onlineUsersList {
+      list-style: none;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    #onlineUsersList li {
+      padding: 14px 20px;
+      border-bottom: 1px solid #2a2d3e;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    #onlineUsersList li:hover,
+    #onlineUsersList li.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Chat Section */
+    #chatSection {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    #chatHeader {
+      background: var(--bg-card);
+      padding: 15px 20px;
+      border-bottom: 1px solid #2a2d3e;
+      font-weight: 600;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    nav a { color: var(--text); text-decoration: none; padding: 8px 12px; border-radius: 6px; transition: 0.2s; }
-    nav a:hover, nav a.active { background: rgba(255,255,255,0.1); }
-    .logout-btn { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
 
+    #messageDisplayArea {
+      flex-grow: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
 
-    /* Main Layout and Sidebar */
-    .chat-container { flex: 1; display: flex; height: calc(100vh - 50px); overflow: hidden; }
-    .sidebar { width: 250px; background: var(--panel); padding: 15px; flex-shrink: 0; overflow-y: auto; }
-    .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); overflow: hidden; }
-    
-    .sidebar h3 { color: var(--accent); border-bottom: 1px solid #444; padding-bottom: 6px; margin: 0 0 10px 0; }
-    #usersList { list-style: none; padding: 0; }
-    .user { padding: 8px; background: var(--panel-2); margin: 4px 0; border-radius: 6px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 10px; }
-    .user:hover, .user.active { background: #3a3a5a; }
-    .online-dot { width: 8px; height: 8px; background: #4CAF50; border-radius: 50%; display: inline-block; }
+    .message {
+      margin: 8px 0;
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      line-height: 1.4;
+      font-size: 0.95rem;
+    }
 
+    .sender {
+      align-self: flex-end;
+      background: var(--accent);
+      color: white;
+      border-bottom-right-radius: 0;
+    }
 
-    /* Chat Area */
-    #chatRecipientHeader { padding: 15px; background: var(--panel-2); border-bottom: 1px solid #333; font-weight: 700; }
-    #chatBox { flex: 1; padding: 15px; overflow-y: auto; }
-
-    /* Message Styling */
-    .msg-row{display:flex; margin:8px 0; align-items:flex-end;}
-    .me .msg-row{flex-direction:row-reverse} /* Flip direction for sender */
-    
-    .msg-content{max-width:70%;}
-    .msg{ padding:10px 12px; border-radius:14px; background:var(--panel-2); border:1px solid rgba(255,255,255,.06); }
-    .me .msg{ background:var(--accent); color:#111; border-color:#5dd6ff; }
-    .meta{font-size:11px; color:var(--muted); margin-top:2px;}
-    .me .meta{text-align:right;}
-
-    /* 🚨 NEW: Typing Indicator */
-    #typingIndicator { color: #5dd6ff; font-style: italic; padding: 0 15px; height: 20px; font-size: 0.9em; }
+    .receiver {
+      align-self: flex-start;
+      background: #262a3f;
+      border-bottom-left-radius: 0;
+    }
 
     /* Input Area */
-    .composer{ display:flex; gap:10px; align-items:center; padding:10px 20px; background:var(--panel); border-top:1px solid #333; flex-shrink: 0; }
-    #messageInput { flex:1; height:44px; padding:0 14px; color:var(--text); background:var(--panel-2); border:none; border-radius:20px; outline:none; }
-    #sendButton, #attachButton { background:var(--accent); color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:1.1em; cursor:pointer; margin-left:5px; }
-    #sendButton { background: #44d07b; }
-    #attachButton { background: #5e6bfe; }
-    
-    /* Responsive Adjustments */
-    @media (max-width: 600px) {
-        .chat-container{flex-direction:column;}
-        .sidebar{width:100%; height:auto; order:-1;}
-        .chat-area{height:calc(100vh - 100px);}
+    #inputArea {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background: var(--bg-card);
+      border-top: 1px solid #2a2d3e;
+    }
+
+    #messageInput {
+      flex: 1;
+      background: #141622;
+      color: var(--text-light);
+      border: none;
+      padding: 12px 15px;
+      border-radius: 8px;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    #sendMessageBtn,
+    #attachFileBtn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      margin-left: 8px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    #sendMessageBtn:hover,
+    #attachFileBtn:hover {
+      background: var(--accent-hover);
+    }
+
+    #logoutBtn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+
+    /* File link */
+    a.file-link {
+      color: #ffd740;
+      text-decoration: underline;
+      display: block;
+      margin-top: 4px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      #sidebar {
+        position: absolute;
+        left: -260px;
+        top: 0;
+        bottom: 0;
+        z-index: 10;
+      }
+
+      #sidebar.active {
+        left: 0;
+      }
+
+      #toggleSidebar {
+        display: block;
+      }
+
+      #chatHeader {
+        display: flex;
+        justify-content: space-between;
+      }
     }
   </style>
 </head>
 <body>
-  <nav>
-    <div class="brand">ChatHub</div>
-    <div style="flex-grow: 1; text-align: right;">
-        <a href="/index.html">Home</a>
-        <a href="/chat.html" class="active">Chat</a>
-        <a href="/profile.html">Profile</a>
-        <a href="/games.html">Games</a>
-        <a href="/videos.html">Videos</a>
-        <a href="/about.html">About</a>
+  <aside id="sidebar">
+    <h2>🟢 Online Users</h2>
+    <ul id="onlineUsersList"></ul>
+  </aside>
+
+  <section id="chatSection">
+    <div id="chatHeader">
+      <button id="toggleSidebar" style="display:none;background:none;border:none;color:white;font-size:1.4em;">
+        <i class="fas fa-bars"></i>
+      </button>
+      <span id="currentChatRecipient">Select a user to chat</span>
+      <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
     </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </nav>
 
-  <main class="page chat-container">
-    <aside class="card sidebar">
-      <h3>🟢 Online Users</h3>
-      <div id="usersList"></div>
-    </aside>
+    <div id="messageDisplayArea"></div>
 
-    <section class="chat-area">
-        <h2 id="chatRecipientHeader">Select a User to Chat</h2>
-        
-        <div id="typingIndicator"></div>
-        
-      <div id="chatBox">
-         <div class="muted" style="text-align:center; padding:20px;">Start by clicking a user name.</div>
-      </div>
+    <div id="inputArea">
+      <input type="file" id="fileInput" hidden />
+      <button id="attachFileBtn"><i class="fas fa-paperclip"></i></button>
+      <input type="text" id="messageInput" placeholder="Type a message..." />
+      <button id="sendMessageBtn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </section>
 
-      <form id="composer" class="composer" autocomplete="off">
-        <input type="file" id="fileInput" style="display:none;">
-        <button type="button" id="attachButton" disabled><i class="fas fa-paperclip"></i></button>
-        <input id="messageInput" class="input" type="text" placeholder="Type your message…" maxlength="1000" disabled />
-        <button class="btn" type="submit" id="sendButton" disabled>➤</button>
-      </form>
-    </section>
-  </main>
-
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    // chat.html - FINAL WORKING JAVASCRIPT LOGIC
-
-document.addEventListener('DOMContentLoaded', () => {
-
-    // --- 1. INITIAL SETUP & AUTHENTICATION CHECK ---
     const socket = io();
-    let username = localStorage.getItem('username');
+    const username = localStorage.getItem("username");
+    if (!username) window.location.href = "/login.html";
 
-    // FIX: Strong check for null, empty string, or the literal string "undefined"
-    if (!username || username === "undefined" || !username.trim()) {
-        console.log("Invalid username found. Clearing data and redirecting to login.");
-        localStorage.clear(); 
-        window.location.href = "/login.html";
-        return;
-    }
-    
-    username = username.trim(); // Ensure username is trimmed
-    
-    // --- 2. ELEMENTS & STATE ---
-    const sidebar = document.getElementById('sidebar');
-    const sidebarCollapse = document.querySelector('.menu-toggle');
-    const content = document.getElementById('content');
-    const welcomeMessageEl = document.getElementById('welcomeMessage');
-    const onlineUsersList = document.getElementById('onlineUsersList');
-    const messageInput = document.getElementById('messageInput');
-    const sendMessageBtn = document.getElementById('sendMessageBtn');
-    const messageDisplayArea = document.getElementById('messageDisplayArea');
-    
-    let currentRecipient = null; 
+    // Register user
+    socket.emit("registerUser", username);
 
-    if (welcomeMessageEl) {
-        welcomeMessageEl.textContent = `Hello, ${username}!`; 
-    }
+    const onlineUsersList = document.getElementById("onlineUsersList");
+    const messageDisplayArea = document.getElementById("messageDisplayArea");
+    const messageInput = document.getElementById("messageInput");
+    const sendMessageBtn = document.getElementById("sendMessageBtn");
+    const attachFileBtn = document.getElementById("attachFileBtn");
+    const fileInput = document.getElementById("fileInput");
+    const currentChatRecipient = document.getElementById("currentChatRecipient");
+    const sidebar = document.getElementById("sidebar");
+    const toggleSidebar = document.getElementById("toggleSidebar");
+    const logoutBtn = document.getElementById("logoutBtn");
 
+    let currentRecipient = null;
 
-    // --- 3. UI and SIDEBAR LOGIC (Fixes button not working) ---
-    function toggleSidebar() {
-        if (sidebar && content) {
-            // Toggles the class that hides/shows the sidebar via CSS
-            sidebar.classList.toggle('active');
-            content.classList.toggle('active'); 
+    toggleSidebar.addEventListener("click", () => {
+      sidebar.classList.toggle("active");
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("username");
+      window.location.href = "/login.html";
+    });
+
+    // Update online users
+    socket.on("updateUserList", (users) => {
+      onlineUsersList.innerHTML = "";
+      users.forEach((user) => {
+        if (user !== username) {
+          const li = document.createElement("li");
+          li.textContent = user;
+          li.onclick = () => selectRecipient(user, li);
+          onlineUsersList.appendChild(li);
         }
+      });
+    });
+
+    function selectRecipient(user, el) {
+      currentRecipient = user;
+      document
+        .querySelectorAll("#onlineUsersList li")
+        .forEach((li) => li.classList.remove("active"));
+      el.classList.add("active");
+      currentChatRecipient.textContent = "Chatting with: " + user;
+      messageDisplayArea.innerHTML = "";
+      socket.emit("loadChat", { user1: username, user2: user });
+      if (window.innerWidth < 768) sidebar.classList.remove("active");
     }
 
-    if (sidebarCollapse) {
-        sidebarCollapse.addEventListener('click', toggleSidebar);
-    }
-    
-    // Add event listener to the Dismiss (X) button if it exists
-    const dismissBtn = document.getElementById('dismiss');
-    if (dismissBtn) {
-        dismissBtn.addEventListener('click', toggleSidebar);
-    }
-
-
-    // --- 4. CHAT AND SOCKET.IO LOGIC ---
-
-    // Initial Registration
-    socket.on('connect', () => {
-        socket.emit('newUser', username); 
+    socket.on("chatHistory", (msgs) => {
+      messageDisplayArea.innerHTML = "";
+      msgs.forEach((m) => displayMessage(m));
+      scrollToBottom();
     });
 
-    // Logout
-    document.querySelector('.logout-btn').addEventListener('click', () => {
-        localStorage.clear();
-        window.location.href = "/login.html";
-    });
-
-    // User Selection Handler
-    function selectRecipient(recipientName, clickedElement) {
-        // Highlight active user
-        document.querySelectorAll('.user').forEach(el => el.classList.remove('active'));
-        if(clickedElement) clickedElement.classList.add('active');
-
-        currentRecipient = recipientName;
-        document.querySelector('.chat-header h2').textContent = `Chatting with: ${recipientName}`;
-        
-        // Clear message area and request history
-        messageDisplayArea.innerHTML = ''; 
-        messageDisplayArea.innerHTML = `<p style="text-align:center; padding:20px;">Loading chat history...</p>`;
-        socket.emit('loadChat', { sender: username, receiver: currentRecipient });
-        
-        // Ensure input is enabled
-        messageInput.disabled = false;
-        sendMessageBtn.disabled = false;
-        messageInput.focus();
-    }
-
-
-    // Message Sending Logic
-    sendMessageBtn.addEventListener('click', () => {
-        const text = messageInput.value.trim();
-        
-        if (!currentRecipient) {
-            alert("Please select a user to chat with.");
-            return;
-        }
-        if (!text) return; // Ignore empty messages
-
-        const messagePayload = { 
-            sender: username, 
-            receiver: currentRecipient, 
-            text: text,
-            timestamp: new Date().toISOString()
-        };
-        
-        // 🚨 Final Socket Emit: Send private message
-        socket.emit("privateMessage", messagePayload); 
-        
-        // Optimistic rendering (show my own message immediately)
-        addMessage(messagePayload, true);
-        
-        messageInput.value = '';
-    });
-    
-    // Enter key press handler
-    messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            sendMessageBtn.click();
-        }
-    });
-
-
-    // --- Socket Listeners ---
-    
-    // Receive Online Users List (FIXED: Expects array of usernames)
-    socket.on("updateUsers", (users) => { 
-        onlineUsersList.innerHTML = '';
-        users.forEach(u => {
-            if (u !== username) {
-                const div = document.createElement("div");
-                div.classList.add("user");
-                div.textContent = u;
-                div.dataset.username = u;
-                
-                // Attach click handler to start chat
-                div.onclick = (e) => selectRecipient(u, e.currentTarget); 
-                
-                onlineUsersList.appendChild(div);
-            }
-        });
-    });
-
-    // Receive Message History
-    socket.on("chatHistory", (history) => {
-        messageDisplayArea.innerHTML = '';
-        history.forEach(msg => addMessage(msg));
-        messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
-    });
-
-    // Receive New Private Message
     socket.on("privateMessage", (msg) => {
-        // Display only if it's the current active chat
-        if (msg.sender === currentRecipient || msg.receiver === currentRecipient) {
-             addMessage(msg);
-        }
+      if (
+        msg.sender === currentRecipient ||
+        msg.receiver === currentRecipient
+      ) {
+        displayMessage(msg);
+        scrollToBottom();
+      }
     });
 
-    // --- MESSAGE RENDERING ---
-    function addMessage(msg, isSelf=false) {
-        const row = document.createElement('div');
-        row.className = 'msg-row' + (isSelf || msg.sender === username ? ' me' : '');
-        
-        const content = document.createElement('div');
-        content.className = 'msg-content';
-        
-        const bubble = document.createElement('div');
-        bubble.classList.add('msg');
-        
-        // Add sender tag (visible only for 'other' messages)
-        const senderTag = (isSelf || msg.sender === username) ? 'You' : msg.sender;
-        
-        bubble.innerHTML = `
-          <div class="username-tag">${senderTag}</div>
-          ${escapeHtml(msg.text || '')}
-          <div class="meta">${formatTime(new Date(msg.timestamp || Date.now()))}</div>
-        `;
-        
-        content.appendChild(bubble);
-        row.appendChild(content);
-
-        // FIX: Ensure correct alignment (assuming simple left/right layout without DP for now)
-        if (isSelf || msg.sender === username) {
-            row.style.justifyContent = 'flex-end';
-        } else {
-            row.style.justifyContent = 'flex-start';
-        }
-
-        messageDisplayArea.appendChild(row);
-        messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
+    function scrollToBottom() {
+      messageDisplayArea.scrollTop = messageDisplayArea.scrollHeight;
     }
-    
-    // General Helpers (Assumed to be defined in your code or in a separate file)
-    function formatTime(d){
-        return new Intl.DateTimeFormat([], {hour:'2-digit', minute:'2-digit'}).format(d);
-    }
-    function escapeHtml(str){
-      return (str+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-    }
-});
 
+    sendMessageBtn.onclick = () => sendMessage();
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
 
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!currentRecipient) return alert("Select a user to chat first");
+      if (!text) return;
+      const msg = { sender: username, receiver: currentRecipient, text };
+      socket.emit("privateMessage", msg);
+      messageInput.value = "";
+    }
+
+    attachFileBtn.onclick = () => fileInput.click();
+    fileInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("chatFile", file);
+
+      const res = await fetch("/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.success) {
+        const msg = {
+          sender: username,
+          receiver: currentRecipient,
+          text: `[File shared: ${data.originalName}]`,
+          fileUrl: data.fileUrl,
+          mimeType: data.mimeType,
+          originalName: data.originalName,
+        };
+        socket.emit("privateMessage", msg);
+      } else {
+        alert("File upload failed: " + data.message);
+      }
+      fileInput.value = "";
+    };
+
+    function displayMessage(m) {
+      const div = document.createElement("div");
+      div.classList.add("message");
+      div.classList.add(m.sender === username ? "sender" : "receiver");
+
+      const text = document.createElement("p");
+      text.textContent = m.text;
+      div.appendChild(text);
+
+      if (m.fileData || m.fileUrl) {
+        const link = document.createElement("a");
+        link.href = m.fileData || m.fileUrl;
+        link.target = "_blank";
+        link.textContent = "📎 " + (m.originalName || "File");
+        link.className = "file-link";
+        div.appendChild(link);
+      }
+
+      messageDisplayArea.appendChild(div);
+    }
   </script>
 </body>
 </html>
