@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forgot Password - Aura Hub</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #1e1e2f;
+      color: #f0f0f0;
+      font-family: 'Arial', sans-serif;
+    }
+    .forgot-container {
+      background: #2c2c3e;
+      padding: 40px;
+      border-radius: 15px;
+      width: 350px;
+      text-align: center;
+      border: 1px solid #444;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: #5e6bfe;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #444;
+      background: #282828;
+      color: white;
+      border-radius: 8px;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #5e6bfe;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #4a59e6;
+    }
+    #status {
+      margin-top: 15px;
+      color: #ef4444;
+      font-size: 14px;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="forgot-container">
+    <h2><i class="fas fa-unlock-alt"></i> Reset Password</h2>
+    <input type="text" id="username" placeholder="Enter your username" required>
+    <input type="password" id="newPass" placeholder="Enter new password" required>
+    <button onclick="resetPassword()">Reset Password</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    async function resetPassword() {
+      const username = document.getElementById("username").value.trim();
+      const newPass = document.getElementById("newPass").value.trim();
+      const status = document.getElementById("status");
+
+      if (!username || !newPass) {
+        status.textContent = "Please fill all fields!";
+        return;
+      }
+
+      status.style.color = "yellow";
+      status.textContent = "Processing...";
+
+      try {
+        const res = await fetch("/api/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, newPass }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          status.style.color = "lightgreen";
+          status.textContent = "Password updated successfully!";
+        } else {
+          status.style.color = "red";
+          status.textContent = data.message || "Failed to reset password.";
+        }
+      } catch (err) {
+        status.style.color = "red";
+        status.textContent = "Server error.";
+      }
+    }
+  </script>
+</body>
+</html>
