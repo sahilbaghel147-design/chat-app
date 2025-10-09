@@ -1,4 +1,4 @@
-// ===== server.js - FINAL FIXED & RENDER READY =====
+// ===== server.js - FINAL STABLE RENDER VERSION =====
 
 const express = require("express");
 const http = require("http");
@@ -15,7 +15,7 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// SOCKET.IO CONFIGURATION
+// ===== SOCKET.IO SETUP =====
 const io = socketIO(server, {
   cors: {
     origin: "*",
@@ -23,22 +23,23 @@ const io = socketIO(server, {
   }
 });
 
-// EXPRESS SETTINGS & MIDDLEWARE
-app.use(compression()); 
+// ===== MIDDLEWARE =====
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-// ✅ MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority';
+// ===== DATABASE CONNECTION =====
+const MONGO_URI =
+  process.env.MONGO_URI ||
+  "mongodb+srv://sahil:12345@cluster0.5mdojw9.mongodb.net/chatapp?retryWrites=true&w=majority";
 
-mongoose.connect(MONGO_URI)
+mongoose
+  .connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ====== Schemas ======
+// ====== SCHEMAS ======
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -58,7 +59,7 @@ const MessageSchema = new mongoose.Schema({
 
 const HighScoreSchema = new mongoose.Schema({
   username: { type: String, required: true },
-  game: { type: String, required: true, default: "snake" },
+  game: { type: String, default: "snake" },
   score: { type: Number, required: true },
   timestamp: { type: Date, default: Date.now }
 });
@@ -67,36 +68,31 @@ const User = mongoose.model("User", UserSchema);
 const Message = mongoose.model("Message", MessageSchema);
 const HighScore = mongoose.model("HighScore", HighScoreSchema);
 
-// ===== Multer Config =====
+// ===== MULTER SETUP =====
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "public/uploads"));
-  },
+  destination: (req, file, cb) => cb(null, path.join(__dirname, "public/uploads")),
   filename: (req, file, cb) => {
     const prefix = req.body.isProfilePic ? "profile-" : "chat-";
     cb(null, prefix + Date.now() + "-" + file.originalname.replace(/ /g, "_"));
   }
 });
 
-const uploadMiddleware = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }
-}).single("chatFile");
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }).single("chatFile");
 
-// ===== Routes =====
+// ===== AUTH ROUTES (built-in, no external file) =====
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const userExists = await User.findOne({ username });
-    if (userExists) return res.json({ success: false, message: "User already exists" });
+    const existingUser = await User.findOne({ username });
+    if (existingUser)
+      return res.json({ success: false, message: "User already exists" });
 
     const hashed = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, password: hashed });
-    await newUser.save();
-    res.json({ success: true, message: "User registered successfully" });
+    await new User({ username, password: hashed }).save();
+    res.json({ success: true, message: "Signup successful" });
   } catch (err) {
     console.error("Signup Error:", err);
-    res.status(500).json({ success: false, message: "Server error during signup" });
+    res.status(500).json({ success: false, message: "Signup failed" });
   }
 });
 
@@ -107,20 +103,18 @@ app.post("/login", async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.json({ success: false, message: "Invalid username or password" });
     }
-    res.json({ success: true, message: "Login successful" });
+    res.json({ success: true, message: "Login successful", username });
   } catch (err) {
     console.error("Login Error:", err);
-    res.status(500).json({ success: false, message: "Server error during login" });
+    res.status(500).json({ success: false, message: "Login failed" });
   }
 });
 
+// ===== FILE UPLOAD =====
 app.post("/upload", (req, res) => {
-  uploadMiddleware(req, res, (err) => {
-    if (err) {
-      console.error("Upload Error:", err);
-      return res.status(500).json({ success: false, message: "File upload failed", error: err.message });
-    }
-    if (!req.file) return res.status(400).json({ success: false, message: "No file selected." });
+  upload(req, res, (err) => {
+    if (err) return res.status(500).json({ success: false, message: err.message });
+    if (!req.file) return res.status(400).json({ success: false, message: "No file selected" });
     res.json({
       success: true,
       fileDir: "/uploads/" + req.file.filename,
@@ -130,33 +124,25 @@ app.post("/upload", (req, res) => {
   });
 });
 
-// ===== Profile Routes =====
+// ===== PROFILE FETCH =====
 app.get("/api/profile/:username", async (req, res) => {
   try {
-    const user = await User.findOne({ username: req.params.username }).select("username bio profilePicture");
-    const bestScore = await HighScore.findOne({ username: req.params.username }).sort({ score: -1 });
+    const user = await User.findOne({ username: req.params.username }).select(
+      "username bio profilePicture"
+    );
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    res.json({
-      success: true,
-      profile: {
-        username: user.username,
-        bio: user.bio,
-        profilePicture: user.profilePicture,
-        bestSnakeScore: bestScore ? bestScore.score : 0
-      }
-    });
+    res.json({ success: true, profile: user });
   } catch (err) {
     console.error("Profile Fetch Error:", err);
-    res.status(500).json({ success: false, message: "Server error fetching profile." });
+    res.status(500).json({ success: false, message: "Error fetching profile" });
   }
 });
 
-// ===== Socket.IO =====
+// ===== SOCKET.IO CHAT =====
 let onlineUsers = {};
 
 io.on("connection", (socket) => {
-  console.log(`✅ New connection: ${socket.id}`);
+  console.log(`⚡ User connected: ${socket.id}`);
 
   socket.on("newUser", (username) => {
     onlineUsers[socket.id] = username;
@@ -169,13 +155,18 @@ io.on("connection", (socket) => {
       await newMsg.save();
 
       const sender = await User.findOne({ username: msg.sender }).select("profilePicture");
-      const messageToSend = { ...msg, senderPicture: sender?.profilePicture || "/uploads/default_avatar.png" };
+      const messageToSend = {
+        ...msg,
+        senderPicture: sender?.profilePicture || "/uploads/default_avatar.png"
+      };
 
       socket.emit("privateMessage", messageToSend);
-      const receiverSockets = Object.keys(onlineUsers).filter(id => onlineUsers[id] === msg.receiver);
-      receiverSockets.forEach(id => io.to(id).emit("privateMessage", messageToSend));
+      const receiverSockets = Object.keys(onlineUsers).filter(
+        (id) => onlineUsers[id] === msg.receiver
+      );
+      receiverSockets.forEach((id) => io.to(id).emit("privateMessage", messageToSend));
     } catch (err) {
-      console.error("Private Message Error:", err);
+      console.error("Message Error:", err);
     }
   });
 
@@ -185,21 +176,17 @@ io.on("connection", (socket) => {
   });
 });
 
-// ===== Serve Frontend Pages =====
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/index.html"));
-});
+// ===== FRONTEND PAGES =====
+app.get("/", (req, res) =>
+  res.sendFile(path.join(__dirname, "public/index.html"))
+);
 
 app.get("/:fileName", (req, res) => {
-  const fileName = req.params.fileName;
-  if (fileName.includes("..") || !fileName.endsWith(".html")) {
-    return res.status(404).sendFile(path.join(__dirname, "public/404.html"));
-  }
-  res.sendFile(path.join(__dirname, "public", fileName));
+  const file = req.params.fileName;
+  if (!file.endsWith(".html")) return res.status(404).send("Not found");
+  res.sendFile(path.join(__dirname, "public", file));
 });
 
-// ===== Start Server =====
+// ===== START SERVER =====
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
