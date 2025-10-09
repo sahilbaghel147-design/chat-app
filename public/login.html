@@ -196,56 +196,69 @@
       <a class="signup-link" href="/forgot.html">Forgot Password?</a>
   </div>
 
-  <script>
-    async function handleLogin() {
-      const username = document.getElementById("usernameInput").value.trim();
-      const password = document.getElementById("passwordInput").value.trim();
-      const statusDiv = document.getElementById("statusMessage");
-      const loginButton = document.getElementById("loginButton");
+ <script>
+async function handleLogin(retryCount = 0) {
+  const username = document.getElementById("usernameInput").value.trim();
+  const password = document.getElementById("passwordInput").value.trim();
+  const statusDiv = document.getElementById("statusMessage");
+  const loginButton = document.getElementById("loginButton");
 
-      statusDiv.style.color = "yellow";
-      statusDiv.textContent = "Logging in...";
-      loginButton.disabled = true; // Disable button during request
+  if (!username || !password) {
+    statusDiv.style.color = "red";
+    statusDiv.textContent = "Please enter username and password";
+    return;
+  }
 
-      if (!username || !password) {
-        statusDiv.style.color = "red";
-        statusDiv.textContent = "Please enter username and password";
-        loginButton.disabled = false;
-        return;
-      }
+  statusDiv.style.color = "yellow";
+  statusDiv.textContent = "Connecting to server...";
+  loginButton.disabled = true;
 
-      try {
-        const res = await fetch("/api/login", { // 🚨 FIX: Use the correct API route
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password })
-        });
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
 
-        const data = await res.json();
-        
-        if (data.success) {
-          statusDiv.style.color = "lightgreen";
-          statusDiv.textContent = "Login successful! Redirecting...";
-          // FIX: Save username correctly
-          localStorage.setItem("username", data.username); 
-          setTimeout(() => {
-            // Redirect to the main page after successful login
-            window.location.href = "/chat.html"; 
-          }, 500);
-        } else {
-          statusDiv.style.color = "red";
-          // FIX: Display the actual error message from the server
-          statusDiv.textContent = data.message; 
-        }
-      } catch (err) {
-        statusDiv.style.color = "red";
-        // FIX: Inform the user that the server is likely down
-        statusDiv.textContent = "Error connecting to server. Please check API server status.";
-        console.error("Login Fetch Error:", err);
-      } finally {
-          loginButton.disabled = false;
-      }
+    // ❗ Explicitly check status (Render sends 200 but may not have JSON yet)
+    if (!res.ok) {
+      throw new Error("Server not responding properly");
     }
-  </script>
+
+    const data = await res.json();
+
+    if (data && data.success) {
+      // ✅ Login success
+      statusDiv.style.color = "lightgreen";
+      statusDiv.textContent = "Login successful! Redirecting...";
+      localStorage.setItem("username", data.username || username);
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      window.location.href = "/chat.html";
+      return;
+    }
+
+    // ❌ Wrong credentials
+    statusDiv.style.color = "red";
+    statusDiv.textContent = data?.message || "Invalid username or password";
+
+  } catch (err) {
+    console.warn("Login Error:", err);
+
+    // 🔁 Auto-retry logic for Render cold start
+    if (retryCount < 2) {
+      statusDiv.style.color = "orange";
+      statusDiv.textContent = `Server waking up... Retrying (${retryCount + 1}/2)`;
+      setTimeout(() => handleLogin(retryCount + 1), 4000);
+      return;
+    }
+
+    statusDiv.style.color = "red";
+    statusDiv.textContent = "Server not responding. Please refresh & try again.";
+  } finally {
+    loginButton.disabled = false;
+  }
+}
+</script>
+
 </body>
 </html>
