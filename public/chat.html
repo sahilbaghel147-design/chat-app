@@ -1,242 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aura Hub Chat</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Login - Aura Hub</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* ===== style.css ===== */
-body {
-  margin: 0;
-  background: #0f172a;
-  color: #fff;
-  font-family: "Poppins", sans-serif;
-}
+  :root {
+      --bg-dark: #1e1e2f;
+      --bg-card: #2c2c3e;
+      --color-primary: #5e6bfe;
+      --color-text: #f0f0f0;
+      --color-error: #ef4444;
+  }
 
-.chat-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
+  body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: var(--bg-dark);
+      color: var(--color-text);
+      font-family: 'Arial', sans-serif;
+      background-image: radial-gradient(circle, #333 1px, transparent 1px);
+      background-size: 30px 30px;
+  }
 
-header {
-  background: #2563eb;
-  padding: 10px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-}
+  .login-container {
+      background: var(--bg-card);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      width: 350px;
+      text-align: center;
+      border: 1px solid #444;
+      animation: fadeIn 0.8s ease-out;
+  }
 
-.chat-body {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
+  h2 {
+      margin-bottom: 30px;
+      color: var(--color-primary);
+      font-size: 2em;
+      font-weight: 700;
+  }
 
-/* Sidebar */
-.online-users {
-  width: 180px;
-  background: #1e293b;
-  padding: 15px;
-  border-right: 1px solid #334155;
-}
+  .input-group { 
+      position: relative; 
+      margin-bottom: 25px; 
+      width: 100%;
+  }
+  input {
+      width: 100%; 
+      padding: 12px 12px 12px 40px; 
+      border: 1px solid #444; 
+      background: #282828; 
+      border-radius: 8px;
+      color: var(--color-text); 
+      font-size: 16px; 
+      transition: border-color 0.3s;
+      box-sizing: border-box;
+  }
+  input:focus { 
+      border-color: var(--color-primary); 
+      box-shadow: 0 0 5px rgba(94, 107, 254, 0.5); 
+  }
 
-.online-users h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 1em;
-  text-align: center;
-  color: #93c5fd;
-}
+  .input-group i {
+      position: absolute; 
+      left: 15px; 
+      top: 50%; 
+      transform: translateY(-50%);
+      color: #888; 
+      transition: color 0.3s;
+  }
+  input:focus + i { color: var(--color-primary); }
 
-.online-users ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+  #loginButton {
+      width: 100%; 
+      padding: 14px; 
+      background: var(--color-primary); 
+      border: none;
+      color: white; 
+      font-size: 1.1em; 
+      font-weight: bold; 
+      cursor: pointer;
+      border-radius: 8px; 
+      transition: 0.3s;
+      box-shadow: 0 4px 15px rgba(94, 107, 254, 0.4);
+  }
+  #loginButton:hover {
+      background: #4a59e6; 
+      transform: translateY(-1px);
+  }
 
-.online-users li {
-  background: #334155;
-  padding: 8px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
+  #statusMessage {
+      margin-top: 15px;
+      font-size: 1em;
+      min-height: 20px;
+      font-weight: 500;
+      color: var(--color-error);
+  }
 
-.online-users li:hover {
-  background: #475569;
-}
+  .signup-link, .forgot-link {
+      margin-top: 15px; 
+      display: block; 
+      color: #aaa; 
+      text-decoration: none; 
+      font-size: 0.9em;
+  }
+  .signup-link:hover, .forgot-link:hover {
+      color: var(--color-primary);
+      text-decoration: underline;
+  }
 
-/* Chat area */
-.chat-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #0f172a;
-}
-
-.messages {
-  flex: 1;
-  padding: 15px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.message {
-  background: #1e293b;
-  padding: 10px;
-  border-radius: 10px;
-  max-width: 70%;
-}
-
-.message.self {
-  background: #2563eb;
-  align-self: flex-end;
-}
-
-.sender {
-  font-size: 0.8em;
-  opacity: 0.7;
-}
-
-.info-note {
-  text-align: center;
-  opacity: 0.7;
-  margin-bottom: 10px;
-}
-
-#chat-form {
-  display: flex;
-  border-top: 1px solid #334155;
-}
-
-#chat-input {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  outline: none;
-  background: #1e293b;
-  color: white;
-  font-size: 1em;
-}
-
-button {
-  background: #2563eb;
-  border: none;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0 20px;
-  transition: background 0.3s;
-}
-
-button:hover {
-  background: #1d4ed8;
-}
-
+  @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+  }
   </style>
+</head>
 <body>
-  <div class="chat-wrapper">
-    <header>
-      <h2>💬 Aura Hub Chat</h2>
-      <div id="username-display"></div>
-    </header>
-
-    <div class="chat-body">
-      <aside class="online-users">
-        <h3>Online Users</h3>
-        <ul id="users-list"></ul>
-      </aside>
-
-      <main class="chat-area">
-        <div id="chat-box" class="messages"></div>
-        <form id="chat-form">
-          <input id="chat-input" type="text" placeholder="Type a message..." autocomplete="off" />
-          <button type="submit">Send</button>
-        </form>
-      </main>
+  <div class="login-container">
+    <h2><i class="fas fa-lock"></i> User Login</h2>
+    
+    <div class="input-group">
+        <input type="text" id="usernameInput" placeholder="Username" required>
+        <i class="fas fa-user"></i>
     </div>
+    
+    <div class="input-group">
+        <input type="password" id="passwordInput" placeholder="Password" required>
+        <i class="fas fa-key"></i>
+    </div>
+    
+    <button id="loginButton" onclick="handleLogin()">
+        <i class="fas fa-sign-in-alt"></i> Login
+    </button>
+    
+    <div id="statusMessage"></div>
+    
+    <a class="signup-link" href="/signup.html">Don't have an account? Signup</a>
+    <a class="signup-link" href="/forgot.html">Forgot Password?</a>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
-    const usersList = document.getElementById("users-list");
-    const chatBox = document.getElementById("chat-box");
-    const chatForm = document.getElementById("chat-form");
-    const chatInput = document.getElementById("chat-input");
-    const usernameDisplay = document.getElementById("username-display");
+    async function handleLogin() {
+      const username = document.getElementById("usernameInput").value.trim();
+      const password = document.getElementById("passwordInput").value.trim();
+      const statusDiv = document.getElementById("statusMessage");
+      const loginButton = document.getElementById("loginButton");
 
-    // 🧠 Username setup
-    let currentUser = localStorage.getItem("username");
-    if (!currentUser) {
-      currentUser = prompt("Enter your username:");
-      localStorage.setItem("username", currentUser);
-    }
-    usernameDisplay.textContent = `👤 ${currentUser}`;
+      statusDiv.style.color = "yellow";
+      statusDiv.textContent = "Logging in...";
+      loginButton.disabled = true;
 
-    // 🟢 Notify server about new user
-    socket.emit("newUser", currentUser);
+      if (!username || !password) {
+        statusDiv.style.color = "red";
+        statusDiv.textContent = "Please enter username and password";
+        loginButton.disabled = false;
+        return;
+      }
 
-    // 🧍 Update online users
-    socket.on("updateUsers", (users) => {
-      usersList.innerHTML = "";
-      users.forEach((user) => {
-        if (user === currentUser) return;
-        const li = document.createElement("li");
-        li.textContent = user;
-        li.addEventListener("click", () => {
-          selectedUser = user;
-          chatBox.innerHTML = "";
-          const note = document.createElement("div");
-          note.className = "info-note";
-          note.textContent = `💬 Chatting with ${selectedUser}`;
-          chatBox.appendChild(note);
+      try {
+        // ✅ FIXED: Correct Render-compatible route
+        const res = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
         });
-        usersList.appendChild(li);
-      });
-    });
 
-    // 💬 Send message
-    let selectedUser = null;
-    chatForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      if (!chatInput.value.trim() || !selectedUser) return;
+        if (!res.ok) {
+          throw new Error("Network response was not ok");
+        }
 
-      const message = {
-        sender: currentUser,
-        receiver: selectedUser,
-        text: chatInput.value.trim()
-      };
+        const data = await res.json();
 
-      socket.emit("privateMessage", message);
-      chatInput.value = "";
-    });
+        if (data.success) {
+          statusDiv.style.color = "lightgreen";
+          statusDiv.textContent = "Login successful! Redirecting...";
+          
+          // ✅ Save username locally
+          localStorage.setItem("username", data.username || username);
 
-    // 📥 Receive messages
-    socket.on("privateMessage", (msg) => {
-      const msgDiv = document.createElement("div");
-      msgDiv.classList.add("message");
-      if (msg.sender === currentUser) msgDiv.classList.add("self");
+          setTimeout(() => {
+            window.location.href = "/chat.html";
+          }, 500);
+        } else {
+          statusDiv.style.color = "red";
+          statusDiv.textContent = data.message || "Invalid username or password";
+        }
 
-      const sender = document.createElement("span");
-      sender.classList.add("sender");
-      sender.textContent = msg.sender;
-
-      const text = document.createElement("p");
-      text.textContent = msg.text;
-
-      msgDiv.appendChild(sender);
-      msgDiv.appendChild(text);
-      chatBox.appendChild(msgDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
+      } catch (err) {
+        console.error("Login Error:", err);
+        statusDiv.style.color = "red";
+        // ✅ Show better error feedback
+        statusDiv.textContent = "Error connecting to server. Please wait and try again.";
+      } finally {
+        loginButton.disabled = false;
+      }
+    }
   </script>
 </body>
 </html>
