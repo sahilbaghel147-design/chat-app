@@ -1,4 +1,4 @@
-// ===== server.js - FINAL STABLE RENDER VERSION =====
+// ===== server.js - FINAL RENDER READY VERSION =====
 
 const express = require("express");
 const http = require("http");
@@ -19,8 +19,8 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 
 // ===== MIDDLEWARE =====
@@ -39,12 +39,12 @@ mongoose
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ====== SCHEMAS ======
+// ===== SCHEMAS =====
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   bio: { type: String, default: "Hey there! I'm new to Aura Hub.", maxlength: 160 },
-  profilePicture: { type: String, default: "/uploads/default_avatar.png" }
+  profilePicture: { type: String, default: "/uploads/default_avatar.png" },
 });
 
 const MessageSchema = new mongoose.Schema({
@@ -54,14 +54,14 @@ const MessageSchema = new mongoose.Schema({
   fileDir: { type: String },
   fileMimeType: { type: String },
   originalName: { type: String },
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
 });
 
 const HighScoreSchema = new mongoose.Schema({
   username: { type: String, required: true },
   game: { type: String, default: "snake" },
   score: { type: Number, required: true },
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
 });
 
 const User = mongoose.model("User", UserSchema);
@@ -74,13 +74,17 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const prefix = req.body.isProfilePic ? "profile-" : "chat-";
     cb(null, prefix + Date.now() + "-" + file.originalname.replace(/ /g, "_"));
-  }
+  },
 });
-
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }).single("chatFile");
 
-// ===== AUTH ROUTES (built-in, no external file) =====
-app.post("/signup", async (req, res) => {
+// ===== HEALTH CHECK (Render wake-up) =====
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", message: "Aura Hub server active 🚀" });
+});
+
+// ===== AUTH ROUTES =====
+app.post("/api/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
     const existingUser = await User.findOne({ username });
@@ -96,7 +100,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.post("/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
@@ -111,15 +115,16 @@ app.post("/login", async (req, res) => {
 });
 
 // ===== FILE UPLOAD =====
-app.post("/upload", (req, res) => {
+app.post("/api/upload", (req, res) => {
   upload(req, res, (err) => {
     if (err) return res.status(500).json({ success: false, message: err.message });
-    if (!req.file) return res.status(400).json({ success: false, message: "No file selected" });
+    if (!req.file)
+      return res.status(400).json({ success: false, message: "No file selected" });
     res.json({
       success: true,
       fileDir: "/uploads/" + req.file.filename,
       fileMimeType: req.file.mimetype,
-      originalName: req.file.originalname
+      originalName: req.file.originalname,
     });
   });
 });
@@ -157,7 +162,7 @@ io.on("connection", (socket) => {
       const sender = await User.findOne({ username: msg.sender }).select("profilePicture");
       const messageToSend = {
         ...msg,
-        senderPicture: sender?.profilePicture || "/uploads/default_avatar.png"
+        senderPicture: sender?.profilePicture || "/uploads/default_avatar.png",
       };
 
       socket.emit("privateMessage", messageToSend);
@@ -176,14 +181,15 @@ io.on("connection", (socket) => {
   });
 });
 
-// ===== FRONTEND PAGES =====
+// ===== FRONTEND STATIC PAGES =====
 app.get("/", (req, res) =>
   res.sendFile(path.join(__dirname, "public/index.html"))
 );
 
 app.get("/:fileName", (req, res) => {
   const file = req.params.fileName;
-  if (!file.endsWith(".html")) return res.status(404).send("Not found");
+  if (!file.endsWith(".html"))
+    return res.status(404).sendFile(path.join(__dirname, "public/404.html"));
   res.sendFile(path.join(__dirname, "public", file));
 });
 
